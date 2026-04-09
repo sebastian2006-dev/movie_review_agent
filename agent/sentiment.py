@@ -66,7 +66,7 @@ Return ONLY valid JSON:
         client = get_groq_client()
 
         response = client.chat.completions.create(
-            model="llama3-70b-8192",  # ✅ FIXED MODEL
+            model="llama-3.1-70b-versatile",  # ✅ UPDATED MODEL
             messages=[
                 {"role": "user", "content": prompt}
             ],
@@ -76,7 +76,7 @@ Return ONLY valid JSON:
         text = response.choices[0].message.content
 
     except Exception as e:
-        st.error(f"Groq Error: {e}")  # ✅ shows error in UI
+        st.error(f"Groq Error: {e}")
         return _error_response(raw_reviews["title"])
 
     # 🧼 JSON parsing
@@ -92,7 +92,7 @@ Return ONLY valid JSON:
 
     except Exception as e:
         st.error("JSON parsing failed")
-        st.text(text)  # ✅ show raw output for debugging
+        st.text(text)
         return _error_response(raw_reviews["title"])
 
 
