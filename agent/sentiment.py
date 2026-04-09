@@ -1,20 +1,11 @@
 import json
-import os
-from dotenv import load_dotenv
 from openai import OpenAI
-import ollama
-
-load_dotenv()
+import streamlit as st
 
 
 def get_groq_client():
-    api_key = os.getenv("GROQ_API_KEY")
-
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment variables")
-
     return OpenAI(
-        api_key=api_key,
+        api_key=st.secrets["GROQ_API_KEY"],
         base_url="https://api.groq.com/openai/v1"
     )
 
@@ -71,7 +62,6 @@ Return ONLY valid JSON:
 }}
 """
 
-    # 🔥 Try Groq first
     try:
         client = get_groq_client()
 
@@ -86,21 +76,8 @@ Return ONLY valid JSON:
         text = response.choices[0].message.content
 
     except Exception as e:
-        print("Groq failed, switching to Ollama:", e)
-
-        # 🏠 fallback
-        try:
-            response = ollama.chat(
-                model="llama3",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            text = response["message"]["content"]
-
-        except Exception as e:
-            print("Ollama also failed:", e)
-            return _error_response(raw_reviews["title"])
+        print("Groq failed:", e)
+        return _error_response(raw_reviews["title"])
 
     # 🧼 JSON parsing
     try:

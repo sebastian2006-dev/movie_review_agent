@@ -1,15 +1,12 @@
 import requests
-import os
-from dotenv import load_dotenv
+import streamlit as st
 
-load_dotenv()
-
-API_KEY = os.getenv("OMDB_API_KEY")
+API_KEY = st.secrets["OMDB_API_KEY"]
 
 def fetch_movie_data(title: str):
 
     if not API_KEY:
-        raise ValueError("Missing OMDB_API_KEY. Add it to your .env file.")
+        raise ValueError("Missing OMDB_API_KEY.")
 
     url = f"http://www.omdbapi.com/?t={title}&apikey={API_KEY}"
 
