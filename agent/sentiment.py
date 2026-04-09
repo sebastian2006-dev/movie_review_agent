@@ -10,6 +10,20 @@ def get_groq_client():
     )
 
 
+# 🔥 NEW: format nested JSON into clean text
+def format_section(section):
+    if isinstance(section, dict):
+        parts = []
+        if "title" in section:
+            parts.append(f"**{section['title']}**")
+        if "analysis" in section:
+            parts.append(section["analysis"])
+        if "reference" in section:
+            parts.append(f"\n_{section['reference']}_")
+        return "\n\n".join(parts)
+    return section
+
+
 def analyze_movie(raw_reviews: dict) -> dict:
 
     prompt = f"""
@@ -66,7 +80,7 @@ Return ONLY valid JSON:
         client = get_groq_client()
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",  # ✅ FINAL WORKING MODEL
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "user", "content": prompt}
             ],
@@ -87,6 +101,11 @@ Return ONLY valid JSON:
 
         data = json.loads(clean_json)
         data["title"] = raw_reviews["title"]
+
+        # 🔥 FORMAT FIX
+        data["critic_expert"] = format_section(data.get("critic_expert"))
+        data["devils_advocate"] = format_section(data.get("devils_advocate"))
+        data["audience_sentiment"] = format_section(data.get("audience_sentiment"))
 
         return data
 
