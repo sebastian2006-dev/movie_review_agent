@@ -4,6 +4,8 @@ import streamlit as st
 from openai import OpenAI
 
 
+# ------------------ GROQ CLIENT ------------------
+
 def get_groq_client():
     return OpenAI(
         api_key=st.secrets["GROQ_API_KEY"],
@@ -11,24 +13,60 @@ def get_groq_client():
     )
 
 
-# 🔥 Robust JSON extractor (production safe)
+# ------------------ JSON EXTRACTOR ------------------
+
 def extract_json(text: str) -> dict:
-    # remove markdown code blocks
-    text = re.sub(r"```json|```", "", text)
+    """Robust JSON extractor that survives bad LLM formatting."""
+    try:
+        # remove ```json ``` wrappers if model adds them
+        text = re.sub(r"```json|```", "", text)
 
-    # grab first JSON object
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError("No JSON found in model response")
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        clean = text[start:end]
 
-    json_str = match.group(0)
+        return json.loads(clean)
+    except Exception:
+        raise ValueError("Model returned invalid JSON")
 
-    # remove trailing commas (very common LLM mistake)
-    json_str = re.sub(r",\s*}", "}", json_str)
-    json_str = re.sub(r",\s*]", "]", json_str)
 
-    return json.loads(json_str)
+# ------------------ SCHEMA NORMALIZER ------------------
 
+def normalize_schema(data: dict) -> dict:
+    """
+    Forces the LLM output to match the schema expected by Streamlit UI.
+    Prevents KeyError crashes forever.
+    """
+
+    def extract_text(section):
+        # Sometimes model returns {text:"...", points:[...]}
+        if isinstance(section, dict):
+            return section.get("text", "")
+        return section or ""
+
+    data["critic_expert"] = extract_text(data.get("critic_expert"))
+    data["devils_advocate"] = extract_text(data.get("devils_advocate"))
+    data["audience_sentiment"] = extract_text(data.get("audience_sentiment"))
+
+    # Themes safety
+    if "themes" not in data or not isinstance(data["themes"], list):
+        data["themes"] = []
+
+    # Final verdict safety
+    fv = data.get("final_verdict", {})
+
+    data["final_verdict"] = {
+        "overview": fv.get("overview", "No overview generated."),
+        "what_works": fv.get("what_works", []),
+        "what_fails": fv.get("what_fails", []),
+        "conclusion": fv.get("conclusion", "No conclusion generated."),
+        "score": fv.get("score", "N/A"),
+    }
+
+    return data
+
+
+# ------------------ MAIN ANALYSIS FUNCTION ------------------
 
 def analyze_movie(raw_reviews: dict) -> dict:
 
@@ -92,6 +130,7 @@ Return ONLY JSON:
 
     client = get_groq_client()
 
+    # ---------- FIRST TRY ----------
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
@@ -100,19 +139,23 @@ Return ONLY JSON:
 
     text = response.choices[0].message.content
 
-    # 🧠 Try parsing safely
     try:
-        return extract_json(text)
+        return normalize_schema(extract_json(text))
 
     except Exception:
-        # 🔁 automatic retry forcing strict JSON
-        retry_prompt = "Return ONLY valid JSON. Fix this:\n" + text
+        # ---------- AUTO RETRY IF JSON BREAKS ----------
+        retry_prompt = f"""
+Your previous response was NOT valid JSON.
+Return ONLY valid JSON. No explanation.
+
+{prompt}
+"""
 
         retry = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": retry_prompt}],
-            temperature=0
+            temperature=0.5
         )
 
         retry_text = retry.choices[0].message.content
-        return extract_json(retry_text)
+        return normalize_schema(extract_json(retry_text))
