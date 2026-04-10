@@ -21,9 +21,10 @@ def fetch_movie_data(title: str):
     if not data or data.get("Response") == "False":
         return None
 
-    ratings = {}
-    for r in data.get("Ratings", []):
-        ratings[r.get("Source")] = r.get("Value")
+    # ⭐ FIX: safe IMDb fallback if OMDB returns "N/A"
+    imdb_rating = data.get("imdbRating")
+    if not imdb_rating or imdb_rating == "N/A":
+        imdb_rating = "—"
 
     return {
         "title": data.get("Title"),
@@ -32,8 +33,7 @@ def fetch_movie_data(title: str):
         "actors": data.get("Actors"),
         "genre": data.get("Genre"),
         "director": data.get("Director"),
-        "writer": data.get("Writer"),
-        "imdb_rating": data.get("imdbRating"),
+        "imdb_rating": imdb_rating,
         "poster": data.get("Poster"),
         "runtime": data.get("Runtime"),
     }
@@ -44,164 +44,149 @@ st.set_page_config(page_title="Movie Intelligence Terminal", layout="wide")
 # ---------------- GLOBAL CSS ----------------
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&family=Playfair+Display:wght@700;900&display=swap');
 
-html, body, [class*="css"] {
-    background-color:#0b0f19;
-    color:white;
+.stApp { background-color: #05070a !important; color: #e8e8f0; }
+.block-container { max-width: 1200px; padding-top: 2rem; }
+
+div[data-testid="stChatInput"] {
+    border: 1px solid rgba(0, 255, 231, 0.2);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 5px;
 }
 
-/* HERO TITLE */
+.eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: #00ffe7;
+    text-align: center;
+}
+
 .title {
-    font-size: 60px;
-    font-weight: 800;
-    text-align:center;
-    background: linear-gradient(90deg,#00ffe7,#7a7cff,#ff00c8);
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 6vw, 50px);
+    font-weight: 900;
+    text-align: center;
+    background: linear-gradient(135deg, #fff 30%, #444 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-/* GLASS CARD */
-.glass {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(14px);
-    padding: 25px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    transition: 0.3s;
+.critic-container { display:flex; gap:20px; flex-wrap:wrap; }
+.critic-card {
+    flex:1; min-width:300px;
+    background: rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:24px;
 }
-.glass:hover { transform: translateY(-6px); }
-
-/* PERSONA COLORS */
-.critic { border-left: 6px solid gold; }
-.devil { border-left: 6px solid #c400ff; }
-.audience { border-left: 6px solid #00ffa6; }
-
-/* SCORE PILLS */
-.score-pill {
-    padding:15px;
-    border-radius:50px;
-    text-align:center;
-    font-size:22px;
-    font-weight:700;
-    background: linear-gradient(90deg,#00ffe7,#7a7cff);
+.critic-label {
+    font-family:'Space Mono'; font-size:11px;
+    text-transform:uppercase; letter-spacing:2px;
+    margin-bottom:12px;
 }
+.critic-text { font-family:'Inter'; font-size:14px; color:#cbd5e1; }
 
-.center { text-align:center; }
+.label-expert{color:#00ffe7}
+.label-devils{color:#ff4b2b}
+.label-audience{color:#ffcc00}
 
+.verdict-box {
+    background: linear-gradient(to right, rgba(0,255,231,0.05), transparent);
+    border-left: 4px solid #00ffe7;
+    padding: 20px;
+    border-radius: 0 12px 12px 0;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HERO ----------------
-st.markdown("<div class='title'>MOVIE INTELLIGENCE TERMINAL</div>", unsafe_allow_html=True)
-st.write("")
+# ---------------- HERO HEADER ----------------
+st.markdown("<div class='eyebrow'>QUANTUM ANALYSIS UNIT</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>CINEMATIC TERMINAL</div>", unsafe_allow_html=True)
 
-user_input = st.chat_input("Search movie or TV show...")
+# ⭐ CENTER SEARCH
+st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
+c1,c2,c3 = st.columns([1,2,1])
+with c2:
+    user_input = st.chat_input("Access movie records...")
+st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
 
 # ---------------- MAIN APP ----------------
 if user_input:
-
     movie = fetch_movie_data(user_input)
 
     if not movie:
-        st.error("Movie not found")
+        st.error("Protocol Error: Subject not found in database.")
         st.stop()
 
-    # ---------- HERO POSTER + INFO ----------
+    # ⭐ HEADER WITH IMDB RATING (NEW)
     col1, col2 = st.columns([1,2])
-
     with col1:
         st.image(movie["poster"], use_column_width=True)
 
     with col2:
-        st.markdown(f"## {movie['title']} ({movie['year']})")
-        st.write(f"**Genre:** {movie['genre']}")
-        st.write(f"**Runtime:** {movie['runtime']}")
-        st.write(f"**Actors:** {movie['actors']}")
+        st.markdown(f"<h1 style='margin-bottom:0;'>{movie['title']}</h1>", unsafe_allow_html=True)
+        st.markdown(
+            f"<p style='color:grey; font-family:Space Mono; font-size:14px;'>"
+            f"{movie['year']} // DIR: {movie['director']} // {movie['runtime']} // ⭐ IMDb {movie['imdb_rating']}"
+            f"</p>",
+            unsafe_allow_html=True
+        )
+        st.write(movie["plot"])
+        st.markdown(f"**Cast:** {movie['actors']}")
 
     raw_reviews = {
         "title": movie["title"],
         "critic_reviews": movie["plot"],
-        "audience_reactions": f"Actors: {movie['actors']}",
+        "audience_reactions": movie["actors"],
         "discussion_points": movie["genre"]
     }
 
-    with st.spinner("AI Critics debating…"):
+    with st.spinner("Synchronizing AI Personas..."):
         result = analyze_movie(raw_reviews)
 
-    # ---------- SCORE BAR ----------
-    colA, colB = st.columns(2)
-    with colA:
-        st.markdown(f"<div class='score-pill'>IMDb ⭐ {movie['imdb_rating']}</div>", unsafe_allow_html=True)
-    with colB:
-        st.markdown(f"<div class='score-pill'>AI Score 🎯 {result['final_verdict']['score']}</div>", unsafe_allow_html=True)
+    st.write("---")
+    st.markdown("### 🎬 MULTI-AGENT PERSPECTIVES")
 
-    st.write("")
-    st.write("")
+    st.markdown(f"""
+    <div class="critic-container">
+        <div class="critic-card">
+            <div class="critic-label label-expert">Veteran Critic</div>
+            <div class="critic-text">{result["critic_expert"]}</div>
+        </div>
+        <div class="critic-card">
+            <div class="critic-label label-devils">Devil's Advocate</div>
+            <div class="critic-text">{result["devils_advocate"]}</div>
+        </div>
+        <div class="critic-card">
+            <div class="critic-label label-audience">Audience Sentiment</div>
+            <div class="critic-text">{result["audience_sentiment"]}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # ---------- PERSONA GRID ----------
-    col1, col2, col3 = st.columns(3)
+    st.write("---")
+    t1, t2 = st.columns([2,1])
 
-    with col1:
-        st.markdown("<div class='glass critic'>", unsafe_allow_html=True)
-        st.subheader("🎬 Veteran Critic")
-        st.write(result["critic_expert"])
-        st.markdown("</div>", unsafe_allow_html=True)
+    with t1:
+        st.markdown("### 🎯 Core Themes")
+        themes_html = " ".join([f"<span style='background:rgba(255,255,255,0.05); padding:5px 12px; border-radius:20px;'># {t}</span>" for t in result["themes"]])
+        st.markdown(themes_html, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown("<div class='glass devil'>", unsafe_allow_html=True)
-        st.subheader("😈 Devil's Advocate")
-        st.write(result["devils_advocate"])
-        st.markdown("</div>", unsafe_allow_html=True)
+    with t2:
+        st.markdown(f"<h1 style='color:#00ffe7'>{result['final_verdict']['score']}</h1>", unsafe_allow_html=True)
 
-    with col3:
-        st.markdown("<div class='glass audience'>", unsafe_allow_html=True)
-        st.subheader("👥 Audience Voice")
-        st.write(result["audience_sentiment"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.write("")
-    st.write("")
-
-    # ---------- THEMES ----------
-    st.markdown("## 🎯 Core Themes")
-    cols = st.columns(len(result["themes"]))
-    for i, t in enumerate(result["themes"]):
-        cols[i].markdown(f"<div class='glass center'>{t}</div>", unsafe_allow_html=True)
-
-    # ---------- FINAL VERDICT ----------
     v = result["final_verdict"]
+    st.markdown("### 🧠 Intelligence Verdict")
+    st.markdown(f"<div class='verdict-box'>{v['overview']}</div>", unsafe_allow_html=True)
 
-    st.write("")
-    st.markdown("## 🧠 Final Verdict")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("<div class='glass'>", unsafe_allow_html=True)
-        st.subheader("Overview")
-        st.write(v["overview"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("<div class='glass'>", unsafe_allow_html=True)
-        st.subheader("Conclusion")
-        st.write(v["conclusion"])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("<div class='glass'>", unsafe_allow_html=True)
-        st.subheader("✅ What Works")
+    w1, w2 = st.columns(2)
+    with w1:
+        st.write("### ✅ Strengths")
         for w in v["what_works"]:
-            st.write("✔", w)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("<div class='glass'>", unsafe_allow_html=True)
-        st.subheader("❌ What Fails")
+            st.write(f"• {w}")
+    with w2:
+        st.write("### ❌ Deficiencies")
         for f in v["what_fails"]:
-            st.write("✖", f)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown(f"<h1 class='center'>⭐ {v['score']}</h1>", unsafe_allow_html=True)
+            st.write(f"• {f}")
