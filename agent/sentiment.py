@@ -1,5 +1,7 @@
+import json
+import streamlit as st
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 
 def analyze_movie(raw_reviews: dict) -> str:
