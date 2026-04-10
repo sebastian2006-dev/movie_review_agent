@@ -99,47 +99,51 @@ def normalize_schema(data: dict) -> dict:
 
 def analyze_movie(raw_reviews: dict) -> dict:
 
-    prompt = f"""
+    # ---------- SYSTEM PROMPT (very important) ----------
+    system_prompt = """
+You are an elite panel of film critics.
+
+You ALWAYS return PERFECT VALID JSON.
+No markdown.
+No backticks.
+No explanations.
+No missing fields.
+
+Every text field must contain at least 4–6 sentences.
+Be detailed, specific, analytical and non-generic.
+"""
+
+    # ---------- USER PROMPT ----------
+    user_prompt = f"""
 You are a ROUND-TABLE PANEL of elite film critics analysing:
 
 TITLE: {raw_reviews['title']}
 
-You must produce EXTREMELY DETAILED, SPECIFIC and NON-GENERIC analysis.
-
 PERSONAS:
 
-1) 🎬 Veteran Film Critic (technical & cinematic analysis)
-   Focus on:
+1) Veteran Film Critic
    - storytelling structure
    - directing style
    - pacing & tone
    - character psychology
    - cinematography & writing depth
 
-2) 😈 Devil’s Advocate (contrarian critic)
+2) Devil’s Advocate
    - Challenge hype
    - Criticise weak writing, pacing, clichés
-   - Point out overrated aspects
-   - Must disagree with something strongly
+   - Strong disagreement required
 
-3) 👥 Audience Voice (viewer experience)
+3) Audience Voice
    - Emotional impact
    - Entertainment value
    - Binge factor / rewatchability
-   - What casual viewers love & hate
 
 DATA:
 Plot: {raw_reviews['critic_reviews']}
 Actors: {raw_reviews['audience_reactions']}
 Genre: {raw_reviews['discussion_points']}
 
-STRICT RULES:
-- No generic phrases
-- Be analytical and specific
-- Each paragraph = 4–6 sentences
-- Themes must be deep and meaningful
-
-Return ONLY JSON:
+Return ONLY JSON in this schema:
 
 {{
   "critic_expert": "",
@@ -159,11 +163,15 @@ Return ONLY JSON:
 
     client = get_groq_client()
 
-    # FIRST TRY
+    # ⭐⭐⭐ FIRST GENERATION — HIGH QUALITY MODEL ⭐⭐⭐
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.8
+        model="llama-3.3-70b-versatile",   # 🔥 UPGRADED MODEL
+        temperature=0.5,                   # more reliable
+        max_tokens=2500,                   # allows long analysis
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
     )
 
     text = response.choices[0].message.content
@@ -172,18 +180,18 @@ Return ONLY JSON:
         return normalize_schema(extract_json(text))
 
     except Exception:
-        # RETRY IF JSON BREAKS
-        retry_prompt = f"""
-Your previous response was NOT valid JSON.
-Return ONLY valid JSON. No explanation.
+        # ---------- AUTO JSON REPAIR RETRY ----------
+        repair_prompt = f"""
+Fix this JSON. Return ONLY valid JSON.
 
-{prompt}
+{text}
 """
 
         retry = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": retry_prompt}],
-            temperature=0.5
+            model="llama-3.3-70b-versatile",
+            temperature=0.2,
+            max_tokens=2500,
+            messages=[{"role": "user", "content": repair_prompt}]
         )
 
         retry_text = retry.choices[0].message.content
