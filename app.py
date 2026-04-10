@@ -2,28 +2,20 @@ import requests
 import streamlit as st
 from agent.sentiment import analyze_movie
 
-# 🔑 OMDB KEY
 API_KEY = st.secrets["OMDB_API_KEY"]
 
-# 🎬 FETCH MOVIE DATA (MUST BE ABOVE UI)
+# ---------------- FETCH MOVIE DATA ----------------
 def fetch_movie_data(title: str):
-
     if not API_KEY:
         raise ValueError("Missing OMDB_API_KEY.")
 
     url = "http://www.omdbapi.com/"
-    params = {
-        "t": title,
-        "apikey": API_KEY,
-        "plot": "full",
-        "r": "json"
-    }
+    params = {"t": title, "apikey": API_KEY, "plot": "full", "r": "json"}
 
     try:
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
-    except Exception as e:
-        print("OMDB REQUEST FAILED:", e)
+    except:
         return None
 
     if not data or data.get("Response") == "False":
@@ -42,101 +34,174 @@ def fetch_movie_data(title: str):
         "director": data.get("Director"),
         "writer": data.get("Writer"),
         "imdb_rating": data.get("imdbRating"),
-        "metascore": data.get("Metascore"),
-        "ratings": ratings,
         "poster": data.get("Poster"),
         "runtime": data.get("Runtime"),
-        "language": data.get("Language"),
-        "country": data.get("Country")
     }
 
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(page_title="Movie Intelligence Terminal", layout="wide")
 
-# 🔥 Page config
-st.set_page_config(page_title="Movie & Show Review Aggregator AI Agent", layout="wide")
-
-# 🎨 Styling (AI + Netflix vibe)
+# ---------------- GLOBAL CSS ----------------
 st.markdown("""
 <style>
-body { background-color: #0f0f0f; color: white; }
-.stChatInputContainer { background-color: #1c1c1c !important; border-radius: 20px !important; padding: 10px !important; }
-.stChatMessage { background-color: #1a1a1a !important; border-radius: 15px !important; padding: 15px !important; }
-.rating-box { background-color: #e50914; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+
+html, body, [class*="css"] {
+    background-color:#0b0f19;
+    color:white;
+}
+
+/* HERO TITLE */
+.title {
+    font-size: 60px;
+    font-weight: 800;
+    text-align:center;
+    background: linear-gradient(90deg,#00ffe7,#7a7cff,#ff00c8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* GLASS CARD */
+.glass {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(14px);
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: 0.3s;
+}
+.glass:hover { transform: translateY(-6px); }
+
+/* PERSONA COLORS */
+.critic { border-left: 6px solid gold; }
+.devil { border-left: 6px solid #c400ff; }
+.audience { border-left: 6px solid #00ffa6; }
+
+/* SCORE PILLS */
+.score-pill {
+    padding:15px;
+    border-radius:50px;
+    text-align:center;
+    font-size:22px;
+    font-weight:700;
+    background: linear-gradient(90deg,#00ffe7,#7a7cff);
+}
+
+.center { text-align:center; }
+
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 AI Agent for Movie & Show Reviews")
+# ---------------- HERO ----------------
+st.markdown("<div class='title'>MOVIE INTELLIGENCE TERMINAL</div>", unsafe_allow_html=True)
+st.write("")
 
-user_input = st.chat_input("Ask about a movie or show...")
+user_input = st.chat_input("Search movie or TV show...")
 
+# ---------------- MAIN APP ----------------
 if user_input:
 
-    st.chat_message("user").write(user_input)
+    movie = fetch_movie_data(user_input)
 
-    with st.chat_message("assistant"):
+    if not movie:
+        st.error("Movie not found")
+        st.stop()
 
-        movie = fetch_movie_data(user_input)
+    # ---------- HERO POSTER + INFO ----------
+    col1, col2 = st.columns([1,2])
 
-        if not movie:
-            st.error("Movie not found")
-        else:
+    with col1:
+        st.image(movie["poster"], use_column_width=True)
 
-            st.markdown(f"""
-            <div style="position: relative; border-radius: 15px; overflow: hidden;">
-                <img src="{movie['poster']}" style="width: 100%; height: 500px; object-fit: contain; background-color: #000;">
-                <div style="position: absolute; bottom: 0; width: 100%; padding: 20px;
-                background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: white;">
-                    <h1>{movie['title']}</h1>
-                    <p>{movie['year']} • {movie['genre']}</p>
-                    <p>{movie['actors']}</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"## {movie['title']} ({movie['year']})")
+        st.write(f"**Genre:** {movie['genre']}")
+        st.write(f"**Runtime:** {movie['runtime']}")
+        st.write(f"**Actors:** {movie['actors']}")
 
-            raw_reviews = {
-                "title": movie["title"],
-                "critic_reviews": movie["plot"],
-                "audience_reactions": f"Actors: {movie['actors']}",
-                "discussion_points": movie["genre"]
-            }
+    raw_reviews = {
+        "title": movie["title"],
+        "critic_reviews": movie["plot"],
+        "audience_reactions": f"Actors: {movie['actors']}",
+        "discussion_points": movie["genre"]
+    }
 
-            with st.spinner("🧠 AI critics are debating..."):
-                result = analyze_movie(raw_reviews)
+    with st.spinner("AI Critics debating…"):
+        result = analyze_movie(raw_reviews)
 
-            col1, col2 = st.columns(2)
+    # ---------- SCORE BAR ----------
+    colA, colB = st.columns(2)
+    with colA:
+        st.markdown(f"<div class='score-pill'>IMDb ⭐ {movie['imdb_rating']}</div>", unsafe_allow_html=True)
+    with colB:
+        st.markdown(f"<div class='score-pill'>AI Score 🎯 {result['final_verdict']['score']}</div>", unsafe_allow_html=True)
 
-            with col1:
-                st.markdown(f"<div class='rating-box'>IMDb ⭐ {movie['imdb_rating']}</div>", unsafe_allow_html=True)
+    st.write("")
+    st.write("")
 
-            with col2:
-                st.markdown(f"<div class='rating-box'>AI 🎯 {result['final_verdict']['score']}</div>", unsafe_allow_html=True)
+    # ---------- PERSONA GRID ----------
+    col1, col2, col3 = st.columns(3)
 
-            st.subheader("🎬 Veteran Critic (20+ yrs experience)")
-            st.write(result["critic_expert"])
+    with col1:
+        st.markdown("<div class='glass critic'>", unsafe_allow_html=True)
+        st.subheader("🎬 Veteran Critic")
+        st.write(result["critic_expert"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            st.subheader("😈 Devil’s Advocate")
-            st.write(result["devils_advocate"])
+    with col2:
+        st.markdown("<div class='glass devil'>", unsafe_allow_html=True)
+        st.subheader("😈 Devil's Advocate")
+        st.write(result["devils_advocate"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            st.subheader("👥 Audience Perspective")
-            st.write(result["audience_sentiment"])
+    with col3:
+        st.markdown("<div class='glass audience'>", unsafe_allow_html=True)
+        st.subheader("👥 Audience Voice")
+        st.write(result["audience_sentiment"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            st.subheader("🎯 Themes")
-            for t in result["themes"]:
-                st.write(f"• {t}")
+    st.write("")
+    st.write("")
 
-            v = result["final_verdict"]
+    # ---------- THEMES ----------
+    st.markdown("## 🎯 Core Themes")
+    cols = st.columns(len(result["themes"]))
+    for i, t in enumerate(result["themes"]):
+        cols[i].markdown(f"<div class='glass center'>{t}</div>", unsafe_allow_html=True)
 
-            st.subheader("📝 Overview")
-            st.write(v["overview"])
+    # ---------- FINAL VERDICT ----------
+    v = result["final_verdict"]
 
-            st.subheader("✅ What Works")
-            for w in v["what_works"]:
-                st.write(f"✔ {w}")
+    st.write("")
+    st.markdown("## 🧠 Final Verdict")
 
-            st.subheader("❌ What Fails")
-            for f in v["what_fails"]:
-                st.write(f"✖ {f}")
+    col1, col2 = st.columns(2)
 
-            st.subheader("🎯 Final Conclusion")
-            st.write(v["conclusion"])
+    with col1:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.subheader("Overview")
+        st.write(v["overview"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-            st.subheader(f"⭐ Score: {v['score']}")
+    with col2:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.subheader("Conclusion")
+        st.write(v["conclusion"])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.subheader("✅ What Works")
+        for w in v["what_works"]:
+            st.write("✔", w)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.subheader("❌ What Fails")
+        for f in v["what_fails"]:
+            st.write("✖", f)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(f"<h1 class='center'>⭐ {v['score']}</h1>", unsafe_allow_html=True)
