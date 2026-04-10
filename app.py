@@ -1,6 +1,5 @@
 import streamlit as st
 from agent.sentiment import analyze_movie
-from agent.tools import fetch_movie_data
 
 # 🔥 Page config
 st.set_page_config(page_title="Movie & Show Review Aggregator AI Agent", layout="wide")
