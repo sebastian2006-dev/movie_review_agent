@@ -18,13 +18,10 @@ def get_groq_client():
 def extract_json(text: str) -> dict:
     """Robust JSON extractor that survives bad LLM formatting."""
     try:
-        # remove ```json ``` wrappers if model adds them
         text = re.sub(r"```json|```", "", text)
-
         start = text.find("{")
         end = text.rfind("}") + 1
         clean = text[start:end]
-
         return json.loads(clean)
     except Exception:
         raise ValueError("Model returned invalid JSON")
@@ -34,32 +31,64 @@ def extract_json(text: str) -> dict:
 
 def normalize_schema(data: dict) -> dict:
     """
-    Forces the LLM output to match the schema expected by Streamlit UI.
-    Prevents KeyError crashes forever.
+    Guarantees Streamlit ALWAYS receives valid + non-empty content.
+    Fixes:
+    - Missing keys
+    - Dict vs string drift
+    - Empty LLM sections
+    - Missing arrays
     """
 
     def extract_text(section):
-        # Sometimes model returns {text:"...", points:[...]}
         if isinstance(section, dict):
             return section.get("text", "")
         return section or ""
 
-    data["critic_expert"] = extract_text(data.get("critic_expert"))
-    data["devils_advocate"] = extract_text(data.get("devils_advocate"))
-    data["audience_sentiment"] = extract_text(data.get("audience_sentiment"))
+    critic = extract_text(data.get("critic_expert"))
+    devil = extract_text(data.get("devils_advocate"))
+    audience = extract_text(data.get("audience_sentiment"))
 
-    # Themes safety
-    if "themes" not in data or not isinstance(data["themes"], list):
-        data["themes"] = []
+    # 🔥 EMPTY TEXT AUTO-RECOVERY
+    def ensure_text(text, fallback):
+        if not text or len(text.strip()) < 40:
+            return fallback
+        return text
 
-    # Final verdict safety
+    data["critic_expert"] = ensure_text(
+        critic,
+        "The critic panel could not generate a full technical breakdown. "
+        "Regenerate to receive detailed analysis of storytelling, direction, and character psychology."
+    )
+
+    data["devils_advocate"] = ensure_text(
+        devil,
+        "The Devil’s Advocate failed to generate a contrarian opinion. "
+        "Regenerate to see strong criticism and opposing viewpoints."
+    )
+
+    data["audience_sentiment"] = ensure_text(
+        audience,
+        "Audience reactions failed to generate. Regenerate to see viewer emotional impact and binge value."
+    )
+
+    # THEMES SAFETY
+    if "themes" not in data or not isinstance(data["themes"], list) or len(data["themes"]) == 0:
+        data["themes"] = [
+            "Morality",
+            "Identity",
+            "Power",
+            "Consequences",
+            "Human nature"
+        ]
+
+    # FINAL VERDICT SAFETY
     fv = data.get("final_verdict", {})
 
     data["final_verdict"] = {
-        "overview": fv.get("overview", "No overview generated."),
-        "what_works": fv.get("what_works", []),
-        "what_fails": fv.get("what_fails", []),
-        "conclusion": fv.get("conclusion", "No conclusion generated."),
+        "overview": fv.get("overview", "Overview not generated."),
+        "what_works": fv.get("what_works", ["Strong premise"]),
+        "what_fails": fv.get("what_fails", ["Inconsistent AI output"]),
+        "conclusion": fv.get("conclusion", "Final conclusion missing."),
         "score": fv.get("score", "N/A"),
     }
 
@@ -130,7 +159,7 @@ Return ONLY JSON:
 
     client = get_groq_client()
 
-    # ---------- FIRST TRY ----------
+    # FIRST TRY
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
@@ -143,7 +172,7 @@ Return ONLY JSON:
         return normalize_schema(extract_json(text))
 
     except Exception:
-        # ---------- AUTO RETRY IF JSON BREAKS ----------
+        # RETRY IF JSON BREAKS
         retry_prompt = f"""
 Your previous response was NOT valid JSON.
 Return ONLY valid JSON. No explanation.
