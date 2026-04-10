@@ -1,113 +1,82 @@
-prompt = f"""
-You are simulating a ROUND-TABLE PANEL of elite film critics analysing the movie or TV show: "{raw_reviews['title']}".
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 
-This is NOT a summary generator.
-This is a DEEP CRITICAL DISCUSSION.
 
-Write like:
-• A video essayist
-• A film school professor
-• A long-form magazine critic
-• A passionate Letterboxd power-user
+def analyze_movie(raw_reviews: dict) -> str:
+    """
+    Takes movie data + reviews and generates a rich multi-critic panel analysis.
+    """
 
-The analysis must feel HUMAN, opinionated, and specific.
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.9   # higher creativity for richer output
+    )
 
-━━━━━━━━━━━━━━━━━━
-CRITICAL THINKING RULES
-━━━━━━━━━━━━━━━━━━
+    prompt = ChatPromptTemplate.from_template(f"""
+You are simulating a **ROUND-TABLE PANEL of ELITE film critics** analysing the movie or TV show:
 
-You MUST:
-• Avoid generic praise ("great acting", "good story")
-• Mention storytelling techniques, tone, pacing, structure, character arcs
-• Reference themes, genre conventions, and audience psychology
-• Sound like critics who have watched thousands of films
-• Be vivid, analytical, and specific
-• Each section MUST be 5–8 sentences minimum
+TITLE: {raw_reviews['title']}
 
-If the movie is famous, assume the audience already knows the basic plot.
-Focus on WHY the show/movie works or fails.
+Your panel includes:
+• A veteran Hollywood critic (20+ yrs experience)
+• A modern Gen-Z pop-culture critic
+• A cynical “Devil’s Advocate” critic
+• A passionate audience representative
 
-━━━━━━━━━━━━━━━━━━
-PERSONA DEFINITIONS
-━━━━━━━━━━━━━━━━━━
+Your job is to generate a **LONG, RICH, DETAILED cinematic analysis**.
 
-🎬 Veteran Critic
-A seasoned critic writing for a high-end film magazine.
-Focus on:
-• directing
-• writing quality
-• cinematography
-• narrative structure
-• character arcs
-• tone and pacing
-• how it compares to genre standards
+The tone should feel like a magazine feature or YouTube film essay.
+Write with personality, depth and storytelling — NOT short summaries.
+
+------------------------------------------------------------
+
+MOVIE DATA:
+Plot: {raw_reviews.get("plot")}
+IMDB Rating: {raw_reviews.get("rating")}
+Genres: {raw_reviews.get("genre")}
+
+User Reviews:
+{raw_reviews.get("reviews")}
+
+------------------------------------------------------------
+
+Return the result in THIS FORMAT:
+
+🎬 Veteran Critic (20+ yrs experience)
+<3–5 rich paragraphs of deep film analysis>
+
+🔥 Modern Pop-Culture Critic
+<modern, energetic perspective>
 
 😈 Devil’s Advocate
-An intelligent contrarian critic.
-Your job is to CHALLENGE THE HYPE.
-• Point out weaknesses
-• Question praise
-• Criticize writing, pacing, tropes, fan bias
-• Be bold and slightly harsh but smart
-• Disagree with something the Veteran Critic implied
+<critical / controversial take>
 
 👥 Audience Perspective
-Represent real viewers.
-Focus on:
-• binge-watchability
-• emotional engagement
-• entertainment value
-• rewatch value
-• what casual viewers love vs complain about
+<what general viewers feel overall>
 
-━━━━━━━━━━━━━━━━━━
-DATA YOU CAN USE
-━━━━━━━━━━━━━━━━━━
-Critic Reviews: {raw_reviews['critic_reviews']}
-Audience Reactions: {raw_reviews['audience_reactions']}
-Discussion Points: {raw_reviews['discussion_points']}
+🎯 Themes
+• list 5–7 deep themes
 
-━━━━━━━━━━━━━━━━━━
-THEMES SECTION RULES
-━━━━━━━━━━━━━━━━━━
-Themes must be DEEP and abstract, not obvious.
+📝 Detailed Overview
+<long cinematic summary>
 
-❌ Bad themes:
-• Love
-• Friendship
-• Good vs Evil
+✅ What Works
+✔ point  
+✔ point  
+✔ point  
 
-✅ Good themes:
-• Moral relativism in modern anti-hero narratives
-• The illusion of control in chaotic systems
-• Identity fragmentation and duality
-• Institutional failure and personal rebellion
+❌ What Fails
+✖ point  
+✖ point  
+✖ point  
 
-Return EXACTLY 5 themes.
+🎯 Final Verdict
+<big closing statement>
 
-━━━━━━━━━━━━━━━━━━
-FINAL VERDICT RULES
-━━━━━━━━━━━━━━━━━━
-Score must feel justified.
-The conclusion must summarise the debate.
+⭐ Score: X/10
+Be bold and decisive with the score.
+""")
 
-━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT (STRICT JSON ONLY)
-━━━━━━━━━━━━━━━━━━
-Return ONLY valid JSON.
-
-{{
-  "critic_expert": "long paragraph",
-  "devils_advocate": "long paragraph",
-  "audience_sentiment": "long paragraph",
-  "themes": ["", "", "", "", ""],
-  "critic_vs_audience": "short paragraph comparing critics vs viewers",
-  "final_verdict": {{
-    "overview": "summary of debate",
-    "what_works": ["", "", ""],
-    "what_fails": ["", "", ""],
-    "conclusion": "final closing thoughts",
-    "score": "X/10"
-  }}
-}}
-"""
+    chain = prompt | llm
+    response = chain.invoke({})
+    return response.content
