@@ -1,5 +1,55 @@
+import requests
 import streamlit as st
 from agent.sentiment import analyze_movie
+
+# 🔑 OMDB KEY
+API_KEY = st.secrets["OMDB_API_KEY"]
+
+# 🎬 FETCH MOVIE DATA (MUST BE ABOVE UI)
+def fetch_movie_data(title: str):
+
+    if not API_KEY:
+        raise ValueError("Missing OMDB_API_KEY.")
+
+    url = "http://www.omdbapi.com/"
+    params = {
+        "t": title,
+        "apikey": API_KEY,
+        "plot": "full",
+        "r": "json"
+    }
+
+    try:
+        res = requests.get(url, params=params, timeout=10)
+        data = res.json()
+    except Exception as e:
+        print("OMDB REQUEST FAILED:", e)
+        return None
+
+    if not data or data.get("Response") == "False":
+        return None
+
+    ratings = {}
+    for r in data.get("Ratings", []):
+        ratings[r.get("Source")] = r.get("Value")
+
+    return {
+        "title": data.get("Title"),
+        "year": data.get("Year"),
+        "plot": data.get("Plot"),
+        "actors": data.get("Actors"),
+        "genre": data.get("Genre"),
+        "director": data.get("Director"),
+        "writer": data.get("Writer"),
+        "imdb_rating": data.get("imdbRating"),
+        "metascore": data.get("Metascore"),
+        "ratings": ratings,
+        "poster": data.get("Poster"),
+        "runtime": data.get("Runtime"),
+        "language": data.get("Language"),
+        "country": data.get("Country")
+    }
+
 
 # 🔥 Page config
 st.set_page_config(page_title="Movie & Show Review Aggregator AI Agent", layout="wide")
@@ -7,43 +57,21 @@ st.set_page_config(page_title="Movie & Show Review Aggregator AI Agent", layout=
 # 🎨 Styling (AI + Netflix vibe)
 st.markdown("""
 <style>
-body {
-    background-color: #0f0f0f;
-    color: white;
-}
-.stChatInputContainer {
-    background-color: #1c1c1c !important;
-    border-radius: 20px !important;
-    padding: 10px !important;
-}
-.stChatMessage {
-    background-color: #1a1a1a !important;
-    border-radius: 15px !important;
-    padding: 15px !important;
-}
-.rating-box {
-    background-color: #e50914;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
+body { background-color: #0f0f0f; color: white; }
+.stChatInputContainer { background-color: #1c1c1c !important; border-radius: 20px !important; padding: 10px !important; }
+.stChatMessage { background-color: #1a1a1a !important; border-radius: 15px !important; padding: 15px !important; }
+.rating-box { background-color: #e50914; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 🤖 Title
 st.title("🤖 AI Agent for Movie & Show Reviews")
 
-# 💬 Chat Input
 user_input = st.chat_input("Ask about a movie or show...")
 
 if user_input:
 
-    # 👤 User message
     st.chat_message("user").write(user_input)
 
-    # 🤖 Assistant response
     with st.chat_message("assistant"):
 
         movie = fetch_movie_data(user_input)
@@ -52,23 +80,11 @@ if user_input:
             st.error("Movie not found")
         else:
 
-            # 🎥 HERO POSTER (FIXED NO CROP)
             st.markdown(f"""
             <div style="position: relative; border-radius: 15px; overflow: hidden;">
-                <img src="{movie['poster']}" style="
-                    width: 100%;
-                    height: 500px;
-                    object-fit: contain;
-                    background-color: #000;
-                ">
-                <div style="
-                    position: absolute;
-                    bottom: 0;
-                    width: 100%;
-                    padding: 20px;
-                    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-                    color: white;
-                ">
+                <img src="{movie['poster']}" style="width: 100%; height: 500px; object-fit: contain; background-color: #000;">
+                <div style="position: absolute; bottom: 0; width: 100%; padding: 20px;
+                background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: white;">
                     <h1>{movie['title']}</h1>
                     <p>{movie['year']} • {movie['genre']}</p>
                     <p>{movie['actors']}</p>
@@ -76,7 +92,6 @@ if user_input:
             </div>
             """, unsafe_allow_html=True)
 
-            # 🧠 Prepare AI input
             raw_reviews = {
                 "title": movie["title"],
                 "critic_reviews": movie["plot"],
@@ -87,22 +102,13 @@ if user_input:
             with st.spinner("🧠 AI critics are debating..."):
                 result = analyze_movie(raw_reviews)
 
-            # ⭐ RATINGS
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown(
-                    f"<div class='rating-box'>IMDb ⭐ {movie['imdb_rating']}</div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"<div class='rating-box'>IMDb ⭐ {movie['imdb_rating']}</div>", unsafe_allow_html=True)
 
             with col2:
-                st.markdown(
-                    f"<div class='rating-box'>AI 🎯 {result['final_verdict']['score']}</div>",
-                    unsafe_allow_html=True
-                )
-
-            # 🎭 MULTI-PERSONALITY OUTPUT
+                st.markdown(f"<div class='rating-box'>AI 🎯 {result['final_verdict']['score']}</div>", unsafe_allow_html=True)
 
             st.subheader("🎬 Veteran Critic (20+ yrs experience)")
             st.write(result["critic_expert"])
@@ -113,12 +119,10 @@ if user_input:
             st.subheader("👥 Audience Perspective")
             st.write(result["audience_sentiment"])
 
-            # 🎯 THEMES
             st.subheader("🎯 Themes")
             for t in result["themes"]:
                 st.write(f"• {t}")
 
-            # 📝 FINAL VERDICT
             v = result["final_verdict"]
 
             st.subheader("📝 Overview")
