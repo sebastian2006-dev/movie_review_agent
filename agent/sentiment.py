@@ -1,4 +1,5 @@
 import json
+import ast
 from openai import OpenAI
 import streamlit as st
 
@@ -10,70 +11,66 @@ def get_groq_client():
     )
 
 
-# 🔥 NEW: format nested JSON into clean text
-def format_section(section):
-    if isinstance(section, dict):
-        parts = []
-        if "title" in section:
-            parts.append(f"**{section['title']}**")
-        if "analysis" in section:
-            parts.append(section["analysis"])
-        if "reference" in section:
-            parts.append(f"\n_{section['reference']}_")
-        return "\n\n".join(parts)
-    return section
+# 🔧 Convert weird LLM outputs into strings safely
+def repair_to_string(value):
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, list):
+        return "\n\n".join(str(v) for v in value)
+
+    if isinstance(value, dict):
+        return "\n\n".join(str(v) for v in value.values())
+
+    return str(value)
+
+
+# 🔧 Guarantee schema so Streamlit never crashes
+def ensure_schema(data, title):
+    return {
+        "title": title,
+        "critic_expert": repair_to_string(data.get("critic_expert", "No response")),
+        "devils_advocate": repair_to_string(data.get("devils_advocate", "No response")),
+        "audience_sentiment": repair_to_string(data.get("audience_sentiment", "No response")),
+        "themes": data.get("themes", ["Unknown"]),
+        "critic_vs_audience": repair_to_string(data.get("critic_vs_audience", "")),
+        "final_verdict": {
+            "overview": repair_to_string(data.get("final_verdict", {}).get("overview", "")),
+            "what_works": data.get("final_verdict", {}).get("what_works", []),
+            "what_fails": data.get("final_verdict", {}).get("what_fails", []),
+            "conclusion": repair_to_string(data.get("final_verdict", {}).get("conclusion", "")),
+            "score": data.get("final_verdict", {}).get("score", "N/A")
+        }
+    }
 
 
 def analyze_movie(raw_reviews: dict) -> dict:
 
     prompt = f"""
-You are a HIGHLY INTELLIGENT panel of film critics analyzing "{raw_reviews['title']}".
+You are a panel of expert film critics analyzing "{raw_reviews['title']}".
 
-You must produce DEEP, INSIGHTFUL, NON-GENERIC analysis.
+Return ONLY valid JSON.
 
-Adopt 3 DISTINCT personas:
-
-1. 🎬 Veteran Critic (20+ years experience)
-   - Analyze storytelling, direction, pacing, character arcs
-   - Reference filmmaking quality and narrative depth
-
-2. 😈 Devil's Advocate
-   - Actively challenge the hype
-   - Point out flaws, overrating, weak writing, pacing issues
-   - Be bold, critical, slightly harsh but intelligent
-
-3. 👥 Audience Voice
-   - Reflect emotional impact, entertainment value
-   - What general viewers love/hate
+Schema:
+{{
+  "critic_expert": "string",
+  "devils_advocate": "string",
+  "audience_sentiment": "string",
+  "themes": ["", "", "", "", ""],
+  "critic_vs_audience": "string",
+  "final_verdict": {{
+    "overview": "string",
+    "what_works": ["", "", ""],
+    "what_fails": ["", "", ""],
+    "conclusion": "string",
+    "score": "X/10"
+  }}
+}}
 
 DATA:
 Critic Reviews: {raw_reviews['critic_reviews']}
 Audience Reactions: {raw_reviews['audience_reactions']}
 Discussion Points: {raw_reviews['discussion_points']}
-
-STRICT RULES:
-- NO generic phrases like "great acting" or "good story"
-- Be specific and analytical
-- Each section must be at least 3-5 sentences
-- Devil’s Advocate MUST disagree with something
-- Themes must be meaningful (not obvious surface-level)
-
-Return ONLY valid JSON:
-
-{{
-  "critic_expert": "",
-  "devils_advocate": "",
-  "audience_sentiment": "",
-  "themes": ["", "", "", "", ""],
-  "critic_vs_audience": "",
-  "final_verdict": {{
-    "overview": "",
-    "what_works": ["", "", ""],
-    "what_fails": ["", "", ""],
-    "conclusion": "",
-    "score": "X/10"
-  }}
-}}
 """
 
     try:
@@ -81,9 +78,7 @@ Return ONLY valid JSON:
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.7
         )
 
@@ -91,43 +86,24 @@ Return ONLY valid JSON:
 
     except Exception as e:
         st.error(f"Groq Error: {e}")
-        return _error_response(raw_reviews["title"])
+        return ensure_schema({}, raw_reviews["title"])
 
-    # 🧼 JSON parsing
+    # 🧼 CLEAN MARKDOWN
+    text = text.replace("```json", "").replace("```", "").strip()
+
+    # 🧼 EXTRACT JSON
     try:
-        json_start = text.find("{")
-        json_end = text.rfind("}") + 1
-        clean_json = text[json_start:json_end]
-
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        clean_json = text[start:end]
         data = json.loads(clean_json)
-        data["title"] = raw_reviews["title"]
 
-        # 🔥 FORMAT FIX
-        data["critic_expert"] = format_section(data.get("critic_expert"))
-        data["devils_advocate"] = format_section(data.get("devils_advocate"))
-        data["audience_sentiment"] = format_section(data.get("audience_sentiment"))
+    except:
+        # 🔥 LAST RESORT AUTO REPAIR
+        try:
+            data = ast.literal_eval(clean_json)
+        except:
+            st.error("AI returned invalid JSON — auto fallback used.")
+            return ensure_schema({}, raw_reviews["title"])
 
-        return data
-
-    except Exception as e:
-        st.error("JSON parsing failed")
-        st.text(text)
-        return _error_response(raw_reviews["title"])
-
-
-def _error_response(title):
-    return {
-        "title": title,
-        "critic_expert": "Error generating response",
-        "devils_advocate": "Error generating response",
-        "audience_sentiment": "Error generating response",
-        "themes": [],
-        "critic_vs_audience": "",
-        "final_verdict": {
-            "overview": "Error",
-            "what_works": [],
-            "what_fails": [],
-            "conclusion": "Error",
-            "score": "N/A"
-        }
-    }
+    return ensure_schema(data, raw_reviews["title"])
