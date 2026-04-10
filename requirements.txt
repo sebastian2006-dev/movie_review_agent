@@ -1,7 +1,4 @@
 streamlit
-langchain
-langchain-openai
 openai
 requests
 python-dotenv
-tavily-python

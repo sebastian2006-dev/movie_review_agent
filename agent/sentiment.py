@@ -1,84 +1,88 @@
 import json
 import streamlit as st
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
+from openai import OpenAI
 
 
-def analyze_movie(raw_reviews: dict) -> str:
-    """
-    Takes movie data + reviews and generates a rich multi-critic panel analysis.
-    """
-
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.9   # higher creativity for richer output
+def get_groq_client():
+    return OpenAI(
+        api_key=st.secrets["GROQ_API_KEY"],
+        base_url="https://api.groq.com/openai/v1"
     )
 
-    prompt = ChatPromptTemplate.from_template(f"""
-You are simulating a **ROUND-TABLE PANEL of ELITE film critics** analysing the movie or TV show:
+
+def analyze_movie(raw_reviews: dict) -> dict:
+
+    prompt = f"""
+You are a ROUND-TABLE PANEL of elite film critics analysing:
 
 TITLE: {raw_reviews['title']}
 
-Your panel includes:
-• A veteran Hollywood critic (20+ yrs experience)
-• A modern Gen-Z pop-culture critic
-• A cynical “Devil’s Advocate” critic
-• A passionate audience representative
+You must produce EXTREMELY DETAILED, SPECIFIC and NON-GENERIC analysis.
 
-Your job is to generate a **LONG, RICH, DETAILED cinematic analysis**.
+PERSONAS:
 
-The tone should feel like a magazine feature or YouTube film essay.
-Write with personality, depth and storytelling — NOT short summaries.
+1) 🎬 Veteran Film Critic (technical & cinematic analysis)
+   Focus on:
+   - storytelling structure
+   - directing style
+   - pacing & tone
+   - character psychology
+   - cinematography & writing depth
 
-------------------------------------------------------------
+2) 😈 Devil’s Advocate (contrarian critic)
+   - Challenge hype
+   - Criticise weak writing, pacing, clichés
+   - Point out overrated aspects
+   - Must disagree with something strongly
 
-MOVIE DATA:
-Plot: {raw_reviews.get("plot")}
-IMDB Rating: {raw_reviews.get("rating")}
-Genres: {raw_reviews.get("genre")}
+3) 👥 Audience Voice (viewer experience)
+   - Emotional impact
+   - Entertainment value
+   - Binge factor / rewatchability
+   - What casual viewers love & hate
 
-User Reviews:
-{raw_reviews.get("reviews")}
+DATA:
+Plot: {raw_reviews['critic_reviews']}
+Actors: {raw_reviews['audience_reactions']}
+Genre: {raw_reviews['discussion_points']}
 
-------------------------------------------------------------
+STRICT RULES:
+- No generic phrases
+- Be analytical and specific
+- Each paragraph = 4–6 sentences
+- Themes must be deep and meaningful
 
-Return the result in THIS FORMAT:
+Return ONLY JSON:
 
-🎬 Veteran Critic (20+ yrs experience)
-<3–5 rich paragraphs of deep film analysis>
+{{
+  "critic_expert": "",
+  "devils_advocate": "",
+  "audience_sentiment": "",
+  "themes": ["", "", "", "", ""],
+  "critic_vs_audience": "",
+  "final_verdict": {{
+    "overview": "",
+    "what_works": ["", "", ""],
+    "what_fails": ["", "", ""],
+    "conclusion": "",
+    "score": "X/10"
+  }}
+}}
+"""
 
-🔥 Modern Pop-Culture Critic
-<modern, energetic perspective>
+    client = get_groq_client()
 
-😈 Devil’s Advocate
-<critical / controversial take>
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.8
+    )
 
-👥 Audience Perspective
-<what general viewers feel overall>
+    text = response.choices[0].message.content
 
-🎯 Themes
-• list 5–7 deep themes
+    # Extract JSON safely
+    json_start = text.find("{")
+    json_end = text.rfind("}") + 1
+    clean_json = text[json_start:json_end]
 
-📝 Detailed Overview
-<long cinematic summary>
-
-✅ What Works
-✔ point  
-✔ point  
-✔ point  
-
-❌ What Fails
-✖ point  
-✖ point  
-✖ point  
-
-🎯 Final Verdict
-<big closing statement>
-
-⭐ Score: X/10
-Be bold and decisive with the score.
-""")
-
-    chain = prompt | llm
-    response = chain.invoke({})
-    return response.content
+    return json.loads(clean_json)
