@@ -1,109 +1,113 @@
-import json
-import ast
-from openai import OpenAI
-import streamlit as st
+prompt = f"""
+You are simulating a ROUND-TABLE PANEL of elite film critics analysing the movie or TV show: "{raw_reviews['title']}".
 
+This is NOT a summary generator.
+This is a DEEP CRITICAL DISCUSSION.
 
-def get_groq_client():
-    return OpenAI(
-        api_key=st.secrets["GROQ_API_KEY"],
-        base_url="https://api.groq.com/openai/v1"
-    )
+Write like:
+• A video essayist
+• A film school professor
+• A long-form magazine critic
+• A passionate Letterboxd power-user
 
+The analysis must feel HUMAN, opinionated, and specific.
 
-# 🔧 Convert weird LLM outputs into strings safely
-def repair_to_string(value):
-    if isinstance(value, str):
-        return value
+━━━━━━━━━━━━━━━━━━
+CRITICAL THINKING RULES
+━━━━━━━━━━━━━━━━━━
 
-    if isinstance(value, list):
-        return "\n\n".join(str(v) for v in value)
+You MUST:
+• Avoid generic praise ("great acting", "good story")
+• Mention storytelling techniques, tone, pacing, structure, character arcs
+• Reference themes, genre conventions, and audience psychology
+• Sound like critics who have watched thousands of films
+• Be vivid, analytical, and specific
+• Each section MUST be 5–8 sentences minimum
 
-    if isinstance(value, dict):
-        return "\n\n".join(str(v) for v in value.values())
+If the movie is famous, assume the audience already knows the basic plot.
+Focus on WHY the show/movie works or fails.
 
-    return str(value)
+━━━━━━━━━━━━━━━━━━
+PERSONA DEFINITIONS
+━━━━━━━━━━━━━━━━━━
 
+🎬 Veteran Critic
+A seasoned critic writing for a high-end film magazine.
+Focus on:
+• directing
+• writing quality
+• cinematography
+• narrative structure
+• character arcs
+• tone and pacing
+• how it compares to genre standards
 
-# 🔧 Guarantee schema so Streamlit never crashes
-def ensure_schema(data, title):
-    return {
-        "title": title,
-        "critic_expert": repair_to_string(data.get("critic_expert", "No response")),
-        "devils_advocate": repair_to_string(data.get("devils_advocate", "No response")),
-        "audience_sentiment": repair_to_string(data.get("audience_sentiment", "No response")),
-        "themes": data.get("themes", ["Unknown"]),
-        "critic_vs_audience": repair_to_string(data.get("critic_vs_audience", "")),
-        "final_verdict": {
-            "overview": repair_to_string(data.get("final_verdict", {}).get("overview", "")),
-            "what_works": data.get("final_verdict", {}).get("what_works", []),
-            "what_fails": data.get("final_verdict", {}).get("what_fails", []),
-            "conclusion": repair_to_string(data.get("final_verdict", {}).get("conclusion", "")),
-            "score": data.get("final_verdict", {}).get("score", "N/A")
-        }
-    }
+😈 Devil’s Advocate
+An intelligent contrarian critic.
+Your job is to CHALLENGE THE HYPE.
+• Point out weaknesses
+• Question praise
+• Criticize writing, pacing, tropes, fan bias
+• Be bold and slightly harsh but smart
+• Disagree with something the Veteran Critic implied
 
+👥 Audience Perspective
+Represent real viewers.
+Focus on:
+• binge-watchability
+• emotional engagement
+• entertainment value
+• rewatch value
+• what casual viewers love vs complain about
 
-def analyze_movie(raw_reviews: dict) -> dict:
-
-    prompt = f"""
-You are a panel of expert film critics analyzing "{raw_reviews['title']}".
-
-Return ONLY valid JSON.
-
-Schema:
-{{
-  "critic_expert": "string",
-  "devils_advocate": "string",
-  "audience_sentiment": "string",
-  "themes": ["", "", "", "", ""],
-  "critic_vs_audience": "string",
-  "final_verdict": {{
-    "overview": "string",
-    "what_works": ["", "", ""],
-    "what_fails": ["", "", ""],
-    "conclusion": "string",
-    "score": "X/10"
-  }}
-}}
-
-DATA:
+━━━━━━━━━━━━━━━━━━
+DATA YOU CAN USE
+━━━━━━━━━━━━━━━━━━
 Critic Reviews: {raw_reviews['critic_reviews']}
 Audience Reactions: {raw_reviews['audience_reactions']}
 Discussion Points: {raw_reviews['discussion_points']}
+
+━━━━━━━━━━━━━━━━━━
+THEMES SECTION RULES
+━━━━━━━━━━━━━━━━━━
+Themes must be DEEP and abstract, not obvious.
+
+❌ Bad themes:
+• Love
+• Friendship
+• Good vs Evil
+
+✅ Good themes:
+• Moral relativism in modern anti-hero narratives
+• The illusion of control in chaotic systems
+• Identity fragmentation and duality
+• Institutional failure and personal rebellion
+
+Return EXACTLY 5 themes.
+
+━━━━━━━━━━━━━━━━━━
+FINAL VERDICT RULES
+━━━━━━━━━━━━━━━━━━
+Score must feel justified.
+The conclusion must summarise the debate.
+
+━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (STRICT JSON ONLY)
+━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON.
+
+{{
+  "critic_expert": "long paragraph",
+  "devils_advocate": "long paragraph",
+  "audience_sentiment": "long paragraph",
+  "themes": ["", "", "", "", ""],
+  "critic_vs_audience": "short paragraph comparing critics vs viewers",
+  "final_verdict": {{
+    "overview": "summary of debate",
+    "what_works": ["", "", ""],
+    "what_fails": ["", "", ""],
+    "conclusion": "final closing thoughts",
+    "score": "X/10"
+  }}
+}}
 """
-
-    try:
-        client = get_groq_client()
-
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-
-        text = response.choices[0].message.content
-
-    except Exception as e:
-        st.error(f"Groq Error: {e}")
-        return ensure_schema({}, raw_reviews["title"])
-
-    # 🧼 CLEAN MARKDOWN
-    text = text.replace("```json", "").replace("```", "").strip()
-
-    # 🧼 EXTRACT JSON
-    try:
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        clean_json = text[start:end]
-        data = json.loads(clean_json)
-
-    except:
-        # 🔥 LAST RESORT AUTO REPAIR
-        try:
-            data = ast.literal_eval(clean_json)
-        except:
-            st.error("AI returned invalid JSON — auto fallback used.")
-            return ensure_schema({}, raw_reviews["title"])
-
-    return ensure_schema(data, raw_reviews["title"])
