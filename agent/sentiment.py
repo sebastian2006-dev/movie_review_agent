@@ -1,4 +1,5 @@
 import json
+import re
 import streamlit as st
 from openai import OpenAI
 
@@ -8,6 +9,25 @@ def get_groq_client():
         api_key=st.secrets["GROQ_API_KEY"],
         base_url="https://api.groq.com/openai/v1"
     )
+
+
+# 🔥 Robust JSON extractor (production safe)
+def extract_json(text: str) -> dict:
+    # remove markdown code blocks
+    text = re.sub(r"```json|```", "", text)
+
+    # grab first JSON object
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise ValueError("No JSON found in model response")
+
+    json_str = match.group(0)
+
+    # remove trailing commas (very common LLM mistake)
+    json_str = re.sub(r",\s*}", "}", json_str)
+    json_str = re.sub(r",\s*]", "]", json_str)
+
+    return json.loads(json_str)
 
 
 def analyze_movie(raw_reviews: dict) -> dict:
@@ -80,9 +100,19 @@ Return ONLY JSON:
 
     text = response.choices[0].message.content
 
-    # Extract JSON safely
-    json_start = text.find("{")
-    json_end = text.rfind("}") + 1
-    clean_json = text[json_start:json_end]
+    # 🧠 Try parsing safely
+    try:
+        return extract_json(text)
 
-    return json.loads(clean_json)
+    except Exception:
+        # 🔁 automatic retry forcing strict JSON
+        retry_prompt = "Return ONLY valid JSON. Fix this:\n" + text
+
+        retry = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": retry_prompt}],
+            temperature=0
+        )
+
+        retry_text = retry.choices[0].message.content
+        return extract_json(retry_text)
