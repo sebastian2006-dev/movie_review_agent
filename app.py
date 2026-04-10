@@ -36,111 +36,133 @@ def fetch_movie_data(title: str):
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Movie Intelligence Terminal", layout="wide")
 
-# ⭐ MAX WIDTH CONTAINER (fix stretched layout)
+# ---------------- GLOBAL CSS (The Redesign) ----------------
 st.markdown("""
 <style>
-.block-container {
-    max-width: 1100px;
-    padding-top: 2rem;
-    padding-bottom: 4rem;
-}
-</style>
-""", unsafe_allow_html=True)
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&family=Playfair+Display:wght@700;900&display=swap');
 
-# ---------------- GLOBAL CSS ----------------
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap');
-
-html, body {
-    background-color: #080b14 !important;
+/* Main Background */
+.stApp {
+    background-color: #05070a !important;
     color: #e8e8f0;
-    font-family: 'Space Mono', monospace;
+}
+
+.block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+}
+
+/* SEARCH BAR STYLING */
+div[data-testid="stChatInput"] {
+    border: 1px solid rgba(0, 255, 231, 0.2);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 5px;
 }
 
 /* HEADER */
 .eyebrow {
-    font-size: 11px;
-    letter-spacing: 6px;
-    color: #7a7cff;
-    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: #00ffe7;
     text-align: center;
-    margin-bottom: 8px;
+    opacity: 0.8;
 }
 
 .title {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(28px, 5vw, 56px);
+    font-size: clamp(30px, 6vw, 50px);
     font-weight: 900;
     text-align: center;
-    background: linear-gradient(90deg, #00ffe7 0%, #7a7cff 45%, #ff00c8 100%);
+    background: linear-gradient(135deg, #fff 30%, #444 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.subhead {
+/* CRITIC CARDS CONTAINER */
+.critic-container {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.critic-card {
+    flex: 1;
+    min-width: 300px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+}
+
+.critic-card:hover {
+    border-color: rgba(0, 255, 231, 0.4);
+    background: rgba(0, 255, 231, 0.02);
+}
+
+.critic-label {
+    font-family: 'Space Mono', monospace;
     font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 3px;
     text-transform: uppercase;
-    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
 }
 
-/* GLASS CARD (improved readability) */
-.glass {
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(16px);
-    padding: 28px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.08);
-    font-size: 15px;
-    line-height: 1.75;
-    margin-bottom: 10px;
+.critic-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #cbd5e1;
 }
 
-/* META */
-.meta-label { font-size: 11px; opacity: 0.5; text-transform: uppercase; }
-.meta-value { font-size: 15px; margin-bottom: 16px; }
+/* VIBRANT ACCENTS */
+.label-expert { color: #00ffe7; border-bottom: 1px solid rgba(0,255,231,0.2); padding-bottom: 5px; }
+.label-devils { color: #ff4b2b; border-bottom: 1px solid rgba(255,75,43,0.2); padding-bottom: 5px; }
+.label-audience { color: #ffcc00; border-bottom: 1px solid rgba(255,204,0,0.2); padding-bottom: 5px; }
 
-/* VERDICT */
-.verdict-text { font-size: 16px; line-height: 1.85; }
-
-/* SECTION */
-.section-label { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.5; }
+/* FINAL VERDICT BOX */
+.verdict-box {
+    background: linear-gradient(to right, rgba(0,255,231,0.05), transparent);
+    border-left: 4px solid #00ffe7;
+    padding: 20px;
+    border-radius: 0 12px 12px 0;
+}
 
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- HERO HEADER ----------------
-st.markdown("<div class='eyebrow'>[ SYSTEM ONLINE ]</div>", unsafe_allow_html=True)
-st.markdown("<div class='title'>MOVIE INTELLIGENCE TERMINAL</div>", unsafe_allow_html=True)
-st.markdown("<div class='subhead'>AI-Powered Cinematic Analysis</div>", unsafe_allow_html=True)
+st.markdown("<div class='eyebrow'>QUANTUM ANALYSIS UNIT</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>CINEMATIC TERMINAL</div>", unsafe_allow_html=True)
 
-# ⭐ CENTERED SEARCH (Claude style landing)
+# ⭐ CENTERED SEARCH
 st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
 c1,c2,c3 = st.columns([1,2,1])
 with c2:
-    user_input = st.chat_input("Search movie or TV show...")
+    user_input = st.chat_input("Access movie records...")
 st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
 
 # ---------------- MAIN APP ----------------
 if user_input:
-
     movie = fetch_movie_data(user_input)
 
     if not movie:
-        st.error("Movie not found")
+        st.error("Protocol Error: Subject not found in database.")
         st.stop()
 
+    # Poster and Metadata
     col1, col2 = st.columns([1,2])
     with col1:
         st.image(movie["poster"], use_column_width=True)
     with col2:
-        st.markdown(f"## {movie['title']} ({movie['year']})")
-        st.markdown(f"<div class='meta-label'>Director</div><div class='meta-value'>{movie['director']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='meta-label'>Genre</div><div class='meta-value'>{movie['genre']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='meta-label'>Runtime</div><div class='meta-value'>{movie['runtime']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='meta-label'>Cast</div><div class='meta-value'>{movie['actors']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='margin-bottom:0;'>{movie['title']}</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:grey; font-family:Space Mono; font-size:14px;'>{movie['year']} // DIR: {movie['director']} // {movie['runtime']}</p>", unsafe_allow_html=True)
+        st.write(movie["plot"])
+        st.markdown(f"**Cast:** {movie['actors']}")
 
     raw_reviews = {
         "title": movie["title"],
@@ -149,34 +171,55 @@ if user_input:
         "discussion_points": movie["genre"]
     }
 
-    with st.spinner("AI Critics debating…"):
+    with st.spinner("Synchronizing AI Personas..."):
         result = analyze_movie(raw_reviews)
 
+    # 🎬 THE REDESIGNED CRITICS PANEL
     st.write("---")
-    st.markdown("### 🎬 Critics Panel")
-    col1,col2,col3 = st.columns(3)
+    st.markdown("### 🎬 MULTI-AGENT PERSPECTIVES")
+    
+    # We use raw HTML for the horizontal card layout to prevent vertical stretching
+    st.markdown(f"""
+    <div class="critic-container">
+        <div class="critic-card">
+            <div class="critic-label label-expert">The Veteran Critic</div>
+            <div class="critic-text">{result["critic_expert"]}</div>
+        </div>
+        <div class="critic-card">
+            <div class="critic-label label-devils">Devil's Advocate</div>
+            <div class="critic-text">{result["devils_advocate"]}</div>
+        </div>
+        <div class="critic-card">
+            <div class="critic-label label-audience">Audience Sentiment</div>
+            <div class="critic-text">{result["audience_sentiment"]}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    col1.markdown(result["critic_expert"])
-    col2.markdown(result["devils_advocate"])
-    col3.markdown(result["audience_sentiment"])
-
+    st.write("<br>", unsafe_allow_html=True)
+    
+    # Themes and Score
     st.write("---")
-    st.markdown("### 🎯 Themes")
-    for t in result["themes"]:
-        st.write("•", t)
+    t1, t2 = st.columns([2,1])
+    with t1:
+        st.markdown("### 🎯 Core Themes")
+        themes_html = " ".join([f"<span style='background:rgba(255,255,255,0.05); padding:5px 12px; border-radius:20px; margin-right:8px; font-size:12px; border:1px solid rgba(255,255,255,0.1);'># {t}</span>" for t in result["themes"]])
+        st.markdown(themes_html, unsafe_allow_html=True)
+    with t2:
+        st.markdown(f"<div style='text-align:right;'><p style='font-family:Space Mono; margin-bottom:0;'>AI RATING</p><h1 style='color:#00ffe7; margin-top:0;'>{result['final_verdict']['score']}</h1></div>", unsafe_allow_html=True)
 
+    # Final Verdict Section
     v = result["final_verdict"]
+    st.markdown("### 🧠 Intelligence Verdict")
+    st.markdown(f"<div class='verdict-box'>{v['overview']}</div>", unsafe_allow_html=True)
 
-    st.write("---")
-    st.markdown("### 🧠 Final Verdict")
-    st.markdown(f"<div class='verdict-text'>{v['overview']}</div>", unsafe_allow_html=True)
-
-    st.write("### ✅ What Works")
-    for w in v["what_works"]:
-        st.write("✔", w)
-
-    st.write("### ❌ What Fails")
-    for f in v["what_fails"]:
-        st.write("✖", f)
-
-    st.write("## 🎯 AI Score:", v["score"])
+    st.write("<br>", unsafe_allow_html=True)
+    w1, w2 = st.columns(2)
+    with w1:
+        st.write("### ✅ Strengths")
+        for w in v["what_works"]:
+            st.write(f"⁃ {w}")
+    with w2:
+        st.write("### ❌ Deficiencies")
+        for f in v["what_fails"]:
+            st.write(f"⁃ {f}")
