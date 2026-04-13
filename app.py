@@ -148,25 +148,48 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 /* ── Typography ── */
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-/* ── Checkbox as pill toggle ── */
+/* ── Checkbox as toggle switch ── */
 div[data-testid="stCheckbox"] {{
     display: flex !important;
     justify-content: flex-end !important;
 }}
 div[data-testid="stCheckbox"] label {{
-    background: {toggle_bg} !important;
-    border: 1px solid {toggle_border} !important;
-    border-radius: 100px !important;
-    padding: 5px 14px 5px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 11px !important;
     color: {text_secondary} !important;
     cursor: pointer !important;
     letter-spacing: 1px !important;
-    transition: background 0.2s !important;
 }}
-div[data-testid="stCheckbox"] label:hover {{
-    background: rgba(124,58,237,0.14) !important;
+div[data-testid="stCheckbox"] input[type="checkbox"] {{
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 44px !important;
+    height: 24px !important;
+    border-radius: 100px !important;
+    background: {"#7c3aed" if is_dark else "rgba(0,0,0,0.15)"} !important;
+    border: none !important;
+    position: relative !important;
+    cursor: pointer !important;
+    transition: background 0.3s ease !important;
+    flex-shrink: 0 !important;
+}}
+div[data-testid="stCheckbox"] input[type="checkbox"]::after {{
+    content: '' !important;
+    position: absolute !important;
+    top: 3px !important;
+    left: {"22px" if is_dark else "3px"} !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: white !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
 }}
 
 /* ── Hero ── */
@@ -407,7 +430,7 @@ with tog_col:
     st.checkbox(
         "🌙 Dark" if is_dark else "☀️ Light",
         value=is_dark,
-        key="dark_mode",        # directly syncs with st.session_state.dark_mode
+        key="dark_mode",
     )
 
 # ---------------- HERO HEADER ----------------
@@ -425,7 +448,6 @@ st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 # ---------------- MAIN LOGIC ----------------
 if user_input:
     query_key = user_input.strip().lower()
-    # Only hit APIs when the query is actually new
     if query_key != st.session_state.cached_query:
         st.session_state.cached_query  = query_key
         st.session_state.cached_movie  = fetch_movie_data(user_input)
@@ -441,7 +463,7 @@ if user_input:
             with st.spinner("Synchronizing AI personas..."):
                 st.session_state.cached_result = analyze_movie(raw_reviews)
 
-# ── Render from cache — survives every rerun (toggle, expander, etc.) ──
+# ── Render from cache ──
 movie  = st.session_state.cached_movie
 result = st.session_state.cached_result
 
@@ -493,7 +515,6 @@ elif movie and result:
                 <div class="card-preview">{preview}</div>
             </div>
             """, unsafe_allow_html=True)
-            # st.expander handles open/close natively — no button, no rerun side-effects
             with st.expander("▸ Read Analysis"):
                 st.markdown(
                     f"<p style='font-size:14px;color:{text_secondary};line-height:1.7;'>{full_text}</p>",
