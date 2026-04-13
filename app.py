@@ -8,9 +8,12 @@ st.set_page_config(page_title="🎬 Movie Review AI", layout="wide")
 
 # ---------------- THEME STATE ----------------
 if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = True
+    st.session_state.dark_mode = False
 
-is_dark = st.session_state.dark_mode
+st.session_state.dark_mode = st.toggle(
+    "🌙 Dark mode",
+    value=st.session_state.dark_mode
+)
 
 # ---------------- TOP RIGHT TOGGLE (REAL SWITCH) ----------------
 _, tog_col = st.columns([8, 1])
