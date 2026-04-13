@@ -38,94 +38,87 @@ def fetch_movie_data(title: str):
     }
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Movie Review Agent", layout="wide")
+st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
 # ---------------- SESSION STATE INIT ----------------
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = True
-if "show_critic" not in st.session_state:
-    st.session_state.show_critic = False
-if "show_devil" not in st.session_state:
-    st.session_state.show_devil = False
-if "show_audience" not in st.session_state:
-    st.session_state.show_audience = False
-
-# ---------------- SIDEBAR THEME TOGGLE ----------------
-with st.sidebar:
-    st.markdown("### ⚙️ Settings")
-    theme_label = "🌙 Dark Mode" if st.session_state.dark_mode else "☀️ Light Mode"
-    if st.toggle(theme_label, value=st.session_state.dark_mode):
-        st.session_state.dark_mode = True
-    else:
-        st.session_state.dark_mode = False
-    st.markdown("---")
-    st.markdown(
-        "<small style='color:grey;'>Movie Review Agent uses multi-agent AI to deliver expert, contrarian, and audience perspectives on any film.</small>",
-        unsafe_allow_html=True
-    )
+if "dark_mode"     not in st.session_state: st.session_state.dark_mode     = True
+if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
+if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
+if "cached_result" not in st.session_state: st.session_state.cached_result = None
 
 is_dark = st.session_state.dark_mode
 
 # ---------------- THEME VARIABLES ----------------
 if is_dark:
-    bg_base       = "#060b18"
-    bg_card       = "rgba(255,255,255,0.04)"
-    bg_card_hover = "rgba(255,255,255,0.08)"
-    border_color  = "rgba(255,255,255,0.08)"
-    text_primary  = "#e8eaf6"
-    text_secondary= "#8892b0"
-    text_muted    = "#4a5568"
-    accent1       = "#7c3aed"   # vivid purple
-    accent2       = "#06b6d4"   # electric teal
-    accent3       = "#a855f7"   # violet
-    glow1         = "rgba(124,58,237,0.35)"
-    glow2         = "rgba(6,182,212,0.25)"
-    verdict_bg    = "rgba(124,58,237,0.08)"
-    verdict_border= "#7c3aed"
-    error_bg      = "rgba(239,68,68,0.1)"
-    error_border  = "#ef4444"
-    tag_bg        = "rgba(124,58,237,0.15)"
-    tag_border    = "rgba(124,58,237,0.4)"
-    score_color   = "#06b6d4"
-    header_gradient = "linear-gradient(135deg, #e8eaf6 0%, #a78bfa 50%, #06b6d4 100%)"
-    eyebrow_color = "#06b6d4"
-    input_bg      = "rgba(255,255,255,0.03)"
-    input_border  = "rgba(124,58,237,0.4)"
-    input_glow    = "rgba(124,58,237,0.3)"
-    meta_color    = "#64748b"
-    sidebar_bg    = "#0a1020"
+    bg_base        = "#060b18"
+    bg_card        = "rgba(255,255,255,0.04)"
+    bg_card_hover  = "rgba(255,255,255,0.08)"
+    border_color   = "rgba(255,255,255,0.08)"
+    text_primary   = "#e8eaf6"
+    text_secondary = "#8892b0"
+    text_muted     = "#4a5568"
+    accent1        = "#7c3aed"
+    accent2        = "#06b6d4"
+    accent3        = "#a855f7"
+    glow1          = "rgba(124,58,237,0.35)"
+    glow2          = "rgba(6,182,212,0.25)"
+    verdict_bg     = "rgba(124,58,237,0.08)"
+    verdict_border = "#7c3aed"
+    error_bg       = "rgba(239,68,68,0.1)"
+    error_border   = "#ef4444"
+    tag_bg         = "rgba(124,58,237,0.15)"
+    tag_border     = "rgba(124,58,237,0.4)"
+    score_color    = "#06b6d4"
+    score_glow     = "rgba(6,182,212,0.4)"
+    header_gradient= "linear-gradient(135deg, #e8eaf6 0%, #a78bfa 50%, #06b6d4 100%)"
+    eyebrow_color  = "#06b6d4"
+    input_bg       = "rgba(255,255,255,0.03)"
+    input_border   = "rgba(124,58,237,0.4)"
+    input_glow     = "rgba(124,58,237,0.3)"
+    meta_color     = "#64748b"
+    toggle_bg      = "rgba(255,255,255,0.06)"
+    toggle_border  = "rgba(255,255,255,0.1)"
+    expander_bg    = "rgba(124,58,237,0.06)"
 else:
-    bg_base       = "#f0f4ff"
-    bg_card       = "rgba(255,255,255,0.75)"
-    bg_card_hover = "rgba(255,255,255,0.95)"
-    border_color  = "rgba(124,58,237,0.15)"
-    text_primary  = "#1a1a2e"
-    text_secondary= "#374151"
-    text_muted    = "#9ca3af"
-    accent1       = "#7c3aed"
-    accent2       = "#0891b2"
-    accent3       = "#9333ea"
-    glow1         = "rgba(124,58,237,0.15)"
-    glow2         = "rgba(8,145,178,0.15)"
-    verdict_bg    = "rgba(124,58,237,0.05)"
-    verdict_border= "#7c3aed"
-    error_bg      = "rgba(239,68,68,0.08)"
-    error_border  = "#ef4444"
-    tag_bg        = "rgba(124,58,237,0.1)"
-    tag_border    = "rgba(124,58,237,0.3)"
-    score_color   = "#0891b2"
-    header_gradient = "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 60%, #0891b2 100%)"
-    eyebrow_color = "#7c3aed"
-    input_bg      = "rgba(255,255,255,0.8)"
-    input_border  = "rgba(124,58,237,0.5)"
-    input_glow    = "rgba(124,58,237,0.2)"
-    meta_color    = "#6b7280"
-    sidebar_bg    = "#e8eaf6"
+    bg_base        = "#f0f4ff"
+    bg_card        = "rgba(255,255,255,0.75)"
+    bg_card_hover  = "rgba(255,255,255,0.95)"
+    border_color   = "rgba(124,58,237,0.15)"
+    text_primary   = "#1a1a2e"
+    text_secondary = "#374151"
+    text_muted     = "#9ca3af"
+    accent1        = "#7c3aed"
+    accent2        = "#0891b2"
+    accent3        = "#9333ea"
+    glow1          = "rgba(124,58,237,0.15)"
+    glow2          = "rgba(8,145,178,0.15)"
+    verdict_bg     = "rgba(124,58,237,0.05)"
+    verdict_border = "#7c3aed"
+    error_bg       = "rgba(239,68,68,0.08)"
+    error_border   = "#ef4444"
+    tag_bg         = "rgba(124,58,237,0.1)"
+    tag_border     = "rgba(124,58,237,0.3)"
+    score_color    = "#0891b2"
+    score_glow     = "rgba(8,145,178,0.3)"
+    header_gradient= "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 60%, #0891b2 100%)"
+    eyebrow_color  = "#7c3aed"
+    input_bg       = "rgba(255,255,255,0.8)"
+    input_border   = "rgba(124,58,237,0.5)"
+    input_glow     = "rgba(124,58,237,0.2)"
+    meta_color     = "#6b7280"
+    toggle_bg      = "rgba(124,58,237,0.08)"
+    toggle_border  = "rgba(124,58,237,0.2)"
+    expander_bg    = "rgba(124,58,237,0.04)"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* ── Hide sidebar collapse button & default header ── */
+[data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+header[data-testid="stHeader"] {{ background: transparent !important; }}
+.stApp > header {{ display: none !important; }}
 
 /* ── Base ── */
 .stApp {{
@@ -135,17 +128,11 @@ st.markdown(f"""
 }}
 .block-container {{
     max-width: 1180px;
-    padding-top: 2.5rem;
+    padding-top: 1.2rem;
     padding-bottom: 4rem;
 }}
 
-/* ── Sidebar ── */
-[data-testid="stSidebar"] {{
-    background: {sidebar_bg} !important;
-    border-right: 1px solid {border_color};
-}}
-
-/* ── Animated Mesh Background ── */
+/* ── Mesh Background ── */
 .stApp::before {{
     content: '';
     position: fixed;
@@ -159,8 +146,28 @@ st.markdown(f"""
 }}
 
 /* ── Typography ── */
-h1, h2, h3, .syne {{ font-family: 'Syne', sans-serif !important; }}
-code, .mono {{ font-family: 'JetBrains Mono', monospace !important; }}
+h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
+
+/* ── Checkbox as pill toggle ── */
+div[data-testid="stCheckbox"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+}}
+div[data-testid="stCheckbox"] label {{
+    background: {toggle_bg} !important;
+    border: 1px solid {toggle_border} !important;
+    border-radius: 100px !important;
+    padding: 5px 14px 5px 10px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    color: {text_secondary} !important;
+    cursor: pointer !important;
+    letter-spacing: 1px !important;
+    transition: background 0.2s !important;
+}}
+div[data-testid="stCheckbox"] label:hover {{
+    background: rgba(124,58,237,0.14) !important;
+}}
 
 /* ── Hero ── */
 .hero-eyebrow {{
@@ -186,12 +193,10 @@ code, .mono {{ font-family: 'JetBrains Mono', monospace !important; }}
     margin-bottom: 6px;
 }}
 .hero-sub {{
-    font-family: 'DM Sans', sans-serif;
     font-size: 15px;
     color: {text_muted};
     text-align: center;
-    letter-spacing: 0.3px;
-    margin-bottom: 36px;
+    margin-bottom: 32px;
 }}
 
 /* ── Chat Input ── */
@@ -204,7 +209,6 @@ div[data-testid="stChatInput"] textarea {{
     font-size: 15px !important;
     padding: 16px 20px !important;
     backdrop-filter: blur(12px);
-    box-shadow: 0 0 0 0 transparent;
     transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
 }}
 div[data-testid="stChatInput"] textarea:focus {{
@@ -212,12 +216,8 @@ div[data-testid="stChatInput"] textarea:focus {{
     border-color: {accent1} !important;
     outline: none !important;
 }}
-div[data-testid="stChatInput"] {{
-    border-radius: 18px !important;
-    overflow: visible !important;
-}}
 
-/* ── Movie Meta Header ── */
+/* ── Movie Meta ── */
 .movie-meta {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -233,24 +233,23 @@ div[data-testid="stChatInput"] {{
     margin-bottom: 6px;
 }}
 
-/* ── Glassmorphism Cards ── */
+/* ── Glass Cards ── */
 .glass-card {{
     background: {bg_card};
     border: 1px solid {border_color};
     border-radius: 20px;
-    padding: 24px 26px;
+    padding: 22px 24px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-    height: 100%;
     box-sizing: border-box;
+    margin-bottom: 8px;
 }}
 .glass-card:hover {{
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-3px) scale(1.01);
     background: {bg_card_hover};
     box-shadow: 0 16px 48px {glow1};
 }}
-
 .card-label {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
@@ -270,9 +269,7 @@ div[data-testid="stChatInput"] {{
 .label-expert   {{ color: {accent2}; }}
 .label-devils   {{ color: #f97316; }}
 .label-audience {{ color: #facc15; }}
-
 .card-preview {{
-    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     color: {text_secondary};
     line-height: 1.65;
@@ -281,33 +278,46 @@ div[data-testid="stChatInput"] {{
     -webkit-box-orient: vertical;
     overflow: hidden;
 }}
-.card-full {{
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    color: {text_secondary};
-    line-height: 1.65;
+
+/* ── Expander styled ── */
+[data-testid="stExpander"] {{
+    background: {expander_bg} !important;
+    border: 1px solid {border_color} !important;
+    border-radius: 12px !important;
+    margin-top: 2px !important;
+}}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary p {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    color: {accent1} !important;
+    letter-spacing: 1px !important;
 }}
 
-/* ── Verdict Box ── */
-.verdict-box {{
-    background: {verdict_bg};
-    border-left: 3px solid {verdict_border};
-    border-radius: 0 16px 16px 0;
-    padding: 22px 26px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    color: {text_secondary};
-    line-height: 1.7;
-    backdrop-filter: blur(10px);
+/* ── Score pill ── */
+.score-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(6,182,212,0.07);
+    border: 1px solid rgba(6,182,212,0.22);
+    border-radius: 14px;
+    padding: 12px 20px;
+    margin-top: 4px;
 }}
-
-/* ── Score Display ── */
-.score-ring {{
+.score-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: {meta_color};
+    text-transform: uppercase;
+}}
+.score-value {{
     font-family: 'Syne', sans-serif;
-    font-size: 64px;
+    font-size: 26px;
     font-weight: 800;
     color: {score_color};
-    text-shadow: 0 0 30px {glow2};
+    text-shadow: 0 0 16px {score_glow};
     line-height: 1;
 }}
 
@@ -325,36 +335,51 @@ div[data-testid="stChatInput"] {{
     letter-spacing: 0.5px;
     transition: background 0.2s;
 }}
-.theme-tag:hover {{
-    background: rgba(124,58,237,0.25);
-}}
+.theme-tag:hover {{ background: rgba(124,58,237,0.25); }}
 
 /* ── Section Heading ── */
 .section-heading {{
     font-family: 'Syne', sans-serif;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: {text_primary};
-    margin-bottom: 16px;
+    margin: 20px 0 14px 0;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }}
 
-/* ── Strength / Fail items ── */
+/* ── Verdict ── */
+.verdict-box {{
+    background: {verdict_bg};
+    border-left: 3px solid {verdict_border};
+    border-radius: 0 16px 16px 0;
+    padding: 20px 24px;
+    font-size: 14px;
+    color: {text_secondary};
+    line-height: 1.7;
+}}
+
+/* ── Points ── */
 .point-item {{
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     color: {text_secondary};
     padding: 8px 0;
     border-bottom: 1px solid {border_color};
     line-height: 1.55;
 }}
-.dot-green {{ color: #34d399; font-size: 18px; line-height: 1.2; }}
-.dot-red   {{ color: #f87171; font-size: 18px; line-height: 1.2; }}
+.dot-green {{ color: #34d399; font-size: 16px; }}
+.dot-red   {{ color: #f87171; font-size: 16px; }}
+
+/* ── Divider ── */
+.fancy-divider {{
+    height: 1px;
+    background: linear-gradient(to right, transparent, {border_color}, transparent);
+    margin: 28px 0;
+}}
 
 /* ── Error ── */
 .err-box {{
@@ -368,174 +393,143 @@ div[data-testid="stChatInput"] {{
     text-align: center;
 }}
 
-/* ── Divider ── */
-.fancy-divider {{
-    height: 1px;
-    background: linear-gradient(to right, transparent, {border_color}, transparent);
-    margin: 36px 0;
-}}
-
 /* ── Poster ── */
-.poster-wrap img {{
+[data-testid="stImage"] img {{
     border-radius: 16px !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px {border_color} !important;
-}}
-
-/* ── Expander override ── */
-[data-testid="stExpander"] {{
-    background: transparent !important;
-    border: none !important;
-}}
-
-/* ── Streamlit button style override ── */
-.stButton > button {{
-    background: transparent !important;
-    border: 1px solid {input_border} !important;
-    color: {accent1} !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 11px !important;
-    letter-spacing: 1.5px !important;
-    border-radius: 100px !important;
-    padding: 4px 16px !important;
-    transition: background 0.2s, box-shadow 0.2s !important;
-}}
-.stButton > button:hover {{
-    background: rgba(124,58,237,0.12) !important;
-    box-shadow: 0 0 14px {input_glow} !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------- TOP-RIGHT THEME TOGGLE ----------------
+_, tog_col = st.columns([8, 1])
+with tog_col:
+    st.checkbox(
+        "🌙 Dark" if is_dark else "☀️ Light",
+        value=is_dark,
+        key="dark_mode",        # directly syncs with st.session_state.dark_mode
+    )
+
 # ---------------- HERO HEADER ----------------
 st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-title'>Movie Review Agent</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-sub'>Ask about any film — get expert, contrarian, and audience perspectives in seconds.</div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-sub'>Ask about any film — get expert, contrarian, and audience perspectives.</div>", unsafe_allow_html=True)
 
 # ── Centered Chat Input ──
 c1, c2, c3 = st.columns([1, 2.5, 1])
 with c2:
     user_input = st.chat_input("Search a movie title...")
 
-st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-# ---------------- MAIN APP ----------------
+# ---------------- MAIN LOGIC ----------------
 if user_input:
-    # Reset expand states on new search
-    st.session_state.show_critic   = False
-    st.session_state.show_devil    = False
-    st.session_state.show_audience = False
+    query_key = user_input.strip().lower()
+    # Only hit APIs when the query is actually new
+    if query_key != st.session_state.cached_query:
+        st.session_state.cached_query  = query_key
+        st.session_state.cached_movie  = fetch_movie_data(user_input)
+        st.session_state.cached_result = None
 
-    movie = fetch_movie_data(user_input)
+        if st.session_state.cached_movie:
+            raw_reviews = {
+                "title":              st.session_state.cached_movie["title"],
+                "critic_reviews":     st.session_state.cached_movie["plot"],
+                "audience_reactions": st.session_state.cached_movie["actors"],
+                "discussion_points":  st.session_state.cached_movie["genre"],
+            }
+            with st.spinner("Synchronizing AI personas..."):
+                st.session_state.cached_result = analyze_movie(raw_reviews)
 
-    if not movie:
-        st.markdown(
-            "<div class='err-box'>⚠ &nbsp; No results found for that title. Try a different spelling or year.</div>",
-            unsafe_allow_html=True
-        )
-        st.stop()
+# ── Render from cache — survives every rerun (toggle, expander, etc.) ──
+movie  = st.session_state.cached_movie
+result = st.session_state.cached_result
+
+if movie is None and st.session_state.cached_query is not None:
+    st.markdown(
+        "<div class='err-box'>⚠ &nbsp; No results found for that title. Try a different spelling.</div>",
+        unsafe_allow_html=True
+    )
+
+elif movie and result:
 
     # ── Movie Header ──
     col_poster, col_info = st.columns([1, 2.6], gap="large")
 
     with col_poster:
         if movie["poster"] and movie["poster"] != "N/A":
-            st.markdown("<div class='poster-wrap'>", unsafe_allow_html=True)
             st.image(movie["poster"], use_column_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
 
     with col_info:
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<div class='movie-meta'>"
-            f"{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']} &nbsp;·&nbsp; {movie['runtime']} &nbsp;·&nbsp; ⭐ IMDb {movie['imdb_rating']}"
-            f"</div>",
+            f"<div class='movie-meta'>{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']}"
+            f" &nbsp;·&nbsp; {movie['runtime']} &nbsp;·&nbsp; ⭐ IMDb {movie['imdb_rating']}</div>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:14px; color:{text_secondary}; line-height:1.7; margin-top:12px;'>{movie['plot']}</p>",
+            f"<p style='font-size:14px;color:{text_secondary};line-height:1.7;margin-top:12px;'>{movie['plot']}</p>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:13px; color:{text_muted}; font-family:JetBrains Mono,monospace; margin-top:8px;'>"
+            f"<p style='font-size:12px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:6px;'>"
             f"CAST: {movie['actors']}</p>",
             unsafe_allow_html=True
         )
 
-    # ── Prepare raw_reviews for analyze_movie (UNCHANGED) ──
-    raw_reviews = {
-        "title": movie["title"],
-        "critic_reviews": movie["plot"],
-        "audience_reactions": movie["actors"],
-        "discussion_points": movie["genre"]
-    }
-
-    with st.spinner("Synchronizing AI personas..."):
-        result = analyze_movie(raw_reviews)
-
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── Section: Multi-Agent Perspectives ──
+    # ── Multi-Agent Perspectives ──
     st.markdown("<div class='section-heading'>🎬 &nbsp; Multi-Agent Perspectives</div>", unsafe_allow_html=True)
 
     col_a, col_b, col_c = st.columns(3, gap="medium")
 
-    def render_critic_card(col, label_class, label_icon, label_text, key, full_text):
+    def render_card(col, label_class, icon, label_text, full_text):
+        preview = full_text[:200] + "…" if len(full_text) > 200 else full_text
         with col:
-            preview = full_text[:220] + "..." if len(full_text) > 220 else full_text
             st.markdown(f"""
             <div class="glass-card">
-                <div class="card-label {label_class}">{label_icon} {label_text}</div>
+                <div class="card-label {label_class}">{icon} {label_text}</div>
                 <div class="card-preview">{preview}</div>
             </div>
             """, unsafe_allow_html=True)
-            btn_label = "▾ Collapse" if st.session_state[key] else "▸ Read Analysis"
-            if st.button(btn_label, key=f"btn_{key}"):
-                st.session_state[key] = not st.session_state[key]
-            if st.session_state[key]:
-                with st.expander("Full Analysis", expanded=True):
-                    st.markdown(
-                        f"<div class='card-full'>{full_text}</div>",
-                        unsafe_allow_html=True
-                    )
+            # st.expander handles open/close natively — no button, no rerun side-effects
+            with st.expander("▸ Read Analysis"):
+                st.markdown(
+                    f"<p style='font-size:14px;color:{text_secondary};line-height:1.7;'>{full_text}</p>",
+                    unsafe_allow_html=True
+                )
 
-    render_critic_card(
-        col_a, "label-expert", "🎓", "Veteran Critic",
-        "show_critic", result["critic_expert"]
-    )
-    render_critic_card(
-        col_b, "label-devils", "😈", "Devil's Advocate",
-        "show_devil", result["devils_advocate"]
-    )
-    render_critic_card(
-        col_c, "label-audience", "🍿", "Audience Sentiment",
-        "show_audience", result["audience_sentiment"]
-    )
+    render_card(col_a, "label-expert",   "🎓", "Veteran Critic",     result["critic_expert"])
+    render_card(col_b, "label-devils",   "😈", "Devil's Advocate",   result["devils_advocate"])
+    render_card(col_c, "label-audience", "🍿", "Audience Sentiment", result["audience_sentiment"])
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── Section: Verdict + Themes ──
-    col_themes, col_score = st.columns([2.5, 1], gap="large")
+    # ── Themes + Score ──
+    col_themes, col_score = st.columns([3, 1], gap="large")
 
     with col_themes:
         st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
         tags_html = "".join([f"<span class='theme-tag'>#{t.strip()}</span>" for t in result["themes"]])
-        st.markdown(f"<div style='line-height:2;'>{tags_html}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='line-height:2.2;'>{tags_html}</div>", unsafe_allow_html=True)
 
     with col_score:
         st.markdown("<div class='section-heading'>🎯 &nbsp; Score</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<div class='score-ring'>{result['final_verdict']['score']}</div>",
+            f"<div class='score-pill'>"
+            f"<span class='score-label'>Overall</span>"
+            f"<span class='score-value'>{result['final_verdict']['score']}</span>"
+            f"</div>",
             unsafe_allow_html=True
         )
 
-    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-
-    # ── Section: Intelligence Verdict ──
+    # ── Intelligence Verdict ──
     v = result["final_verdict"]
     st.markdown("<div class='section-heading'>🧠 &nbsp; Intelligence Verdict</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='verdict-box'>{v['overview']}</div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
     w1, w2 = st.columns(2, gap="large")
 
