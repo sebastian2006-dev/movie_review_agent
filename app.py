@@ -422,16 +422,49 @@ div[data-testid="stChatInput"] textarea:focus {{
     box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
 }}
 </style>
+/* ── Hide native checkbox (using custom HTML toggle) ── */
+div[data-testid="stCheckbox"] {{
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}}
 """, unsafe_allow_html=True)
 
+
+# ---------------- TOP-RIGHT THEME TOGGLE ----------------
 # ---------------- TOP-RIGHT THEME TOGGLE ----------------
 _, tog_col = st.columns([8, 1])
 with tog_col:
-    st.checkbox(
-        "🌙 Dark" if is_dark else "☀️ Light",
-        value=is_dark,
-        key="dark_mode",
-    )
+    toggle_html = f"""
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:4px 0;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{text_secondary};letter-spacing:1px;">
+            {"🌙 Dark" if is_dark else "☀️ Light"}
+        </span>
+        <div onclick="
+            const params = new URLSearchParams(window.location.search);
+            window.parent.postMessage({{type:'streamlit:setComponentValue', value: !{str(is_dark).lower()}}}, '*');
+        "
+        style="
+            width:44px;height:24px;border-radius:100px;
+            background:{'#7c3aed' if is_dark else 'rgba(0,0,0,0.2)'};
+            position:relative;cursor:pointer;transition:background 0.3s;
+            flex-shrink:0;
+        ">
+            <div style="
+                position:absolute;top:3px;
+                left:{'22px' if is_dark else '3px'};
+                width:18px;height:18px;border-radius:50%;
+                background:white;
+                box-shadow:0 1px 4px rgba(0,0,0,0.3);
+                transition:left 0.3s;
+            "></div>
+        </div>
+    </div>
+    """
+    st.markdown(toggle_html, unsafe_allow_html=True)
+    st.checkbox("", value=is_dark, key="dark_mode", label_visibility="collapsed")
 
 # ---------------- HERO HEADER ----------------
 st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
