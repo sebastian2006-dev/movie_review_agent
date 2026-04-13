@@ -115,12 +115,10 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* ── Hide sidebar collapse button & default header ── */
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
-/* ── Base ── */
 .stApp {{
     background-color: {bg_base} !important;
     color: {text_primary};
@@ -132,7 +130,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-bottom: 4rem;
 }}
 
-/* ── Mesh Background ── */
 .stApp::before {{
     content: '';
     position: fixed;
@@ -145,54 +142,16 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     pointer-events: none;
 }}
 
-/* ── Typography ── */
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-/* ── Checkbox as toggle switch ── */
 div[data-testid="stCheckbox"] {{
-    display: flex !important;
-    justify-content: flex-end !important;
-}}
-div[data-testid="stCheckbox"] label {{
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 4px 0 !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 11px !important;
-    color: {text_secondary} !important;
-    cursor: pointer !important;
-    letter-spacing: 1px !important;
-}}
-div[data-testid="stCheckbox"] input[type="checkbox"] {{
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    width: 44px !important;
-    height: 24px !important;
-    border-radius: 100px !important;
-    background: {"#7c3aed" if is_dark else "rgba(0,0,0,0.15)"} !important;
-    border: none !important;
-    position: relative !important;
-    cursor: pointer !important;
-    transition: background 0.3s ease !important;
-    flex-shrink: 0 !important;
-}}
-div[data-testid="stCheckbox"] input[type="checkbox"]::after {{
-    content: '' !important;
     position: absolute !important;
-    top: 3px !important;
-    left: {"22px" if is_dark else "3px"} !important;
-    width: 18px !important;
-    height: 18px !important;
-    border-radius: 50% !important;
-    background: white !important;
-    transition: left 0.3s ease !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
 }}
 
-/* ── Hero ── */
 .hero-eyebrow {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -222,7 +181,6 @@ div[data-testid="stCheckbox"] input[type="checkbox"]::after {{
     margin-bottom: 32px;
 }}
 
-/* ── Chat Input ── */
 div[data-testid="stChatInput"] textarea {{
     background: {input_bg} !important;
     border: 1px solid {input_border} !important;
@@ -240,7 +198,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     outline: none !important;
 }}
 
-/* ── Movie Meta ── */
 .movie-meta {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -256,7 +213,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     margin-bottom: 6px;
 }}
 
-/* ── Glass Cards ── */
 .glass-card {{
     background: {bg_card};
     border: 1px solid {border_color};
@@ -302,7 +258,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     overflow: hidden;
 }}
 
-/* ── Expander styled ── */
 [data-testid="stExpander"] {{
     background: {expander_bg} !important;
     border: 1px solid {border_color} !important;
@@ -317,7 +272,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     letter-spacing: 1px !important;
 }}
 
-/* ── Score pill ── */
 .score-pill {{
     display: inline-flex;
     align-items: center;
@@ -344,7 +298,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     line-height: 1;
 }}
 
-/* ── Theme Tags ── */
 .theme-tag {{
     display: inline-block;
     background: {tag_bg};
@@ -360,7 +313,6 @@ div[data-testid="stChatInput"] textarea:focus {{
 }}
 .theme-tag:hover {{ background: rgba(124,58,237,0.25); }}
 
-/* ── Section Heading ── */
 .section-heading {{
     font-family: 'Syne', sans-serif;
     font-size: 17px;
@@ -372,7 +324,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     gap: 8px;
 }}
 
-/* ── Verdict ── */
 .verdict-box {{
     background: {verdict_bg};
     border-left: 3px solid {verdict_border};
@@ -383,7 +334,6 @@ div[data-testid="stChatInput"] textarea:focus {{
     line-height: 1.7;
 }}
 
-/* ── Points ── */
 .point-item {{
     display: flex;
     align-items: flex-start;
@@ -397,14 +347,12 @@ div[data-testid="stChatInput"] textarea:focus {{
 .dot-green {{ color: #34d399; font-size: 16px; }}
 .dot-red   {{ color: #f87171; font-size: 16px; }}
 
-/* ── Divider ── */
 .fancy-divider {{
     height: 1px;
     background: linear-gradient(to right, transparent, {border_color}, transparent);
     margin: 28px 0;
 }}
 
-/* ── Error ── */
 .err-box {{
     background: {error_bg};
     border: 1px solid {error_border};
@@ -416,55 +364,52 @@ div[data-testid="stChatInput"] textarea:focus {{
     text-align: center;
 }}
 
-/* ── Poster ── */
 [data-testid="stImage"] img {{
     border-radius: 16px !important;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
 }}
 </style>
-/* ── Hide native checkbox (using custom HTML toggle) ── */
-div[data-testid="stCheckbox"] {{
-    position: absolute !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    overflow: hidden !important;
-}}
 """, unsafe_allow_html=True)
 
+# ---------------- CHECK QUERY PARAM TO FLIP THEME ----------------
+params = st.query_params
+if "_dm" in params:
+    new_val = params["_dm"] == "1"
+    st.query_params.clear()
+    st.session_state.dark_mode = new_val
+    st.rerun()
 
-# ---------------- TOP-RIGHT THEME TOGGLE ----------------
 # ---------------- TOP-RIGHT THEME TOGGLE ----------------
 _, tog_col = st.columns([8, 1])
 with tog_col:
-    toggle_html = f"""
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:4px 0;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:{text_secondary};letter-spacing:1px;">
-            {"🌙 Dark" if is_dark else "☀️ Light"}
-        </span>
-        <div onclick="
-            const params = new URLSearchParams(window.location.search);
-            window.parent.postMessage({{type:'streamlit:setComponentValue', value: !{str(is_dark).lower()}}}, '*');
-        "
-        style="
+    track_color = "#7c3aed" if is_dark else "rgba(0,0,0,0.2)"
+    knob_left   = "22px"    if is_dark else "3px"
+    label_text  = "🌙 Dark" if is_dark else "☀️ Light"
+    label_color = "#8892b0" if is_dark else "#374151"
+    next_val    = "0"       if is_dark else "1"
+
+    st.markdown(f"""
+    <a href="?_dm={next_val}" style="
+        display:flex;align-items:center;gap:8px;
+        text-decoration:none;padding:4px 0;justify-content:flex-end;
+    ">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                     color:{label_color};letter-spacing:1px;">{label_text}</span>
+        <div style="
             width:44px;height:24px;border-radius:100px;
-            background:{'#7c3aed' if is_dark else 'rgba(0,0,0,0.2)'};
-            position:relative;cursor:pointer;transition:background 0.3s;
-            flex-shrink:0;
+            background:{track_color};position:relative;flex-shrink:0;
         ">
             <div style="
-                position:absolute;top:3px;
-                left:{'22px' if is_dark else '3px'};
+                position:absolute;top:3px;left:{knob_left};
                 width:18px;height:18px;border-radius:50%;
-                background:white;
-                box-shadow:0 1px 4px rgba(0,0,0,0.3);
-                transition:left 0.3s;
+                background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);
             "></div>
         </div>
-    </div>
-    """
-    st.markdown(toggle_html, unsafe_allow_html=True)
-    st.checkbox("", value=is_dark, key="dark_mode", label_visibility="collapsed")
+    </a>
+    """, unsafe_allow_html=True)
+
+    # Hidden native checkbox to keep session state in sync
+    st.checkbox("", value=is_dark, key="dark_mode", label_visibility="hidden")
 
 # ---------------- HERO HEADER ----------------
 st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
@@ -508,7 +453,6 @@ if movie is None and st.session_state.cached_query is not None:
 
 elif movie and result:
 
-    # ── Movie Header ──
     col_poster, col_info = st.columns([1, 2.6], gap="large")
 
     with col_poster:
@@ -534,7 +478,6 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── Multi-Agent Perspectives ──
     st.markdown("<div class='section-heading'>🎬 &nbsp; Multi-Agent Perspectives</div>", unsafe_allow_html=True)
 
     col_a, col_b, col_c = st.columns(3, gap="medium")
@@ -560,7 +503,6 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── Themes + Score ──
     col_themes, col_score = st.columns([3, 1], gap="large")
 
     with col_themes:
@@ -578,7 +520,6 @@ elif movie and result:
             unsafe_allow_html=True
         )
 
-    # ── Intelligence Verdict ──
     v = result["final_verdict"]
     st.markdown("<div class='section-heading'>🧠 &nbsp; Intelligence Verdict</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='verdict-box'>{v['overview']}</div>", unsafe_allow_html=True)
