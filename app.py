@@ -38,23 +38,27 @@ def fetch_movie_data(title: str):
     }
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Movie Debate AI", layout="wide")
 
 # ---------------- SESSION STATE ----------------
-if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
-if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
-if "cached_result" not in st.session_state: st.session_state.cached_result = None
+if "cached_query" not in st.session_state:
+    st.session_state.cached_query = None
+if "cached_movie" not in st.session_state:
+    st.session_state.cached_movie = None
+if "cached_result" not in st.session_state:
+    st.session_state.cached_result = None
 
-# ---------------- HERO HEADER ----------------
-st.markdown("### 🎬 Movie Debate AI")
-user_input = st.chat_input("Search a movie title...")
+# ---------------- HEADER ----------------
+st.title("🎬 Movie Debate AI")
+user_input = st.chat_input("Search for a movie...")
 
 # ---------------- MAIN LOGIC ----------------
 if user_input:
     query_key = user_input.strip().lower()
+
     if query_key != st.session_state.cached_query:
-        st.session_state.cached_query  = query_key
-        st.session_state.cached_movie  = fetch_movie_data(user_input)
+        st.session_state.cached_query = query_key
+        st.session_state.cached_movie = fetch_movie_data(user_input)
         st.session_state.cached_result = None
 
         if st.session_state.cached_movie:
@@ -64,19 +68,24 @@ if user_input:
                 "audience_reactions": st.session_state.cached_movie["actors"],
                 "discussion_points": st.session_state.cached_movie["genre"],
             }
-            with st.spinner("Running AI debate..."):
+
+            with st.spinner("🤖 Running AI debate..."):
                 st.session_state.cached_result = analyze_movie(raw_reviews)
 
-movie  = st.session_state.cached_movie
+movie = st.session_state.cached_movie
 result = st.session_state.cached_result
 
+# =========================================================
+# RESULTS
+# =========================================================
 if movie is None and st.session_state.cached_query is not None:
     st.error("No movie found.")
 
 elif movie and result:
 
-    # Movie header
-    col_poster, col_info = st.columns([1,2])
+    # ---------------- MOVIE HEADER ----------------
+    col_poster, col_info = st.columns([1, 2])
+
     with col_poster:
         if movie["poster"] != "N/A":
             st.image(movie["poster"])
@@ -89,30 +98,40 @@ elif movie and result:
 
     st.divider()
 
-    # ---------------- DEBATE TRANSCRIPT (TOP) ----------------
-    st.header("⚔️ AI Debate Transcript")
+    # =========================================================
+    # ⚔️ DEBATE TRANSCRIPT (NOW FIRST)
+    # =========================================================
+    with st.expander("⚔️ View AI Debate Transcript", expanded=False):
 
-    debate = result.get("debate_transcript", [])
-    for turn in debate:
-        role = turn["role"]
-        with st.chat_message("assistant"):
-            st.markdown(f"**{role}**")
-            st.write(turn["text"])
+        debate = result.get("debate_transcript", [])
+
+        role_map = {
+            "Veteran Critic": "Critique Agent",
+            "Devil's Advocate": "Advocate Agent"
+        }
+
+        for turn in debate:
+            role = role_map.get(turn["role"], turn["role"])
+            with st.chat_message("assistant"):
+                st.markdown(f"**{role}**")
+                st.write(turn["text"])
 
     st.divider()
 
-    # ---------------- AI SUMMARY + SCORE ----------------
-    col_sum, col_score = st.columns([3,1])
+    # =========================================================
+    # 🤖 AI SUMMARY + SCORE
+    # =========================================================
+    col_summary, col_score = st.columns([3,1])
 
     with col_score:
         st.subheader("🤖 AI Score")
         st.metric("Final Score", result["final_score"])
 
-    with col_sum:
+    with col_summary:
         st.subheader("🧠 Debate Summary")
         st.info(result["debate_summary"])
 
-    # pros cons
+    # ---------------- WHAT WORKS / FAILS ----------------
     w1, w2 = st.columns(2)
 
     with w1:
