@@ -8,8 +8,9 @@ from openai import OpenAI
 #  Critic  → llama-3.3-70b-versatile  (analytical, authoritative)
 #  Advocate→ gemma2-9b-it              (sharp, contrarian, different arch)
 # ─────────────────────────────────────────────
+# NEW — both are currently active on Groq as of 2026
 MODEL_CRITIC   = "llama-3.3-70b-versatile"
-MODEL_ADVOCATE = "gemma2-9b-it"
+MODEL_ADVOCATE = "llama3-8b-8192"  
 
 
 # ─────────────────────────────────────────────
