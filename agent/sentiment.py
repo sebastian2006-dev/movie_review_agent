@@ -6,11 +6,14 @@ from openai import OpenAI
 # ─────────────────────────────────────────────
 #  MODEL CONFIG
 #  Critic  → llama-3.3-70b-versatile  (analytical, authoritative)
-#  Advocate→ gemma2-9b-it              (sharp, contrarian, different arch)
+#  Advocate→ mixtral-8x7b-32768       (sharp, contrarian, different arch)
+#
+#  NOTE: gemma2-9b-it was removed from Groq — replaced with mixtral-8x7b-32768
+#  To verify available models on your account, run:
+#      client.models.list()
 # ─────────────────────────────────────────────
-# NEW — both are currently active on Groq as of 2026
 MODEL_CRITIC   = "llama-3.3-70b-versatile"
-MODEL_ADVOCATE = "llama3-8b-8192"  
+MODEL_ADVOCATE = "mixtral-8x7b-32768"
 
 
 # ─────────────────────────────────────────────
@@ -118,74 +121,86 @@ Write 3-4 punchy, confrontational paragraphs — no bullet points."""
     history = []
 
     # ── Turn 1 — Critic opens ───────────────────
-    t1 = client.chat.completions.create(
-        model=MODEL_CRITIC,
-        temperature=0.65,
-        max_tokens=600,
-        messages=[
-            {"role": "system", "content": CRITIC_SYS},
-            {"role": "user",   "content": (
-                f"{movie_ctx}\n\n"
-                "Open the debate. Cover storytelling, direction, performances, pacing, and the film's legacy."
-            )}
-        ]
-    ).choices[0].message.content.strip()
+    try:
+        t1 = client.chat.completions.create(
+            model=MODEL_CRITIC,
+            temperature=0.65,
+            max_tokens=600,
+            messages=[
+                {"role": "system", "content": CRITIC_SYS},
+                {"role": "user",   "content": (
+                    f"{movie_ctx}\n\n"
+                    "Open the debate. Cover storytelling, direction, performances, pacing, and the film's legacy."
+                )}
+            ]
+        ).choices[0].message.content.strip()
+    except Exception as e:
+        raise RuntimeError(f"Critic model ({MODEL_CRITIC}) failed on Turn 1: {e}") from e
 
     history.append({"role": "Veteran Critic", "model": MODEL_CRITIC, "text": t1})
 
     # ── Turn 2 — Advocate challenges ────────────
-    t2 = client.chat.completions.create(
-        model=MODEL_ADVOCATE,
-        temperature=0.75,
-        max_tokens=600,
-        messages=[
-            {"role": "system", "content": ADVOCATE_SYS},
-            {"role": "user",   "content": (
-                f"{movie_ctx}\n\n"
-                f"The Veteran Critic opened with:\n\n{t1}\n\n"
-                "Challenge their points head-on. What are they wrong about? "
-                "What flaws and over-praised elements are they glossing over?"
-            )}
-        ]
-    ).choices[0].message.content.strip()
+    try:
+        t2 = client.chat.completions.create(
+            model=MODEL_ADVOCATE,
+            temperature=0.75,
+            max_tokens=600,
+            messages=[
+                {"role": "system", "content": ADVOCATE_SYS},
+                {"role": "user",   "content": (
+                    f"{movie_ctx}\n\n"
+                    f"The Veteran Critic opened with:\n\n{t1}\n\n"
+                    "Challenge their points head-on. What are they wrong about? "
+                    "What flaws and over-praised elements are they glossing over?"
+                )}
+            ]
+        ).choices[0].message.content.strip()
+    except Exception as e:
+        raise RuntimeError(f"Advocate model ({MODEL_ADVOCATE}) failed on Turn 2: {e}") from e
 
     history.append({"role": "Devil's Advocate", "model": MODEL_ADVOCATE, "text": t2})
 
     # ── Turn 3 — Critic rebuts ───────────────────
-    t3 = client.chat.completions.create(
-        model=MODEL_CRITIC,
-        temperature=0.65,
-        max_tokens=600,
-        messages=[
-            {"role": "system", "content": CRITIC_SYS},
-            {"role": "user",   "content": (
-                f"{movie_ctx}\n\n"
-                f"Your opening:\n{t1}\n\n"
-                f"Devil's Advocate replied:\n{t2}\n\n"
-                "Rebut their criticisms. Defend your position or concede the valid points with nuance."
-            )}
-        ]
-    ).choices[0].message.content.strip()
+    try:
+        t3 = client.chat.completions.create(
+            model=MODEL_CRITIC,
+            temperature=0.65,
+            max_tokens=600,
+            messages=[
+                {"role": "system", "content": CRITIC_SYS},
+                {"role": "user",   "content": (
+                    f"{movie_ctx}\n\n"
+                    f"Your opening:\n{t1}\n\n"
+                    f"Devil's Advocate replied:\n{t2}\n\n"
+                    "Rebut their criticisms. Defend your position or concede the valid points with nuance."
+                )}
+            ]
+        ).choices[0].message.content.strip()
+    except Exception as e:
+        raise RuntimeError(f"Critic model ({MODEL_CRITIC}) failed on Turn 3: {e}") from e
 
     history.append({"role": "Veteran Critic", "model": MODEL_CRITIC, "text": t3})
 
     # ── Turn 4 — Advocate closes ─────────────────
-    t4 = client.chat.completions.create(
-        model=MODEL_ADVOCATE,
-        temperature=0.75,
-        max_tokens=600,
-        messages=[
-            {"role": "system", "content": ADVOCATE_SYS},
-            {"role": "user",   "content": (
-                f"{movie_ctx}\n\n"
-                f"Full debate so far:\n"
-                f"CRITIC (Round 1): {t1}\n\n"
-                f"YOU (Round 1): {t2}\n\n"
-                f"CRITIC (Round 2): {t3}\n\n"
-                "Give your final closing argument. What is your ultimate verdict on this film?"
-            )}
-        ]
-    ).choices[0].message.content.strip()
+    try:
+        t4 = client.chat.completions.create(
+            model=MODEL_ADVOCATE,
+            temperature=0.75,
+            max_tokens=600,
+            messages=[
+                {"role": "system", "content": ADVOCATE_SYS},
+                {"role": "user",   "content": (
+                    f"{movie_ctx}\n\n"
+                    f"Full debate so far:\n"
+                    f"CRITIC (Round 1): {t1}\n\n"
+                    f"YOU (Round 1): {t2}\n\n"
+                    f"CRITIC (Round 2): {t3}\n\n"
+                    "Give your final closing argument. What is your ultimate verdict on this film?"
+                )}
+            ]
+        ).choices[0].message.content.strip()
+    except Exception as e:
+        raise RuntimeError(f"Advocate model ({MODEL_ADVOCATE}) failed on Turn 4: {e}") from e
 
     history.append({"role": "Devil's Advocate", "model": MODEL_ADVOCATE, "text": t4})
 
@@ -238,12 +253,15 @@ Every text field must be 5-7 sentences.
 }}
 """
 
-    resp = client.chat.completions.create(
-        model=MODEL_CRITIC,
-        temperature=0.35,
-        max_tokens=2000,
-        messages=[{"role": "user", "content": prompt}]
-    ).choices[0].message.content
+    try:
+        resp = client.chat.completions.create(
+            model=MODEL_CRITIC,
+            temperature=0.35,
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        ).choices[0].message.content
+    except Exception as e:
+        raise RuntimeError(f"Synthesis model ({MODEL_CRITIC}) failed: {e}") from e
 
     return extract_json(resp)
 
@@ -268,13 +286,16 @@ def analyze_movie(raw_reviews: dict) -> dict:
             "Fix it and return ONLY valid JSON, nothing else:\n\n"
             + str(raw_result)
         )
-        retry_text = client.chat.completions.create(
-            model=MODEL_CRITIC,
-            temperature=0.2,
-            max_tokens=2000,
-            messages=[{"role": "user", "content": repair_prompt}]
-        ).choices[0].message.content
-        raw_result = extract_json(retry_text)
+        try:
+            retry_text = client.chat.completions.create(
+                model=MODEL_CRITIC,
+                temperature=0.2,
+                max_tokens=2000,
+                messages=[{"role": "user", "content": repair_prompt}]
+            ).choices[0].message.content
+            raw_result = extract_json(retry_text)
+        except Exception as e:
+            raise RuntimeError(f"JSON repair fallback also failed: {e}") from e
 
     # Step 3 — Attach transcript + normalise
     raw_result["debate_transcript"] = debate_history

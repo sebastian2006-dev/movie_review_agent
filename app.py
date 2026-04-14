@@ -87,7 +87,6 @@ if is_dark:
     toggle_bg      = "rgba(255,255,255,0.06)"
     toggle_border  = "rgba(255,255,255,0.1)"
     expander_bg    = "rgba(124,58,237,0.06)"
-    # search bar blends with dark bg
     chatinput_bg   = "rgba(255,255,255,0.04)"
     chatinput_text = "#e8eaf6"
     chatinput_placeholder = "#4a5568"
@@ -121,7 +120,6 @@ else:
     toggle_bg      = "rgba(124,58,237,0.08)"
     toggle_border  = "rgba(124,58,237,0.2)"
     expander_bg    = "rgba(124,58,237,0.04)"
-    # search bar blends with light bg
     chatinput_bg   = "rgba(255,255,255,0.7)"
     chatinput_text = "#1a1a2e"
     chatinput_placeholder = "#9ca3af"
@@ -484,7 +482,6 @@ with tog_col:
     label_color = "#8892b0" if is_dark else "#374151"
     next_val    = "0"       if is_dark else "1"
 
-    # Use JS to navigate in the same tab instead of <a href> which opens a new tab
     st.markdown(f"""
     <div onclick="window.location.href='?_dm={next_val}'" style="
         display:flex;align-items:center;gap:8px;
@@ -507,7 +504,6 @@ with tog_col:
     </div>
     """, unsafe_allow_html=True)
 
-    # Hidden native checkbox to keep session state in sync
     st.checkbox("", value=is_dark, key="dark_mode", label_visibility="hidden")
 
 # ---------------- HERO HEADER ----------------
@@ -651,10 +647,11 @@ elif movie and result:
             "<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>",
             unsafe_allow_html=True
         )
+        # ── UPDATED: reflects new advocate model ──
         st.markdown(
             f"<p style='font-size:13px;color:{text_muted};margin-bottom:16px;"
             f"font-family:JetBrains Mono,monospace;'>"
-            f"llama-3.3-70b-versatile &nbsp;vs&nbsp; gemma2-9b-it &nbsp;·&nbsp; 4 rounds</p>",
+            f"llama-3.3-70b-versatile &nbsp;vs&nbsp; mixtral-8x7b-32768 &nbsp;·&nbsp; 4 rounds</p>",
             unsafe_allow_html=True
         )
 
@@ -667,7 +664,7 @@ elif movie and result:
                     bubbles_html += f"<div class='round-pill'>Round {round_num}</div>"
 
                 is_critic    = turn["role"] == "Veteran Critic"
-                bubble_class = "bubble-critic"   if is_critic else "bubble-advocate"
+                bubble_class = "bubble-critic"       if is_critic else "bubble-advocate"
                 label_class  = "bubble-label-critic" if is_critic else "bubble-label-advocate"
                 icon         = "🎓" if is_critic else "😈"
 
