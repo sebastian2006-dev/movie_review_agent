@@ -40,6 +40,14 @@ def fetch_movie_data(title: str):
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
+# ---------------- CHECK QUERY PARAM TO FLIP THEME (before session state read) ----------------
+params = st.query_params
+if "_dm" in params:
+    new_val = params["_dm"] == "1"
+    st.query_params.clear()
+    st.session_state.dark_mode = new_val
+    st.rerun()
+
 # ---------------- SESSION STATE INIT ----------------
 if "dark_mode"     not in st.session_state: st.session_state.dark_mode     = True
 if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
@@ -79,6 +87,10 @@ if is_dark:
     toggle_bg      = "rgba(255,255,255,0.06)"
     toggle_border  = "rgba(255,255,255,0.1)"
     expander_bg    = "rgba(124,58,237,0.06)"
+    # search bar blends with dark bg
+    chatinput_bg   = "rgba(255,255,255,0.04)"
+    chatinput_text = "#e8eaf6"
+    chatinput_placeholder = "#4a5568"
 else:
     bg_base        = "#f0f4ff"
     bg_card        = "rgba(255,255,255,0.75)"
@@ -109,6 +121,10 @@ else:
     toggle_bg      = "rgba(124,58,237,0.08)"
     toggle_border  = "rgba(124,58,237,0.2)"
     expander_bg    = "rgba(124,58,237,0.04)"
+    # search bar blends with light bg
+    chatinput_bg   = "rgba(255,255,255,0.7)"
+    chatinput_text = "#1a1a2e"
+    chatinput_placeholder = "#9ca3af"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
@@ -144,6 +160,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
+/* ── Hide native checkbox ── */
 div[data-testid="stCheckbox"] {{
     position: absolute !important;
     opacity: 0 !important;
@@ -181,21 +198,46 @@ div[data-testid="stCheckbox"] {{
     margin-bottom: 32px;
 }}
 
-div[data-testid="stChatInput"] textarea {{
-    background: {input_bg} !important;
+/* ── Chat Input — blends with bg, no orange ring ── */
+div[data-testid="stChatInput"] {{
+    background: transparent !important;
+}}
+div[data-testid="stChatInput"] > div {{
+    background: {chatinput_bg} !important;
     border: 1px solid {input_border} !important;
     border-radius: 16px !important;
-    color: {text_primary} !important;
+    box-shadow: none !important;
+    outline: none !important;
+}}
+div[data-testid="stChatInput"] textarea {{
+    background: transparent !important;
+    border: none !important;
+    border-radius: 16px !important;
+    color: {chatinput_text} !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 15px !important;
     padding: 16px 20px !important;
-    backdrop-filter: blur(12px);
-    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+    box-shadow: none !important;
+    outline: none !important;
+    -webkit-box-shadow: none !important;
+    caret-color: {accent1} !important;
+}}
+div[data-testid="stChatInput"] textarea::placeholder {{
+    color: {chatinput_placeholder} !important;
 }}
 div[data-testid="stChatInput"] textarea:focus {{
-    box-shadow: 0 0 24px {input_glow}, 0 0 0 1px {input_border} !important;
-    border-color: {accent1} !important;
+    box-shadow: none !important;
     outline: none !important;
+    border: none !important;
+}}
+div[data-testid="stChatInput"]:focus-within > div {{
+    border-color: {accent1} !important;
+    box-shadow: 0 0 20px {input_glow} !important;
+}}
+/* Kill any orange/red focus ring from the browser or Streamlit */
+div[data-testid="stChatInput"] *:focus {{
+    outline: none !important;
+    box-shadow: none !important;
 }}
 
 .movie-meta {{
@@ -371,14 +413,6 @@ div[data-testid="stChatInput"] textarea:focus {{
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- CHECK QUERY PARAM TO FLIP THEME ----------------
-params = st.query_params
-if "_dm" in params:
-    new_val = params["_dm"] == "1"
-    st.query_params.clear()
-    st.session_state.dark_mode = new_val
-    st.rerun()
-
 # ---------------- TOP-RIGHT THEME TOGGLE ----------------
 _, tog_col = st.columns([8, 1])
 with tog_col:
@@ -388,24 +422,27 @@ with tog_col:
     label_color = "#8892b0" if is_dark else "#374151"
     next_val    = "0"       if is_dark else "1"
 
+    # Use JS to navigate in the same tab instead of <a href> which opens a new tab
     st.markdown(f"""
-    <a href="?_dm={next_val}" style="
+    <div onclick="window.location.href='?_dm={next_val}'" style="
         display:flex;align-items:center;gap:8px;
-        text-decoration:none;padding:4px 0;justify-content:flex-end;
+        cursor:pointer;padding:4px 0;justify-content:flex-end;
     ">
         <span style="font-family:'JetBrains Mono',monospace;font-size:11px;
-                     color:{label_color};letter-spacing:1px;">{label_text}</span>
+                     color:{label_color};letter-spacing:1px;user-select:none;">{label_text}</span>
         <div style="
             width:44px;height:24px;border-radius:100px;
             background:{track_color};position:relative;flex-shrink:0;
+            transition:background 0.3s;
         ">
             <div style="
                 position:absolute;top:3px;left:{knob_left};
                 width:18px;height:18px;border-radius:50%;
                 background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);
+                transition:left 0.3s;
             "></div>
         </div>
-    </a>
+    </div>
     """, unsafe_allow_html=True)
 
     # Hidden native checkbox to keep session state in sync
