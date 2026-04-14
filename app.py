@@ -410,6 +410,68 @@ div[data-testid="stChatInput"] *:focus {{
     border-radius: 16px !important;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
 }}
+
+/* ── Debate Transcript ── */
+.debate-wrap {{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
+}}
+.debate-bubble {{
+    padding: 16px 20px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 90%;
+    color: {text_secondary};
+    position: relative;
+}}
+.bubble-critic {{
+    background: rgba(6,182,212,0.07);
+    border: 1px solid rgba(6,182,212,0.2);
+    border-radius: 16px 16px 16px 4px;
+    align-self: flex-start;
+}}
+.bubble-advocate {{
+    background: rgba(249,115,22,0.07);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 16px 16px 4px 16px;
+    align-self: flex-end;
+}}
+.bubble-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 700;
+}}
+.bubble-label-critic   {{ color: {accent2}; }}
+.bubble-label-advocate {{ color: #f97316; }}
+.bubble-model-tag {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    opacity: 0.45;
+    margin-left: 8px;
+    letter-spacing: 1px;
+}}
+.round-pill {{
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: {tag_bg};
+    border: 1px solid {tag_border};
+    color: {accent3};
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin: 12px auto 4px auto;
+    text-align: center;
+    display: block;
+    width: fit-content;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -580,3 +642,44 @@ elif movie and result:
                 f"<div class='point-item'><span class='dot-red'>›</span>{item}</div>",
                 unsafe_allow_html=True
             )
+
+    # ── Debate Transcript ──────────────────────────────────────────────────
+    debate = result.get("debate_transcript", [])
+    if debate:
+        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<p style='font-size:13px;color:{text_muted};margin-bottom:16px;"
+            f"font-family:JetBrains Mono,monospace;'>"
+            f"llama-3.3-70b-versatile &nbsp;vs&nbsp; gemma2-9b-it &nbsp;·&nbsp; 4 rounds</p>",
+            unsafe_allow_html=True
+        )
+
+        with st.expander("▸ Read Full Debate"):
+            bubbles_html = "<div class='debate-wrap'>"
+            round_num = 0
+            for i, turn in enumerate(debate):
+                if i % 2 == 0:
+                    round_num += 1
+                    bubbles_html += f"<div class='round-pill'>Round {round_num}</div>"
+
+                is_critic    = turn["role"] == "Veteran Critic"
+                bubble_class = "bubble-critic"   if is_critic else "bubble-advocate"
+                label_class  = "bubble-label-critic" if is_critic else "bubble-label-advocate"
+                icon         = "🎓" if is_critic else "😈"
+
+                bubbles_html += (
+                    f"<div class='debate-bubble {bubble_class}'>"
+                    f"<div class='bubble-label {label_class}'>"
+                    f"{icon} {turn['role']}"
+                    f"<span class='bubble-model-tag'>{turn['model']}</span>"
+                    f"</div>"
+                    f"{turn['text']}"
+                    f"</div>"
+                )
+
+            bubbles_html += "</div>"
+            st.markdown(bubbles_html, unsafe_allow_html=True)
