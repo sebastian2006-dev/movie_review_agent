@@ -15,7 +15,7 @@ def fetch_movie_data(title: str):
     try:
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
-    except:
+    except Exception:
         return None
 
     if not data or data.get("Response") == "False":
@@ -26,21 +26,22 @@ def fetch_movie_data(title: str):
         imdb_rating = "—"
 
     return {
-        "title": data.get("Title"),
-        "year": data.get("Year"),
-        "plot": data.get("Plot"),
-        "actors": data.get("Actors"),
-        "genre": data.get("Genre"),
-        "director": data.get("Director"),
+        "title":       data.get("Title"),
+        "year":        data.get("Year"),
+        "plot":        data.get("Plot"),
+        "actors":      data.get("Actors"),
+        "genre":       data.get("Genre"),
+        "director":    data.get("Director"),
         "imdb_rating": imdb_rating,
-        "poster": data.get("Poster"),
-        "runtime": data.get("Runtime"),
+        "poster":      data.get("Poster"),
+        "runtime":     data.get("Runtime"),
     }
+
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
-# ---------------- CHECK QUERY PARAM TO FLIP THEME (before session state read) ----------------
+# ---------------- THEME TOGGLE VIA QUERY PARAM ----------------
 params = st.query_params
 if "_dm" in params:
     new_val = params["_dm"] == "1"
@@ -48,7 +49,7 @@ if "_dm" in params:
     st.session_state.dark_mode = new_val
     st.rerun()
 
-# ---------------- SESSION STATE INIT ----------------
+# ---------------- SESSION STATE ----------------
 if "dark_mode"     not in st.session_state: st.session_state.dark_mode     = True
 if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
 if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
@@ -58,73 +59,71 @@ is_dark = st.session_state.dark_mode
 
 # ---------------- THEME VARIABLES ----------------
 if is_dark:
-    bg_base        = "#060b18"
-    bg_card        = "rgba(255,255,255,0.04)"
-    bg_card_hover  = "rgba(255,255,255,0.08)"
-    border_color   = "rgba(255,255,255,0.08)"
-    text_primary   = "#e8eaf6"
-    text_secondary = "#8892b0"
-    text_muted     = "#4a5568"
-    accent1        = "#7c3aed"
-    accent2        = "#06b6d4"
-    accent3        = "#a855f7"
-    glow1          = "rgba(124,58,237,0.35)"
-    glow2          = "rgba(6,182,212,0.25)"
-    verdict_bg     = "rgba(124,58,237,0.08)"
-    verdict_border = "#7c3aed"
-    error_bg       = "rgba(239,68,68,0.1)"
-    error_border   = "#ef4444"
-    tag_bg         = "rgba(124,58,237,0.15)"
-    tag_border     = "rgba(124,58,237,0.4)"
-    score_color    = "#06b6d4"
-    score_glow     = "rgba(6,182,212,0.4)"
-    header_gradient= "linear-gradient(135deg, #e8eaf6 0%, #a78bfa 50%, #06b6d4 100%)"
-    eyebrow_color  = "#06b6d4"
-    input_bg       = "rgba(255,255,255,0.03)"
-    input_border   = "rgba(124,58,237,0.4)"
-    input_glow     = "rgba(124,58,237,0.3)"
-    meta_color     = "#64748b"
-    toggle_bg      = "rgba(255,255,255,0.06)"
-    toggle_border  = "rgba(255,255,255,0.1)"
-    expander_bg    = "rgba(124,58,237,0.06)"
-    # search bar blends with dark bg
-    chatinput_bg   = "rgba(255,255,255,0.04)"
-    chatinput_text = "#e8eaf6"
+    bg_base               = "#060b18"
+    bg_card               = "rgba(255,255,255,0.04)"
+    bg_card_hover         = "rgba(255,255,255,0.08)"
+    border_color          = "rgba(255,255,255,0.08)"
+    text_primary          = "#e8eaf6"
+    text_secondary        = "#8892b0"
+    text_muted            = "#4a5568"
+    accent1               = "#7c3aed"
+    accent2               = "#06b6d4"
+    accent3               = "#a855f7"
+    glow1                 = "rgba(124,58,237,0.35)"
+    glow2                 = "rgba(6,182,212,0.25)"
+    verdict_bg            = "rgba(124,58,237,0.08)"
+    verdict_border        = "#7c3aed"
+    error_bg              = "rgba(239,68,68,0.1)"
+    error_border          = "#ef4444"
+    tag_bg                = "rgba(124,58,237,0.15)"
+    tag_border            = "rgba(124,58,237,0.4)"
+    score_color           = "#06b6d4"
+    score_glow            = "rgba(6,182,212,0.4)"
+    header_gradient       = "linear-gradient(135deg, #e8eaf6 0%, #a78bfa 50%, #06b6d4 100%)"
+    eyebrow_color         = "#06b6d4"
+    input_border          = "rgba(124,58,237,0.4)"
+    input_glow            = "rgba(124,58,237,0.3)"
+    meta_color            = "#64748b"
+    expander_bg           = "rgba(124,58,237,0.06)"
+    chatinput_bg          = "rgba(255,255,255,0.04)"
+    chatinput_text        = "#e8eaf6"
     chatinput_placeholder = "#4a5568"
+    btn_bg                = "linear-gradient(135deg, #7c3aed, #06b6d4)"
+    btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0891b2)"
+    btn_shadow            = "rgba(124,58,237,0.45)"
 else:
-    bg_base        = "#f0f4ff"
-    bg_card        = "rgba(255,255,255,0.75)"
-    bg_card_hover  = "rgba(255,255,255,0.95)"
-    border_color   = "rgba(124,58,237,0.15)"
-    text_primary   = "#1a1a2e"
-    text_secondary = "#374151"
-    text_muted     = "#9ca3af"
-    accent1        = "#7c3aed"
-    accent2        = "#0891b2"
-    accent3        = "#9333ea"
-    glow1          = "rgba(124,58,237,0.15)"
-    glow2          = "rgba(8,145,178,0.15)"
-    verdict_bg     = "rgba(124,58,237,0.05)"
-    verdict_border = "#7c3aed"
-    error_bg       = "rgba(239,68,68,0.08)"
-    error_border   = "#ef4444"
-    tag_bg         = "rgba(124,58,237,0.1)"
-    tag_border     = "rgba(124,58,237,0.3)"
-    score_color    = "#0891b2"
-    score_glow     = "rgba(8,145,178,0.3)"
-    header_gradient= "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 60%, #0891b2 100%)"
-    eyebrow_color  = "#7c3aed"
-    input_bg       = "rgba(255,255,255,0.8)"
-    input_border   = "rgba(124,58,237,0.5)"
-    input_glow     = "rgba(124,58,237,0.2)"
-    meta_color     = "#6b7280"
-    toggle_bg      = "rgba(124,58,237,0.08)"
-    toggle_border  = "rgba(124,58,237,0.2)"
-    expander_bg    = "rgba(124,58,237,0.04)"
-    # search bar blends with light bg
-    chatinput_bg   = "rgba(255,255,255,0.7)"
-    chatinput_text = "#1a1a2e"
+    bg_base               = "#f0f4ff"
+    bg_card               = "rgba(255,255,255,0.75)"
+    bg_card_hover         = "rgba(255,255,255,0.95)"
+    border_color          = "rgba(124,58,237,0.15)"
+    text_primary          = "#1a1a2e"
+    text_secondary        = "#374151"
+    text_muted            = "#9ca3af"
+    accent1               = "#7c3aed"
+    accent2               = "#0891b2"
+    accent3               = "#9333ea"
+    glow1                 = "rgba(124,58,237,0.15)"
+    glow2                 = "rgba(8,145,178,0.15)"
+    verdict_bg            = "rgba(124,58,237,0.05)"
+    verdict_border        = "#7c3aed"
+    error_bg              = "rgba(239,68,68,0.08)"
+    error_border          = "#ef4444"
+    tag_bg                = "rgba(124,58,237,0.1)"
+    tag_border            = "rgba(124,58,237,0.3)"
+    score_color           = "#0891b2"
+    score_glow            = "rgba(8,145,178,0.3)"
+    header_gradient       = "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 60%, #0891b2 100%)"
+    eyebrow_color         = "#7c3aed"
+    input_border          = "rgba(124,58,237,0.5)"
+    input_glow            = "rgba(124,58,237,0.2)"
+    meta_color            = "#6b7280"
+    expander_bg           = "rgba(124,58,237,0.04)"
+    chatinput_bg          = "rgba(255,255,255,0.7)"
+    chatinput_text        = "#1a1a2e"
     chatinput_placeholder = "#9ca3af"
+    btn_bg                = "linear-gradient(135deg, #7c3aed, #0891b2)"
+    btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0369a1)"
+    btn_shadow            = "rgba(124,58,237,0.3)"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
@@ -145,7 +144,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-top: 1.2rem;
     padding-bottom: 4rem;
 }}
-
 .stApp::before {{
     content: '';
     position: fixed;
@@ -157,10 +155,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
         radial-gradient(ellipse 40% 40% at 50% 50%, rgba(168,85,247,0.06) 0%, transparent 70%);
     pointer-events: none;
 }}
-
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-/* ── Hide native checkbox ── */
 div[data-testid="stCheckbox"] {{
     position: absolute !important;
     opacity: 0 !important;
@@ -169,6 +165,7 @@ div[data-testid="stCheckbox"] {{
     overflow: hidden !important;
 }}
 
+/* ── Hero ── */
 .hero-eyebrow {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -198,48 +195,64 @@ div[data-testid="stCheckbox"] {{
     margin-bottom: 32px;
 }}
 
-/* ── Chat Input — blends with bg, no orange ring ── */
-div[data-testid="stChatInput"] {{
-    background: transparent !important;
-}}
+/* ── Chat Input ── */
+div[data-testid="stChatInput"] {{ background: transparent !important; }}
 div[data-testid="stChatInput"] > div {{
     background: {chatinput_bg} !important;
     border: 1px solid {input_border} !important;
     border-radius: 16px !important;
     box-shadow: none !important;
-    outline: none !important;
 }}
 div[data-testid="stChatInput"] textarea {{
     background: transparent !important;
     border: none !important;
-    border-radius: 16px !important;
     color: {chatinput_text} !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 15px !important;
     padding: 16px 20px !important;
     box-shadow: none !important;
     outline: none !important;
-    -webkit-box-shadow: none !important;
     caret-color: {accent1} !important;
 }}
-div[data-testid="stChatInput"] textarea::placeholder {{
-    color: {chatinput_placeholder} !important;
-}}
+div[data-testid="stChatInput"] textarea::placeholder {{ color: {chatinput_placeholder} !important; }}
 div[data-testid="stChatInput"] textarea:focus {{
-    box-shadow: none !important;
-    outline: none !important;
-    border: none !important;
+    box-shadow: none !important; outline: none !important; border: none !important;
 }}
 div[data-testid="stChatInput"]:focus-within > div {{
     border-color: {accent1} !important;
     box-shadow: 0 0 20px {input_glow} !important;
 }}
-/* Kill any orange/red focus ring from the browser or Streamlit */
-div[data-testid="stChatInput"] *:focus {{
-    outline: none !important;
-    box-shadow: none !important;
+div[data-testid="stChatInput"] *:focus {{ outline: none !important; box-shadow: none !important; }}
+
+/* ── Send Button ── */
+div[data-testid="stChatInput"] button {{
+    background: {btn_bg} !important;
+    border: none !important;
+    border-radius: 10px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px {btn_shadow} !important;
+    transition: all 0.2s ease !important;
+    margin-right: 6px !important;
+    flex-shrink: 0 !important;
+}}
+div[data-testid="stChatInput"] button:hover {{
+    background: {btn_hover_bg} !important;
+    box-shadow: 0 6px 20px {btn_shadow} !important;
+    transform: scale(1.06) !important;
+}}
+div[data-testid="stChatInput"] button svg {{
+    stroke: #ffffff !important;
+    fill: none !important;
+    width: 16px !important;
+    height: 16px !important;
 }}
 
+/* ── Movie Info ── */
 .movie-meta {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -255,65 +268,78 @@ div[data-testid="stChatInput"] *:focus {{
     margin-bottom: 6px;
 }}
 
-.glass-card {{
-    background: {bg_card};
-    border: 1px solid {border_color};
-    border-radius: 20px;
-    padding: 22px 24px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-    box-sizing: border-box;
-    margin-bottom: 8px;
+/* ── Debate Bubbles ── */
+.debate-wrap {{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
 }}
-.glass-card:hover {{
-    transform: translateY(-3px) scale(1.01);
-    background: {bg_card_hover};
-    box-shadow: 0 16px 48px {glow1};
+.debate-bubble {{
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 90%;
+    color: {text_secondary};
 }}
-.card-label {{
+.bubble-critic {{
+    background: rgba(6,182,212,0.07);
+    border: 1px solid rgba(6,182,212,0.2);
+    border-radius: 16px 16px 16px 4px;
+    align-self: flex-start;
+}}
+.bubble-advocate {{
+    background: rgba(249,115,22,0.07);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 16px 16px 4px 16px;
+    align-self: flex-end;
+}}
+.bubble-label {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 700;
 }}
-.card-label::after {{
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: {border_color};
+.bubble-label-critic   {{ color: {accent2}; }}
+.bubble-label-advocate {{ color: #f97316; }}
+.bubble-model-tag {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    opacity: 0.45;
+    margin-left: 8px;
+    letter-spacing: 1px;
 }}
-.label-expert   {{ color: {accent2}; }}
-.label-devils   {{ color: #f97316; }}
-.label-audience {{ color: #facc15; }}
-.card-preview {{
+.round-pill {{
+    display: block;
+    width: fit-content;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: {tag_bg};
+    border: 1px solid {tag_border};
+    color: {accent3};
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin: 12px auto 4px auto;
+    text-align: center;
+}}
+
+/* ── Summary Box ── */
+.summary-box {{
+    background: {verdict_bg};
+    border-left: 3px solid {verdict_border};
+    border-radius: 0 16px 16px 0;
+    padding: 20px 24px;
     font-size: 14px;
     color: {text_secondary};
-    line-height: 1.65;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    line-height: 1.8;
+    margin-bottom: 8px;
 }}
 
-[data-testid="stExpander"] {{
-    background: {expander_bg} !important;
-    border: 1px solid {border_color} !important;
-    border-radius: 12px !important;
-    margin-top: 2px !important;
-}}
-[data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary p {{
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 11px !important;
-    color: {accent1} !important;
-    letter-spacing: 1px !important;
-}}
-
+/* ── Score ── */
 .score-pill {{
     display: inline-flex;
     align-items: center;
@@ -321,25 +347,26 @@ div[data-testid="stChatInput"] *:focus {{
     background: rgba(6,182,212,0.07);
     border: 1px solid rgba(6,182,212,0.22);
     border-radius: 14px;
-    padding: 12px 20px;
-    margin-top: 4px;
+    padding: 14px 24px;
+    margin: 4px 0 16px 0;
 }}
 .score-label {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 2px;
     color: {meta_color};
     text-transform: uppercase;
 }}
 .score-value {{
     font-family: 'Syne', sans-serif;
-    font-size: 26px;
+    font-size: 32px;
     font-weight: 800;
     color: {score_color};
     text-shadow: 0 0 16px {score_glow};
     line-height: 1;
 }}
 
+/* ── Themes ── */
 .theme-tag {{
     display: inline-block;
     background: {tag_bg};
@@ -351,31 +378,21 @@ div[data-testid="stChatInput"] *:focus {{
     border-radius: 100px;
     margin: 4px 3px;
     letter-spacing: 0.5px;
-    transition: background 0.2s;
 }}
-.theme-tag:hover {{ background: rgba(124,58,237,0.25); }}
 
+/* ── Section Heading ── */
 .section-heading {{
     font-family: 'Syne', sans-serif;
     font-size: 17px;
     font-weight: 700;
     color: {text_primary};
-    margin: 20px 0 14px 0;
+    margin: 24px 0 12px 0;
     display: flex;
     align-items: center;
     gap: 8px;
 }}
 
-.verdict-box {{
-    background: {verdict_bg};
-    border-left: 3px solid {verdict_border};
-    border-radius: 0 16px 16px 0;
-    padding: 20px 24px;
-    font-size: 14px;
-    color: {text_secondary};
-    line-height: 1.7;
-}}
-
+/* ── Point Items ── */
 .point-item {{
     display: flex;
     align-items: flex-start;
@@ -389,12 +406,12 @@ div[data-testid="stChatInput"] *:focus {{
 .dot-green {{ color: #34d399; font-size: 16px; }}
 .dot-red   {{ color: #f87171; font-size: 16px; }}
 
+/* ── Misc ── */
 .fancy-divider {{
     height: 1px;
     background: linear-gradient(to right, transparent, {border_color}, transparent);
     margin: 28px 0;
 }}
-
 .err-box {{
     background: {error_bg};
     border: 1px solid {error_border};
@@ -405,15 +422,27 @@ div[data-testid="stChatInput"] *:focus {{
     color: #f87171;
     text-align: center;
 }}
-
 [data-testid="stImage"] img {{
     border-radius: 16px !important;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
 }}
+[data-testid="stExpander"] {{
+    background: {expander_bg} !important;
+    border: 1px solid {border_color} !important;
+    border-radius: 12px !important;
+    margin-top: 2px !important;
+}}
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary p {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    color: {accent1} !important;
+    letter-spacing: 1px !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- TOP-RIGHT THEME TOGGLE ----------------
+# ---------------- THEME TOGGLE (top right) ----------------
 _, tog_col = st.columns([8, 1])
 with tog_col:
     track_color = "#7c3aed" if is_dark else "rgba(0,0,0,0.2)"
@@ -422,38 +451,27 @@ with tog_col:
     label_color = "#8892b0" if is_dark else "#374151"
     next_val    = "0"       if is_dark else "1"
 
-    # Use JS to navigate in the same tab instead of <a href> which opens a new tab
     st.markdown(f"""
     <div onclick="window.location.href='?_dm={next_val}'" style="
         display:flex;align-items:center;gap:8px;
-        cursor:pointer;padding:4px 0;justify-content:flex-end;
-    ">
+        cursor:pointer;padding:4px 0;justify-content:flex-end;">
         <span style="font-family:'JetBrains Mono',monospace;font-size:11px;
                      color:{label_color};letter-spacing:1px;user-select:none;">{label_text}</span>
-        <div style="
-            width:44px;height:24px;border-radius:100px;
-            background:{track_color};position:relative;flex-shrink:0;
-            transition:background 0.3s;
-        ">
-            <div style="
-                position:absolute;top:3px;left:{knob_left};
-                width:18px;height:18px;border-radius:50%;
-                background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);
-                transition:left 0.3s;
-            "></div>
+        <div style="width:44px;height:24px;border-radius:100px;
+                    background:{track_color};position:relative;flex-shrink:0;">
+            <div style="position:absolute;top:3px;left:{knob_left};
+                        width:18px;height:18px;border-radius:50%;
+                        background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # Hidden native checkbox to keep session state in sync
     st.checkbox("", value=is_dark, key="dark_mode", label_visibility="hidden")
 
-# ---------------- HERO HEADER ----------------
+# ---------------- HERO ----------------
 st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-title'>Movie Review Agent</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-sub'>Ask about any film — get expert, contrarian, and audience perspectives.</div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-sub'>Ask about any film — two AI models debate it, then deliver a verdict.</div>", unsafe_allow_html=True)
 
-# ── Centered Chat Input ──
 c1, c2, c3 = st.columns([1, 2.5, 1])
 with c2:
     user_input = st.chat_input("Search a movie title...")
@@ -475,21 +493,23 @@ if user_input:
                 "audience_reactions": st.session_state.cached_movie["actors"],
                 "discussion_points":  st.session_state.cached_movie["genre"],
             }
-            with st.spinner("Synchronizing AI personas..."):
+            with st.spinner("AI models are debating the film..."):
                 st.session_state.cached_result = analyze_movie(raw_reviews)
 
-# ── Render from cache ──
 movie  = st.session_state.cached_movie
 result = st.session_state.cached_result
 
+# ---------------- ERROR STATE ----------------
 if movie is None and st.session_state.cached_query is not None:
     st.markdown(
         "<div class='err-box'>⚠ &nbsp; No results found for that title. Try a different spelling.</div>",
         unsafe_allow_html=True
     )
 
+# ---------------- RENDER ----------------
 elif movie and result:
 
+    # ── Movie Info ──────────────────────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.6], gap="large")
 
     with col_poster:
@@ -515,59 +535,55 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='section-heading'>🎬 &nbsp; Multi-Agent Perspectives</div>", unsafe_allow_html=True)
+    # ── 1. DEBATE TRANSCRIPT ────────────────────────────────────────────────
+    debate = result.get("debate_transcript", [])
+    if debate:
+        st.markdown("<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<p style='font-size:12px;color:{text_muted};margin-bottom:12px;"
+            f"font-family:JetBrains Mono,monospace;'>"
+            f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 rounds</p>",
+            unsafe_allow_html=True
+        )
+        with st.expander("▸ Click to read the full debate"):
+            bubbles_html = "<div class='debate-wrap'>"
+            round_num = 0
+            for i, turn in enumerate(debate):
+                if i % 2 == 0:
+                    round_num += 1
+                    bubbles_html += f"<div class='round-pill'>Round {round_num}</div>"
 
-    col_a, col_b, col_c = st.columns(3, gap="medium")
+                is_critic    = turn["role"] == "Movie Critique Model"
+                bubble_class = "bubble-critic"       if is_critic else "bubble-advocate"
+                label_class  = "bubble-label-critic" if is_critic else "bubble-label-advocate"
 
-    def render_card(col, label_class, icon, label_text, full_text):
-        preview = full_text[:200] + "…" if len(full_text) > 200 else full_text
-        with col:
-            st.markdown(f"""
-            <div class="glass-card">
-                <div class="card-label {label_class}">{icon} {label_text}</div>
-                <div class="card-preview">{preview}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            with st.expander("▸ Read Analysis"):
-                st.markdown(
-                    f"<p style='font-size:14px;color:{text_secondary};line-height:1.7;'>{full_text}</p>",
-                    unsafe_allow_html=True
+                bubbles_html += (
+                    f"<div class='debate-bubble {bubble_class}'>"
+                    f"<div class='bubble-label {label_class}'>"
+                    f"{turn['role']}"
+                    f"<span class='bubble-model-tag'>{turn['model']}</span>"
+                    f"</div>"
+                    f"{turn['text']}"
+                    f"</div>"
                 )
-
-    render_card(col_a, "label-expert",   "🎓", "Veteran Critic",     result["critic_expert"])
-    render_card(col_b, "label-devils",   "😈", "Devil's Advocate",   result["devils_advocate"])
-    render_card(col_c, "label-audience", "🍿", "Audience Sentiment", result["audience_sentiment"])
+            bubbles_html += "</div>"
+            st.markdown(bubbles_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    col_themes, col_score = st.columns([3, 1], gap="large")
+    # ── 2. DEBATE SUMMARY ───────────────────────────────────────────────────
+    st.markdown("<div class='section-heading'>🧠 &nbsp; Debate Summary</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
+        unsafe_allow_html=True
+    )
 
-    with col_themes:
-        st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
-        tags_html = "".join([f"<span class='theme-tag'>#{t.strip()}</span>" for t in result["themes"]])
-        st.markdown(f"<div style='line-height:2.2;'>{tags_html}</div>", unsafe_allow_html=True)
-
-    with col_score:
-        st.markdown("<div class='section-heading'>🎯 &nbsp; Score</div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div class='score-pill'>"
-            f"<span class='score-label'>Overall</span>"
-            f"<span class='score-value'>{result['final_verdict']['score']}</span>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
-
-    v = result["final_verdict"]
-    st.markdown("<div class='section-heading'>🧠 &nbsp; Intelligence Verdict</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='verdict-box'>{v['overview']}</div>", unsafe_allow_html=True)
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
+    # ── What Works / What Falls Short ──────────────────────────────────────
     w1, w2 = st.columns(2, gap="large")
 
     with w1:
         st.markdown("<div class='section-heading'>✅ &nbsp; What Works</div>", unsafe_allow_html=True)
-        for item in v["what_works"]:
+        for item in result.get("what_works", []):
             st.markdown(
                 f"<div class='point-item'><span class='dot-green'>›</span>{item}</div>",
                 unsafe_allow_html=True
@@ -575,8 +591,31 @@ elif movie and result:
 
     with w2:
         st.markdown("<div class='section-heading'>❌ &nbsp; What Falls Short</div>", unsafe_allow_html=True)
-        for item in v["what_fails"]:
+        for item in result.get("what_fails", []):
             st.markdown(
                 f"<div class='point-item'><span class='dot-red'>›</span>{item}</div>",
                 unsafe_allow_html=True
             )
+
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+
+    # ── 3. THEMES + FINAL SCORE ─────────────────────────────────────────────
+    col_themes, col_score = st.columns([3, 1], gap="large")
+
+    with col_themes:
+        st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
+        tags_html = "".join(
+            f"<span class='theme-tag'>#{t.strip()}</span>"
+            for t in result.get("themes", [])
+        )
+        st.markdown(f"<div style='line-height:2.4;'>{tags_html}</div>", unsafe_allow_html=True)
+
+    with col_score:
+        st.markdown("<div class='section-heading'>🎯 &nbsp; Final Score</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='score-pill'>"
+            f"<span class='score-label'>Overall</span>"
+            f"<span class='score-value'>{result.get('final_score', 'N/A')}</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
