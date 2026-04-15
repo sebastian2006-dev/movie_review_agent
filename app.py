@@ -63,31 +63,31 @@ if is_dark:
     bg_card               = "rgba(255,255,255,0.04)"
     bg_card_hover         = "rgba(255,255,255,0.08)"
     border_color          = "rgba(255,255,255,0.08)"
-    text_primary          = "#e8eaf6"
-    text_secondary        = "#8892b0"
-    text_muted            = "#4a5568"
-    accent1               = "#7c3aed"
-    accent2               = "#06b6d4"
-    accent3               = "#a855f7"
+    text_primary          = "#f0f4ff"          # brighter than before
+    text_secondary        = "#c8d0e8"          # significantly brighter
+    text_muted            = "#7a85a0"          # brighter muted
+    accent1               = "#9b6fff"          # brighter purple
+    accent2               = "#22d3ee"          # brighter cyan
+    accent3               = "#c084fc"          # brighter violet
     glow1                 = "rgba(124,58,237,0.35)"
     glow2                 = "rgba(6,182,212,0.25)"
     verdict_bg            = "rgba(124,58,237,0.08)"
-    verdict_border        = "#7c3aed"
+    verdict_border        = "#9b6fff"
     error_bg              = "rgba(239,68,68,0.1)"
     error_border          = "#ef4444"
     tag_bg                = "rgba(124,58,237,0.15)"
     tag_border            = "rgba(124,58,237,0.4)"
-    score_color           = "#06b6d4"
-    score_glow            = "rgba(6,182,212,0.4)"
-    header_gradient       = "linear-gradient(135deg, #e8eaf6 0%, #a78bfa 50%, #06b6d4 100%)"
-    eyebrow_color         = "#06b6d4"
-    input_border          = "rgba(124,58,237,0.4)"
-    input_glow            = "rgba(124,58,237,0.3)"
-    meta_color            = "#64748b"
+    score_color           = "#22d3ee"          # brighter
+    score_glow            = "rgba(34,211,238,0.5)"
+    header_gradient       = "linear-gradient(135deg, #f0f4ff 0%, #c084fc 50%, #22d3ee 100%)"
+    eyebrow_color         = "#22d3ee"
+    input_border          = "rgba(155,111,255,0.5)"
+    input_glow            = "rgba(155,111,255,0.3)"
+    meta_color            = "#8892b0"          # brighter meta
     expander_bg           = "rgba(124,58,237,0.06)"
     chatinput_bg          = "rgba(255,255,255,0.04)"
-    chatinput_text        = "#e8eaf6"
-    chatinput_placeholder = "#4a5568"
+    chatinput_text        = "#f0f4ff"
+    chatinput_placeholder = "#6a7590"
     btn_bg                = "linear-gradient(135deg, #7c3aed, #06b6d4)"
     btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0891b2)"
     btn_shadow            = "rgba(124,58,237,0.45)"
@@ -96,12 +96,12 @@ else:
     bg_card               = "rgba(255,255,255,0.75)"
     bg_card_hover         = "rgba(255,255,255,0.95)"
     border_color          = "rgba(124,58,237,0.15)"
-    text_primary          = "#1a1a2e"
-    text_secondary        = "#374151"
-    text_muted            = "#9ca3af"
-    accent1               = "#7c3aed"
-    accent2               = "#0891b2"
-    accent3               = "#9333ea"
+    text_primary          = "#0d0d1a"          # darker = higher contrast on light bg
+    text_secondary        = "#1e2240"          # much darker for readability
+    text_muted            = "#5a6480"          # darker muted
+    accent1               = "#6d28d9"
+    accent2               = "#0369a1"
+    accent3               = "#7c3aed"
     glow1                 = "rgba(124,58,237,0.15)"
     glow2                 = "rgba(8,145,178,0.15)"
     verdict_bg            = "rgba(124,58,237,0.05)"
@@ -110,17 +110,17 @@ else:
     error_border          = "#ef4444"
     tag_bg                = "rgba(124,58,237,0.1)"
     tag_border            = "rgba(124,58,237,0.3)"
-    score_color           = "#0891b2"
-    score_glow            = "rgba(8,145,178,0.3)"
-    header_gradient       = "linear-gradient(135deg, #1a1a2e 0%, #7c3aed 60%, #0891b2 100%)"
-    eyebrow_color         = "#7c3aed"
+    score_color           = "#0369a1"
+    score_glow            = "rgba(3,105,161,0.3)"
+    header_gradient       = "linear-gradient(135deg, #0d0d1a 0%, #7c3aed 60%, #0891b2 100%)"
+    eyebrow_color         = "#6d28d9"
     input_border          = "rgba(124,58,237,0.5)"
     input_glow            = "rgba(124,58,237,0.2)"
-    meta_color            = "#6b7280"
+    meta_color            = "#374151"          # darker for light mode
     expander_bg           = "rgba(124,58,237,0.04)"
     chatinput_bg          = "rgba(255,255,255,0.7)"
-    chatinput_text        = "#1a1a2e"
-    chatinput_placeholder = "#9ca3af"
+    chatinput_text        = "#0d0d1a"
+    chatinput_placeholder = "#7a85a0"
     btn_bg                = "linear-gradient(135deg, #7c3aed, #0891b2)"
     btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0369a1)"
     btn_shadow            = "rgba(124,58,237,0.3)"
@@ -168,17 +168,17 @@ div[data-testid="stCheckbox"] {{
 /* ── Hero ── */
 .hero-eyebrow {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 6px;
+    font-size: 13px;              /* up from 11px */
+    letter-spacing: 5px;
     color: {eyebrow_color};
     text-align: center;
     text-transform: uppercase;
     margin-bottom: 12px;
-    opacity: 0.85;
+    opacity: 1;                   /* was 0.85 */
 }}
 .hero-title {{
     font-family: 'Syne', sans-serif;
-    font-size: clamp(34px, 6vw, 64px);
+    font-size: clamp(38px, 6vw, 68px);   /* up from 34/64 */
     font-weight: 800;
     text-align: center;
     background: {header_gradient};
@@ -189,7 +189,7 @@ div[data-testid="stCheckbox"] {{
     margin-bottom: 6px;
 }}
 .hero-sub {{
-    font-size: 15px;
+    font-size: 17px;              /* up from 15px */
     color: {text_muted};
     text-align: center;
     margin-bottom: 32px;
@@ -208,7 +208,7 @@ div[data-testid="stChatInput"] textarea {{
     border: none !important;
     color: {chatinput_text} !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 15px !important;
+    font-size: 16px !important;   /* up from 15px */
     padding: 16px 20px !important;
     box-shadow: none !important;
     outline: none !important;
@@ -255,14 +255,14 @@ div[data-testid="stChatInput"] button svg {{
 /* ── Movie Info ── */
 .movie-meta {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;              /* up from 12px */
     color: {meta_color};
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
     margin-bottom: 12px;
 }}
 .movie-title-display {{
     font-family: 'Syne', sans-serif;
-    font-size: clamp(24px, 4vw, 40px);
+    font-size: clamp(28px, 4vw, 44px);   /* up from 24/40 */
     font-weight: 800;
     color: {text_primary};
     margin-bottom: 6px;
@@ -276,9 +276,9 @@ div[data-testid="stChatInput"] button svg {{
     margin-top: 8px;
 }}
 .debate-bubble {{
-    padding: 16px 20px;
-    font-size: 14px;
-    line-height: 1.7;
+    padding: 18px 22px;           /* slightly more padding */
+    font-size: 15px;              /* up from 14px */
+    line-height: 1.75;            /* slightly more leading */
     max-width: 90%;
     color: {text_secondary};
 }}
@@ -296,7 +296,7 @@ div[data-testid="stChatInput"] button svg {{
 }}
 .bubble-label {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;              /* up from 10px */
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -306,8 +306,8 @@ div[data-testid="stChatInput"] button svg {{
 .bubble-label-advocate {{ color: #f97316; }}
 .bubble-model-tag {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    opacity: 0.45;
+    font-size: 10px;              /* up from 9px */
+    opacity: 0.6;                 /* was 0.45 — more visible */
     margin-left: 8px;
     letter-spacing: 1px;
 }}
@@ -315,7 +315,7 @@ div[data-testid="stChatInput"] button svg {{
     display: block;
     width: fit-content;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;              /* up from 9px */
     letter-spacing: 2px;
     text-transform: uppercase;
     background: {tag_bg};
@@ -332,10 +332,10 @@ div[data-testid="stChatInput"] button svg {{
     background: {verdict_bg};
     border-left: 3px solid {verdict_border};
     border-radius: 0 16px 16px 0;
-    padding: 20px 24px;
-    font-size: 14px;
+    padding: 22px 26px;
+    font-size: 15px;              /* up from 14px */
     color: {text_secondary};
-    line-height: 1.8;
+    line-height: 1.85;
     margin-bottom: 8px;
 }}
 
@@ -352,17 +352,17 @@ div[data-testid="stChatInput"] button svg {{
 }}
 .score-label {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;              /* up from 11px */
     letter-spacing: 2px;
     color: {meta_color};
     text-transform: uppercase;
 }}
 .score-value {{
     font-family: 'Syne', sans-serif;
-    font-size: 32px;
+    font-size: 36px;              /* up from 32px */
     font-weight: 800;
     color: {score_color};
-    text-shadow: 0 0 16px {score_glow};
+    text-shadow: 0 0 20px {score_glow};
     line-height: 1;
 }}
 
@@ -373,7 +373,7 @@ div[data-testid="stChatInput"] button svg {{
     border: 1px solid {tag_border};
     color: {accent3};
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;              /* up from 11px */
     padding: 5px 14px;
     border-radius: 100px;
     margin: 4px 3px;
@@ -383,7 +383,7 @@ div[data-testid="stChatInput"] button svg {{
 /* ── Section Heading ── */
 .section-heading {{
     font-family: 'Syne', sans-serif;
-    font-size: 17px;
+    font-size: 19px;              /* up from 17px */
     font-weight: 700;
     color: {text_primary};
     margin: 24px 0 12px 0;
@@ -397,14 +397,14 @@ div[data-testid="stChatInput"] button svg {{
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    font-size: 14px;
+    font-size: 15px;              /* up from 14px */
     color: {text_secondary};
-    padding: 8px 0;
+    padding: 9px 0;
     border-bottom: 1px solid {border_color};
-    line-height: 1.55;
+    line-height: 1.6;
 }}
-.dot-green {{ color: #34d399; font-size: 16px; }}
-.dot-red   {{ color: #f87171; font-size: 16px; }}
+.dot-green {{ color: #34d399; font-size: 17px; }}
+.dot-red   {{ color: #f87171; font-size: 17px; }}
 
 /* ── Misc ── */
 .fancy-divider {{
@@ -418,7 +418,7 @@ div[data-testid="stChatInput"] button svg {{
     border-radius: 12px;
     padding: 18px 22px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: 14px;              /* up from 13px */
     color: #f87171;
     text-align: center;
 }}
@@ -435,9 +435,14 @@ div[data-testid="stChatInput"] button svg {{
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 11px !important;
+    font-size: 12px !important;   /* up from 11px */
     color: {accent1} !important;
     letter-spacing: 1px !important;
+}}
+
+/* ── Body text baseline ── */
+p, li, div {{
+    font-size: 15px;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -448,14 +453,14 @@ with tog_col:
     track_color = "#7c3aed" if is_dark else "rgba(0,0,0,0.2)"
     knob_left   = "22px"    if is_dark else "3px"
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = "#8892b0" if is_dark else "#374151"
+    label_color = "#c8d0e8" if is_dark else "#1e2240"
     next_val    = "0"       if is_dark else "1"
 
     st.markdown(f"""
     <div onclick="window.location.href='?_dm={next_val}'" style="
         display:flex;align-items:center;gap:8px;
         cursor:pointer;padding:4px 0;justify-content:flex-end;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;
                      color:{label_color};letter-spacing:1px;user-select:none;">{label_text}</span>
         <div style="width:44px;height:24px;border-radius:100px;
                     background:{track_color};position:relative;flex-shrink:0;">
@@ -524,11 +529,11 @@ elif movie and result:
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:14px;color:{text_secondary};line-height:1.7;margin-top:12px;'>{movie['plot']}</p>",
+            f"<p style='font-size:15px;color:{text_secondary};line-height:1.8;margin-top:12px;'>{movie['plot']}</p>",
             unsafe_allow_html=True
         )
         st.markdown(
-            f"<p style='font-size:12px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:6px;'>"
+            f"<p style='font-size:13px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:6px;'>"
             f"CAST: {movie['actors']}</p>",
             unsafe_allow_html=True
         )
@@ -540,7 +545,7 @@ elif movie and result:
     if debate:
         st.markdown("<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-size:12px;color:{text_muted};margin-bottom:12px;"
+            f"<p style='font-size:13px;color:{text_muted};margin-bottom:12px;"
             f"font-family:JetBrains Mono,monospace;'>"
             f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 rounds</p>",
             unsafe_allow_html=True
