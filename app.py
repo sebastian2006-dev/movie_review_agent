@@ -84,35 +84,35 @@ if is_dark:
     btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0891b2)"
     btn_shadow            = "rgba(124,58,237,0.45)"
 else:
-    bg_base               = "#f0f4ff"
-    bg_card               = "rgba(255,255,255,0.75)"
-    bg_card_hover         = "rgba(255,255,255,0.95)"
-    border_color          = "rgba(124,58,237,0.15)"
-    text_primary          = "#0d0d1a"          # darker = higher contrast on light bg
-    text_secondary        = "#1e2240"          # much darker for readability
-    text_muted            = "#5a6480"          # darker muted
+    bg_base               = "#eef2fb"          # slightly more contrasty light blue/gray
+    bg_card               = "rgba(255,255,255,0.9)"
+    bg_card_hover         = "rgba(255,255,255,1)"
+    border_color          = "rgba(124,58,237,0.25)"
+    text_primary          = "#0d0d1a"
+    text_secondary        = "#1e2240"
+    text_muted            = "#4a5568"          # darker muted for more contrast
     accent1               = "#6d28d9"
     accent2               = "#0369a1"
     accent3               = "#7c3aed"
     glow1                 = "rgba(124,58,237,0.15)"
     glow2                 = "rgba(8,145,178,0.15)"
-    verdict_bg            = "rgba(124,58,237,0.05)"
+    verdict_bg            = "rgba(124,58,237,0.08)"
     verdict_border        = "#7c3aed"
     error_bg              = "rgba(239,68,68,0.08)"
     error_border          = "#ef4444"
-    tag_bg                = "rgba(124,58,237,0.1)"
-    tag_border            = "rgba(124,58,237,0.3)"
+    tag_bg                = "rgba(124,58,237,0.12)"
+    tag_border            = "rgba(124,58,237,0.4)"
     score_color           = "#0369a1"
-    score_glow            = "rgba(3,105,161,0.3)"
-    header_gradient       = "linear-gradient(135deg, #0d0d1a 0%, #7c3aed 60%, #0891b2 100%)"
+    score_glow            = "rgba(3,105,161,0.2)"
+    header_gradient       = "linear-gradient(135deg, #0d0d1a 0%, #6d28d9 60%, #0369a1 100%)"
     eyebrow_color         = "#6d28d9"
-    input_border          = "rgba(124,58,237,0.5)"
-    input_glow            = "rgba(124,58,237,0.2)"
-    meta_color            = "#374151"          # darker for light mode
-    expander_bg           = "rgba(124,58,237,0.04)"
-    chatinput_bg          = "rgba(255,255,255,0.7)"
+    input_border          = "rgba(124,58,237,0.6)"
+    input_glow            = "rgba(124,58,237,0.25)"
+    meta_color            = "#374151"
+    expander_bg           = "rgba(255,255,255,0.6)"
+    chatinput_bg          = "#ffffff"          # solid white for visibility
     chatinput_text        = "#0d0d1a"
-    chatinput_placeholder = "#7a85a0"
+    chatinput_placeholder = "#4a5568"          # darker placeholder
     btn_bg                = "linear-gradient(135deg, #7c3aed, #0891b2)"
     btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0369a1)"
     btn_shadow            = "rgba(124,58,237,0.3)"
@@ -149,8 +149,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-/* ── Toggle Fix ── */
-div[data-testid="stToggle"] {{ justify-content: center; margin-top: -10px; }}
+
 
 /* ── Hero ── */
 .hero-eyebrow {{
@@ -186,9 +185,9 @@ div[data-testid="stToggle"] {{ justify-content: center; margin-top: -10px; }}
 div[data-testid="stChatInput"] {{ background: transparent !important; }}
 div[data-testid="stChatInput"] > div {{
     background: {chatinput_bg} !important;
-    border: 1px solid {input_border} !important;
+    border: { '1px solid ' + input_border if is_dark else '2px solid ' + input_border } !important;
     border-radius: 16px !important;
-    box-shadow: none !important;
+    box-shadow: { 'none' if is_dark else '0 4px 16px rgba(0,0,0,0.06)' } !important;
 }}
 div[data-testid="stChatInput"] textarea {{
     background: transparent !important;
@@ -446,13 +445,20 @@ with tog_col:
     <style>
     div[data-testid="stToggle"] label p {{
         font-family: 'JetBrains Mono', monospace !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
         color: {label_color} !important;
         letter-spacing: 1px !important;
     }}
     div[data-testid="stToggle"] {{
         display: flex;
         justify-content: flex-end;
+        background: { 'transparent' if is_dark else '#ffffff' };
+        padding: { '0' if is_dark else '6px 14px' };
+        border-radius: 30px;
+        border: { 'none' if is_dark else '1px solid rgba(124,58,237,0.3)' };
+        box-shadow: { 'none' if is_dark else '0 4px 12px rgba(0,0,0,0.05)' };
+        margin-top: { '-10px' if is_dark else '0' };
     }}
     </style>
     """, unsafe_allow_html=True)
