@@ -490,25 +490,29 @@ with tog_col:
     
     st.markdown(f"""
     <style>
-    /* Target the column containing the toggle to ensure we hit it */
-    div[data-testid="column"]:nth-of-type(2) [data-testid="stWidgetLabel"],
-    div[data-testid="column"]:nth-of-type(2) [data-testid="stCheckbox"],
-    div[data-testid="column"]:nth-of-type(2) [data-testid="stToggle"] {{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-top: { '-10px' if is_dark else '0' } !important;
-        float: right;
-    }}
-    div[data-testid="column"]:nth-of-type(2) * {{
+    /* Explicitly target the text inside the toggle widget to override Streamlit defaults */
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] span,
+    [data-testid="stToggle"] p,
+    [data-testid="stToggle"] span,
+    [data-testid="stCheckbox"] p,
+    [data-testid="stCheckbox"] span {{
         color: {label_color} !important;
         -webkit-text-fill-color: {label_color} !important;
         font-family: 'JetBrains Mono', monospace !important;
         letter-spacing: 1px !important;
-    }}
-    div[data-testid="column"]:nth-of-type(2) p {{
         font-size: 14px !important;
         font-weight: 800 !important;
+    }}
+    
+    /* Align the toggle switch properly */
+    [data-testid="stWidgetLabel"],
+    [data-testid="stToggle"],
+    [data-testid="stCheckbox"] {{
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
     """, unsafe_allow_html=True)
