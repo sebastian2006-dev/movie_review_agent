@@ -505,13 +505,11 @@ with tog_col:
         font-weight: 800 !important;
     }}
     
-    /* Align the toggle switch properly */
+    /* Align the toggle switch properly without breaking its internal click target */
     [data-testid="stWidgetLabel"],
     [data-testid="stToggle"],
     [data-testid="stCheckbox"] {{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
+        float: right;
         margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
