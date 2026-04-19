@@ -63,6 +63,7 @@ if is_dark:
     accent3               = "#c084fc"          # brighter violet
     glow1                 = "rgba(124,58,237,0.35)"
     glow2                 = "rgba(6,182,212,0.25)"
+    glow3                 = "rgba(168,85,247,0.06)"
     verdict_bg            = "rgba(124,58,237,0.08)"
     verdict_border        = "#9b6fff"
     error_bg              = "rgba(239,68,68,0.1)"
@@ -71,6 +72,8 @@ if is_dark:
     tag_border            = "rgba(124,58,237,0.4)"
     score_color           = "#22d3ee"          # brighter
     score_glow            = "rgba(34,211,238,0.5)"
+    score_bg              = "rgba(6,182,212,0.07)"
+    score_border          = "rgba(6,182,212,0.22)"
     header_gradient       = "linear-gradient(135deg, #f0f4ff 0%, #c084fc 50%, #22d3ee 100%)"
     eyebrow_color         = "#22d3ee"
     input_border          = "rgba(155,111,255,0.5)"
@@ -83,39 +86,54 @@ if is_dark:
     btn_bg                = "linear-gradient(135deg, #7c3aed, #06b6d4)"
     btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0891b2)"
     btn_shadow            = "rgba(124,58,237,0.45)"
+    critic_color          = "#22d3ee"
+    critic_bg             = "rgba(6,182,212,0.07)"
+    critic_border         = "rgba(6,182,212,0.2)"
+    advocate_color        = "#f97316"
+    advocate_bg           = "rgba(249,115,22,0.07)"
+    advocate_border       = "rgba(249,115,22,0.2)"
 else:
-    bg_base               = "#eef2fb"          # slightly more contrasty light blue/gray
-    bg_card               = "rgba(255,255,255,0.9)"
+    bg_base               = "#fdfbf7"          # warm off-white/cream
+    bg_card               = "rgba(255,255,255,0.85)"
     bg_card_hover         = "rgba(255,255,255,1)"
-    border_color          = "rgba(124,58,237,0.25)"
-    text_primary          = "#0d0d1a"
-    text_secondary        = "#1e2240"
-    text_muted            = "#4a5568"          # darker muted for more contrast
-    accent1               = "#6d28d9"
-    accent2               = "#0369a1"
-    accent3               = "#7c3aed"
-    glow1                 = "rgba(124,58,237,0.15)"
-    glow2                 = "rgba(8,145,178,0.15)"
-    verdict_bg            = "rgba(124,58,237,0.08)"
-    verdict_border        = "#7c3aed"
-    error_bg              = "rgba(239,68,68,0.08)"
-    error_border          = "#ef4444"
-    tag_bg                = "rgba(124,58,237,0.12)"
-    tag_border            = "rgba(124,58,237,0.4)"
-    score_color           = "#0369a1"
-    score_glow            = "rgba(3,105,161,0.2)"
-    header_gradient       = "linear-gradient(135deg, #0d0d1a 0%, #6d28d9 60%, #0369a1 100%)"
-    eyebrow_color         = "#6d28d9"
-    input_border          = "rgba(124,58,237,0.6)"
-    input_glow            = "rgba(124,58,237,0.25)"
-    meta_color            = "#374151"
-    expander_bg           = "rgba(255,255,255,0.6)"
-    chatinput_bg          = "#ffffff"          # solid white for visibility
-    chatinput_text        = "#0d0d1a"
-    chatinput_placeholder = "#4a5568"          # darker placeholder
-    btn_bg                = "linear-gradient(135deg, #7c3aed, #0891b2)"
-    btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0369a1)"
-    btn_shadow            = "rgba(124,58,237,0.3)"
+    border_color          = "rgba(217,119,54,0.15)"
+    text_primary          = "#2c2421"          # deep warm brownish-black
+    text_secondary        = "#4a3f3c"          # warm dark gray/brown
+    text_muted            = "#7a6b68"          # warm gray
+    accent1               = "#d97736"          # terracotta/orange
+    accent2               = "#4a7c59"          # sage green
+    accent3               = "#c4554b"          # muted red
+    glow1                 = "rgba(217,119,54,0.12)"
+    glow2                 = "rgba(196,85,75,0.12)"
+    glow3                 = "rgba(217,119,54,0.06)"
+    verdict_bg            = "rgba(217,119,54,0.06)"
+    verdict_border        = "#d97736"
+    error_bg              = "rgba(220,38,38,0.06)"
+    error_border          = "#dc2626"
+    tag_bg                = "rgba(217,119,54,0.08)"
+    tag_border            = "rgba(217,119,54,0.25)"
+    score_color           = "#c4554b"
+    score_glow            = "rgba(196,85,75,0.15)"
+    score_bg              = "rgba(196,85,75,0.07)"
+    score_border          = "rgba(196,85,75,0.22)"
+    header_gradient       = "linear-gradient(135deg, #2c2421 0%, #d97736 60%, #c4554b 100%)"
+    eyebrow_color         = "#d97736"
+    input_border          = "rgba(217,119,54,0.3)"
+    input_glow            = "rgba(217,119,54,0.15)"
+    meta_color            = "#665a58"
+    expander_bg           = "rgba(255,255,255,0.7)"
+    chatinput_bg          = "#ffffff"
+    chatinput_text        = "#2c2421"
+    chatinput_placeholder = "#8c7f7d"
+    btn_bg                = "linear-gradient(135deg, #d97736, #c4554b)"
+    btn_hover_bg          = "linear-gradient(135deg, #c4554b, #a34139)"
+    btn_shadow            = "rgba(217,119,54,0.2)"
+    critic_color          = "#4a7c59"
+    critic_bg             = "rgba(74,124,89,0.07)"
+    critic_border         = "rgba(74,124,89,0.2)"
+    advocate_color        = "#d97736"
+    advocate_bg           = "rgba(217,119,54,0.07)"
+    advocate_border       = "rgba(217,119,54,0.2)"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
@@ -144,7 +162,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     background:
         radial-gradient(ellipse 80% 60% at 20% 10%, {glow1} 0%, transparent 60%),
         radial-gradient(ellipse 60% 50% at 80% 80%, {glow2} 0%, transparent 55%),
-        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(168,85,247,0.06) 0%, transparent 70%);
+        radial-gradient(ellipse 40% 40% at 50% 50%, {glow3} 0%, transparent 70%);
     pointer-events: none;
 }}
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
@@ -280,14 +298,14 @@ div:has(> div > textarea[data-testid="stChatInput"]) button svg {{
     color: {text_secondary};
 }}
 .bubble-critic {{
-    background: rgba(6,182,212,0.07);
-    border: 1px solid rgba(6,182,212,0.2);
+    background: {critic_bg};
+    border: 1px solid {critic_border};
     border-radius: 16px 16px 16px 4px;
     align-self: flex-start;
 }}
 .bubble-advocate {{
-    background: rgba(249,115,22,0.07);
-    border: 1px solid rgba(249,115,22,0.2);
+    background: {advocate_bg};
+    border: 1px solid {advocate_border};
     border-radius: 16px 16px 4px 16px;
     align-self: flex-end;
 }}
@@ -299,8 +317,8 @@ div:has(> div > textarea[data-testid="stChatInput"]) button svg {{
     margin-bottom: 8px;
     font-weight: 700;
 }}
-.bubble-label-critic   {{ color: {accent2}; }}
-.bubble-label-advocate {{ color: #f97316; }}
+.bubble-label-critic   {{ color: {critic_color}; }}
+.bubble-label-advocate {{ color: {advocate_color}; }}
 .bubble-model-tag {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;              /* up from 9px */
@@ -341,8 +359,8 @@ div:has(> div > textarea[data-testid="stChatInput"]) button svg {{
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    background: rgba(6,182,212,0.07);
-    border: 1px solid rgba(6,182,212,0.22);
+    background: {score_bg};
+    border: 1px solid {score_border};
     border-radius: 14px;
     padding: 14px 24px;
     margin: 4px 0 16px 0;
@@ -448,7 +466,7 @@ p, li, div {{
 _, tog_col = st.columns([8, 2])
 with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = "#c8d0e8" if is_dark else "#1e2240"
+    label_color = text_secondary
     
     st.toggle(label_text, key="dark_mode")
     
@@ -470,10 +488,10 @@ with tog_col:
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        background: { 'transparent' if is_dark else 'rgba(124,58,237,0.1)' } !important;
+        background: { 'transparent' if is_dark else tag_bg } !important;
         padding: { '0' if is_dark else '8px 16px' } !important;
         border-radius: 30px !important;
-        border: { 'none' if is_dark else '2px solid rgba(124,58,237,0.4)' } !important;
+        border: { 'none' if is_dark else f'2px solid {tag_border}' } !important;
         margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
