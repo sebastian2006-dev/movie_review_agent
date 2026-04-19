@@ -504,14 +504,6 @@ with tog_col:
         font-size: 14px !important;
         font-weight: 800 !important;
     }}
-    
-    /* Align the toggle switch properly without breaking its internal click target */
-    [data-testid="stWidgetLabel"],
-    [data-testid="stToggle"],
-    [data-testid="stCheckbox"] {{
-        float: right;
-        margin-top: { '-10px' if is_dark else '0' } !important;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
