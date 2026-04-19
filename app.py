@@ -201,7 +201,7 @@ h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
 /* ── Chat Input ── */
 /* The entire Chat Input widget container */
-div:has(> div > textarea[data-testid="stChatInput"]) {{
+div[data-testid="stChatInput"] {{
     background: {chatinput_bg} !important;
     border: { '1px solid ' + input_border if is_dark else '2px solid ' + input_border } !important;
     border-radius: 16px !important;
@@ -210,13 +210,13 @@ div:has(> div > textarea[data-testid="stChatInput"]) {{
 }}
 
 /* The div directly wrapping the textarea */
-div:has(> textarea[data-testid="stChatInput"]) {{
+div[data-testid="stChatInput"] > div {{
     background: transparent !important;
     border: none !important;
 }}
 
 /* The textarea itself */
-textarea[data-testid="stChatInput"] {{
+div[data-testid="stChatInput"] textarea {{
     background: transparent !important;
     border: none !important;
     color: {chatinput_text} !important;
@@ -228,20 +228,20 @@ textarea[data-testid="stChatInput"] {{
     outline: none !important;
     caret-color: {accent1} !important;
 }}
-textarea[data-testid="stChatInput"]::placeholder {{
+div[data-testid="stChatInput"] textarea::placeholder {{
     color: {chatinput_placeholder} !important;
     -webkit-text-fill-color: {chatinput_placeholder} !important;
 }}
-textarea[data-testid="stChatInput"]:focus {{
+div[data-testid="stChatInput"] textarea:focus {{
     box-shadow: none !important; outline: none !important; border: none !important;
 }}
-div:has(> div > textarea[data-testid="stChatInput"]):focus-within {{
+div[data-testid="stChatInput"]:focus-within {{
     border-color: {accent1} !important;
     box-shadow: 0 0 20px {input_glow} !important;
 }}
 
 /* ── Send Button ── */
-div:has(> div > textarea[data-testid="stChatInput"]) button {{
+div[data-testid="stChatInput"] button {{
     background: {btn_bg} !important;
     border: none !important;
     border-radius: 10px !important;
@@ -255,12 +255,12 @@ div:has(> div > textarea[data-testid="stChatInput"]) button {{
     transition: all 0.2s ease !important;
     flex-shrink: 0 !important;
 }}
-div:has(> div > textarea[data-testid="stChatInput"]) button:hover {{
+div[data-testid="stChatInput"] button:hover {{
     background: {btn_hover_bg} !important;
     box-shadow: 0 6px 20px {btn_shadow} !important;
     transform: scale(1.06) !important;
 }}
-div:has(> div > textarea[data-testid="stChatInput"]) button svg {{
+div[data-testid="stChatInput"] button svg {{
     stroke: #ffffff !important;
     fill: none !important;
     width: 16px !important;
@@ -472,19 +472,19 @@ with tog_col:
     
     st.markdown(f"""
     <style>
-    label[data-testid="stToggle"] *,
-    label[data-testid="stToggle"] p,
-    label[data-testid="stToggle"] span {{
+    [data-testid="stToggle"] *,
+    [data-testid="stToggle"] p,
+    [data-testid="stToggle"] span {{
         color: {label_color} !important;
         -webkit-text-fill-color: {label_color} !important;
         font-family: 'JetBrains Mono', monospace !important;
         letter-spacing: 1px !important;
     }}
-    label[data-testid="stToggle"] p {{
+    [data-testid="stToggle"] p {{
         font-size: 14px !important;
         font-weight: 800 !important;
     }}
-    label[data-testid="stToggle"] {{
+    [data-testid="stToggle"] {{
         display: flex;
         justify-content: flex-end;
         align-items: center;
