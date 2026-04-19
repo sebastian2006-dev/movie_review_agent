@@ -484,7 +484,7 @@ p, li, div {{
 _, tog_col = st.columns([8, 2])
 with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = bg_base if is_dark else "#ffffff"
+    label_color = text_primary
     
     st.toggle(label_text, key="light_mode")
     
@@ -494,10 +494,6 @@ with tog_col:
     div[data-testid="column"]:nth-of-type(2) [data-testid="stWidgetLabel"],
     div[data-testid="column"]:nth-of-type(2) [data-testid="stCheckbox"],
     div[data-testid="column"]:nth-of-type(2) [data-testid="stToggle"] {{
-        background: { text_primary } !important;
-        padding: 8px 16px !important;
-        border-radius: 30px !important;
-        border: 2px solid {text_primary} !important;
         display: flex;
         justify-content: flex-end;
         align-items: center;
