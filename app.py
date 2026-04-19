@@ -466,7 +466,7 @@ p, li, div {{
 _, tog_col = st.columns([8, 2])
 with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = text_secondary if is_dark else "#ffffff"
+    label_color = bg_base if is_dark else "#ffffff"
     
     st.toggle(label_text, key="dark_mode")
     
@@ -488,10 +488,10 @@ with tog_col:
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        background: { 'transparent' if is_dark else text_primary } !important;
-        padding: { '0' if is_dark else '8px 16px' } !important;
+        background: { text_primary } !important;
+        padding: 8px 16px !important;
         border-radius: 30px !important;
-        border: { 'none' if is_dark else f'2px solid {text_primary}' } !important;
+        border: 2px solid {text_primary} !important;
         margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
