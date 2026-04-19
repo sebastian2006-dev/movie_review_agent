@@ -42,12 +42,12 @@ def fetch_movie_data(title: str):
 st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
 # ---------------- SESSION STATE ----------------
-if "dark_mode"     not in st.session_state: st.session_state.dark_mode     = True
+if "light_mode"    not in st.session_state: st.session_state.light_mode    = False
 if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
 if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
 if "cached_result" not in st.session_state: st.session_state.cached_result = None
 
-is_dark = st.session_state.dark_mode
+is_dark = not st.session_state.light_mode
 
 # ---------------- THEME VARIABLES ----------------
 if is_dark:
@@ -486,7 +486,7 @@ with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
     label_color = bg_base if is_dark else "#ffffff"
     
-    st.toggle(label_text, key="dark_mode")
+    st.toggle(label_text, key="light_mode")
     
     st.markdown(f"""
     <style>
