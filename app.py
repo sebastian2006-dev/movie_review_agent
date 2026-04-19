@@ -189,18 +189,26 @@ div[data-testid="stChatInput"] > div {{
     border-radius: 16px !important;
     box-shadow: { 'none' if is_dark else '0 4px 16px rgba(0,0,0,0.06)' } !important;
 }}
+/* Override internal backgrounds that Streamlit adds */
+div[data-testid="stChatInput"] > div > div {{
+    background: transparent !important;
+}}
 div[data-testid="stChatInput"] textarea {{
     background: transparent !important;
     border: none !important;
     color: {chatinput_text} !important;
+    -webkit-text-fill-color: {chatinput_text} !important;
     font-family: 'DM Sans', sans-serif !important;
-    font-size: 16px !important;   /* up from 15px */
+    font-size: 16px !important;
     padding: 16px 20px !important;
     box-shadow: none !important;
     outline: none !important;
     caret-color: {accent1} !important;
 }}
-div[data-testid="stChatInput"] textarea::placeholder {{ color: {chatinput_placeholder} !important; }}
+div[data-testid="stChatInput"] textarea::placeholder {{
+    color: {chatinput_placeholder} !important;
+    -webkit-text-fill-color: {chatinput_placeholder} !important;
+}}
 div[data-testid="stChatInput"] textarea:focus {{
     box-shadow: none !important; outline: none !important; border: none !important;
 }}
@@ -443,22 +451,26 @@ with tog_col:
     
     st.markdown(f"""
     <style>
-    div[data-testid="stToggle"] label p {{
-        font-family: 'JetBrains Mono', monospace !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
+    div[data-testid="stToggle"] label,
+    div[data-testid="stToggle"] label p,
+    div[data-testid="stToggle"] label span {{
         color: {label_color} !important;
+        -webkit-text-fill-color: {label_color} !important;
+        font-family: 'JetBrains Mono', monospace !important;
         letter-spacing: 1px !important;
+    }}
+    div[data-testid="stToggle"] label p {{
+        font-size: 14px !important;
+        font-weight: 800 !important;
     }}
     div[data-testid="stToggle"] {{
         display: flex;
         justify-content: flex-end;
-        background: { 'transparent' if is_dark else '#ffffff' };
-        padding: { '0' if is_dark else '6px 14px' };
-        border-radius: 30px;
-        border: { 'none' if is_dark else '1px solid rgba(124,58,237,0.3)' };
-        box-shadow: { 'none' if is_dark else '0 4px 12px rgba(0,0,0,0.05)' };
-        margin-top: { '-10px' if is_dark else '0' };
+        background: { 'transparent' if is_dark else 'rgba(124,58,237,0.1)' } !important;
+        padding: { '0' if is_dark else '6px 14px' } !important;
+        border-radius: 30px !important;
+        border: { 'none' if is_dark else '2px solid rgba(124,58,237,0.4)' } !important;
+        margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
     """, unsafe_allow_html=True)
