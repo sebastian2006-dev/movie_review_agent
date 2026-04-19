@@ -201,22 +201,28 @@ h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
 /* ── Chat Input ── */
 /* The entire Chat Input widget container */
-div[data-testid="stChatInput"] {{
+div[data-testid="stChatInput"],
+.stChatInput {{
     background: {chatinput_bg} !important;
     border: { '1px solid ' + input_border if is_dark else '2px solid ' + input_border } !important;
     border-radius: 16px !important;
     box-shadow: { 'none' if is_dark else '0 4px 16px rgba(0,0,0,0.06)' } !important;
     padding-right: 6px !important;
+    padding-left: 6px !important;
 }}
 
 /* The div directly wrapping the textarea */
-div[data-testid="stChatInput"] > div {{
-    background: transparent !important;
+div[data-testid="stChatInput"] > div,
+.stChatInput > div {{
+    background: {chatinput_bg} !important;
     border: none !important;
+    border-radius: 16px !important;
 }}
 
 /* The textarea itself */
-div[data-testid="stChatInput"] textarea {{
+textarea[data-testid="stChatInputTextArea"],
+div[data-testid="stChatInput"] textarea,
+.stChatInput textarea {{
     background: transparent !important;
     border: none !important;
     color: {chatinput_text} !important;
@@ -228,20 +234,27 @@ div[data-testid="stChatInput"] textarea {{
     outline: none !important;
     caret-color: {accent1} !important;
 }}
-div[data-testid="stChatInput"] textarea::placeholder {{
+textarea[data-testid="stChatInputTextArea"]::placeholder,
+div[data-testid="stChatInput"] textarea::placeholder,
+.stChatInput textarea::placeholder {{
     color: {chatinput_placeholder} !important;
     -webkit-text-fill-color: {chatinput_placeholder} !important;
 }}
-div[data-testid="stChatInput"] textarea:focus {{
+textarea[data-testid="stChatInputTextArea"]:focus,
+div[data-testid="stChatInput"] textarea:focus,
+.stChatInput textarea:focus {{
     box-shadow: none !important; outline: none !important; border: none !important;
 }}
-div[data-testid="stChatInput"]:focus-within {{
+div[data-testid="stChatInput"]:focus-within,
+.stChatInput:focus-within {{
     border-color: {accent1} !important;
     box-shadow: 0 0 20px {input_glow} !important;
 }}
 
 /* ── Send Button ── */
-div[data-testid="stChatInput"] button {{
+button[data-testid="stChatInputSubmitButton"],
+div[data-testid="stChatInput"] button,
+.stChatInput button {{
     background: {btn_bg} !important;
     border: none !important;
     border-radius: 10px !important;
@@ -254,13 +267,18 @@ div[data-testid="stChatInput"] button {{
     box-shadow: 0 4px 14px {btn_shadow} !important;
     transition: all 0.2s ease !important;
     flex-shrink: 0 !important;
+    margin-top: 6px !important;
 }}
-div[data-testid="stChatInput"] button:hover {{
+button[data-testid="stChatInputSubmitButton"]:hover,
+div[data-testid="stChatInput"] button:hover,
+.stChatInput button:hover {{
     background: {btn_hover_bg} !important;
     box-shadow: 0 6px 20px {btn_shadow} !important;
     transform: scale(1.06) !important;
 }}
-div[data-testid="stChatInput"] button svg {{
+button[data-testid="stChatInputSubmitButton"] svg,
+div[data-testid="stChatInput"] button svg,
+.stChatInput button svg {{
     stroke: #ffffff !important;
     fill: none !important;
     width: 16px !important;
@@ -472,27 +490,29 @@ with tog_col:
     
     st.markdown(f"""
     <style>
-    [data-testid="stToggle"] *,
-    [data-testid="stToggle"] p,
-    [data-testid="stToggle"] span {{
+    /* Target the column containing the toggle to ensure we hit it */
+    div[data-testid="column"]:nth-of-type(2) [data-testid="stWidgetLabel"],
+    div[data-testid="column"]:nth-of-type(2) [data-testid="stCheckbox"],
+    div[data-testid="column"]:nth-of-type(2) [data-testid="stToggle"] {{
+        background: { text_primary } !important;
+        padding: 8px 16px !important;
+        border-radius: 30px !important;
+        border: 2px solid {text_primary} !important;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: { '-10px' if is_dark else '0' } !important;
+        float: right;
+    }}
+    div[data-testid="column"]:nth-of-type(2) * {{
         color: {label_color} !important;
         -webkit-text-fill-color: {label_color} !important;
         font-family: 'JetBrains Mono', monospace !important;
         letter-spacing: 1px !important;
     }}
-    [data-testid="stToggle"] p {{
+    div[data-testid="column"]:nth-of-type(2) p {{
         font-size: 14px !important;
         font-weight: 800 !important;
-    }}
-    [data-testid="stToggle"] {{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        background: { text_primary } !important;
-        padding: 8px 16px !important;
-        border-radius: 30px !important;
-        border: 2px solid {text_primary} !important;
-        margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
     """, unsafe_allow_html=True)
