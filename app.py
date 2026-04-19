@@ -118,13 +118,13 @@ else:
     score_border          = "rgba(196,85,75,0.22)"
     header_gradient       = "linear-gradient(135deg, #2c2421 0%, #d97736 60%, #c4554b 100%)"
     eyebrow_color         = "#d97736"
-    input_border          = "rgba(217,119,54,0.3)"
-    input_glow            = "rgba(217,119,54,0.15)"
+    input_border          = text_primary
+    input_glow            = "rgba(44,36,33,0.25)"
     meta_color            = "#665a58"
     expander_bg           = "rgba(255,255,255,0.7)"
-    chatinput_bg          = "#ffffff"
-    chatinput_text        = "#2c2421"
-    chatinput_placeholder = "#8c7f7d"
+    chatinput_bg          = text_primary
+    chatinput_text        = "#ffffff"
+    chatinput_placeholder = "rgba(255,255,255,0.6)"
     btn_bg                = "linear-gradient(135deg, #d97736, #c4554b)"
     btn_hover_bg          = "linear-gradient(135deg, #c4554b, #a34139)"
     btn_shadow            = "rgba(217,119,54,0.2)"
@@ -466,7 +466,7 @@ p, li, div {{
 _, tog_col = st.columns([8, 2])
 with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = text_secondary
+    label_color = text_secondary if is_dark else "#ffffff"
     
     st.toggle(label_text, key="dark_mode")
     
@@ -488,10 +488,10 @@ with tog_col:
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        background: { 'transparent' if is_dark else tag_bg } !important;
+        background: { 'transparent' if is_dark else text_primary } !important;
         padding: { '0' if is_dark else '8px 16px' } !important;
         border-radius: 30px !important;
-        border: { 'none' if is_dark else f'2px solid {tag_border}' } !important;
+        border: { 'none' if is_dark else f'2px solid {text_primary}' } !important;
         margin-top: { '-10px' if is_dark else '0' } !important;
     }}
     </style>
