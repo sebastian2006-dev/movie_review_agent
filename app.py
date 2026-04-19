@@ -41,14 +41,6 @@ def fetch_movie_data(title: str):
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
-# ---------------- THEME TOGGLE VIA QUERY PARAM ----------------
-params = st.query_params
-if "_dm" in params:
-    new_val = params["_dm"] == "1"
-    st.query_params.clear()
-    st.session_state.dark_mode = new_val
-    st.rerun()
-
 # ---------------- SESSION STATE ----------------
 if "dark_mode"     not in st.session_state: st.session_state.dark_mode     = True
 if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
@@ -157,13 +149,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-div[data-testid="stCheckbox"] {{
-    position: absolute !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    overflow: hidden !important;
-}}
+/* ── Toggle Fix ── */
+div[data-testid="stToggle"] {{ justify-content: center; margin-top: -10px; }}
 
 /* ── Hero ── */
 .hero-eyebrow {{
@@ -448,29 +435,27 @@ p, li, div {{
 """, unsafe_allow_html=True)
 
 # ---------------- THEME TOGGLE (top right) ----------------
-_, tog_col = st.columns([8, 1])
+_, tog_col = st.columns([8, 2])
 with tog_col:
-    track_color = "#7c3aed" if is_dark else "rgba(0,0,0,0.2)"
-    knob_left   = "22px"    if is_dark else "3px"
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
     label_color = "#c8d0e8" if is_dark else "#1e2240"
-    next_val    = "0"       if is_dark else "1"
-
+    
+    st.toggle(label_text, key="dark_mode")
+    
     st.markdown(f"""
-    <div onclick="window.location.href='?_dm={next_val}'" style="
-        display:flex;align-items:center;gap:8px;
-        cursor:pointer;padding:4px 0;justify-content:flex-end;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;
-                     color:{label_color};letter-spacing:1px;user-select:none;">{label_text}</span>
-        <div style="width:44px;height:24px;border-radius:100px;
-                    background:{track_color};position:relative;flex-shrink:0;">
-            <div style="position:absolute;top:3px;left:{knob_left};
-                        width:18px;height:18px;border-radius:50%;
-                        background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>
-        </div>
-    </div>
+    <style>
+    div[data-testid="stToggle"] label p {{
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 13px !important;
+        color: {label_color} !important;
+        letter-spacing: 1px !important;
+    }}
+    div[data-testid="stToggle"] {{
+        display: flex;
+        justify-content: flex-end;
+    }}
+    </style>
     """, unsafe_allow_html=True)
-    st.checkbox("", value=is_dark, key="dark_mode", label_visibility="hidden")
 
 # ---------------- HERO ----------------
 st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
