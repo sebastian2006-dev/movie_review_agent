@@ -8,15 +8,17 @@ API_KEY = st.secrets["OMDB_API_KEY"]
 
 # ---------------- SEARCH MOVIES ----------------
 def search_movies(query: str):
-    """Search OMDB. Prepends exact-title match so the best result appears first."""
+    """Search OMDB. Prepends exact-title match so the best result appears first.
+    No type filter so TV series (e.g. Breaking Bad) are included.
+    """
     if not API_KEY:
         return []
     url = "http://www.omdbapi.com/"
 
-    # 1. Try exact match first
+    # 1. Try exact match first (no type filter — supports series too)
     exact = None
     try:
-        r = requests.get(url, params={"t": query, "apikey": API_KEY, "type": "movie", "r": "json"}, timeout=10)
+        r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json"}, timeout=10)
         d = r.json()
         if d.get("Response") == "True" and d.get("imdbID"):
             exact = {
@@ -24,14 +26,15 @@ def search_movies(query: str):
                 "Year":   d.get("Year", ""),
                 "imdbID": d.get("imdbID", ""),
                 "Poster": d.get("Poster", "N/A"),
+                "Type":   d.get("Type", ""),
             }
     except Exception:
         pass
 
-    # 2. Broader search
+    # 2. Broader search (no type filter)
     fuzzy = []
     try:
-        r = requests.get(url, params={"s": query, "apikey": API_KEY, "type": "movie", "r": "json"}, timeout=10)
+        r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json"}, timeout=10)
         d = r.json()
         if d.get("Response") == "True":
             fuzzy = d.get("Search", [])
@@ -683,50 +686,44 @@ if user_input and user_input.strip():
 search_results = st.session_state.search_results
 if search_results and not st.session_state.selected_imdb_id:
     st.markdown(
-        "<div class='search-section-label'>▸ Click a movie poster to begin the AI review</div>",
+        "<div class='search-section-label'>▸ Click a poster to begin the AI review</div>",
         unsafe_allow_html=True,
     )
 
-    # Scoped card button CSS — transparent background, visible title text, hover glow
+    # CSS: poster images with rounded tops; invisible click-strip button below
     st.markdown(f"""
     <style>
-    /* Card image — round corners */
     div[data-testid="column"] img {{
-        border-radius: 12px 12px 0 0 !important;
+        border-radius: 12px !important;
         display: block !important;
-    }}
-    /* Card button — sits flush below the poster, acts as title + click target */
-    div[data-testid="column"] div[data-testid="stButton"] > button {{
-        background: {bg_card} !important;
-        border: 1px solid {border_color} !important;
-        border-top: none !important;
-        border-radius: 0 0 12px 12px !important;
-        color: {text_primary} !important;
-        -webkit-text-fill-color: {text_primary} !important;
-        font-family: 'Syne', sans-serif !important;
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        padding: 10px 8px !important;
-        width: 100% !important;
-        margin-top: -6px !important;
-        line-height: 1.4 !important;
-        white-space: normal !important;
         cursor: pointer !important;
-        text-align: center !important;
-        transition: all 0.2s ease !important;
-        min-height: 56px !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }}
+    div[data-testid="column"] img:hover {{
+        transform: scale(1.03) !important;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.35) !important;
+    }}
+    div[data-testid="column"] div[data-testid="stButton"] > button {{
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        color: transparent !important;
+        -webkit-text-fill-color: transparent !important;
+        font-size: 1px !important;
+        padding: 0 !important;
+        margin-top: -300px !important;
+        height: 300px !important;
+        width: 100% !important;
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 10 !important;
     }}
     div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-        background: {btn_bg} !important;
-        color: {accent1} !important;
-        -webkit-text-fill-color: {accent1} !important;
-        border-color: {accent1} !important;
-        box-shadow: 0 6px 20px {btn_shadow} !important;
+        background: rgba(255,255,255,0.08) !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    # Cap at 4 cards for bigger, readable posters
     display_results = search_results[:4]
     num  = len(display_results)
     cols = st.columns(num, gap="medium")
@@ -745,20 +742,26 @@ if search_results and not st.session_state.selected_imdb_id:
                     st.image(poster, use_container_width=True)
                 except Exception:
                     st.markdown(
-                        f"<div style='height:280px;background:{bg_card};border-radius:12px 12px 0 0;"
-                        f"display:flex;align-items:center;justify-content:center;font-size:48px;'>🎬</div>",
+                        f"<div style='height:300px;background:{bg_card};border-radius:12px;"
+                        f"display:flex;align-items:center;justify-content:center;font-size:48px;"
+                        f"cursor:pointer;'>🎬</div>",
                         unsafe_allow_html=True,
                     )
             else:
                 st.markdown(
-                    f"<div style='height:280px;background:{bg_card};border-radius:12px 12px 0 0;"
-                    f"display:flex;align-items:center;justify-content:center;font-size:48px;'>🎬</div>",
+                    f"<div style='height:300px;background:{bg_card};border-radius:12px;"
+                    f"display:flex;align-items:center;justify-content:center;font-size:48px;"
+                    f"cursor:pointer;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
-            # ── Clickable title label (flush with poster, acts as card footer) ──
-            label = f"{title}\n{year}" if year else title
-            if st.button(label, key=f"sel_{imdb_id}_{i}", use_container_width=True):
+            # ── Invisible overlay button — makes the poster area clickable ──
+            if st.button(
+                "\u200b",  # zero-width space — effectively empty label
+                key=f"sel_{imdb_id}_{i}",
+                use_container_width=True,
+                help=f"{title} ({year})",
+            ):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
                 st.rerun()
