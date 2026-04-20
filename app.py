@@ -897,81 +897,41 @@ elif movie and result:
         rt_pct = 0
     rt_display = raw_rt
 
-    # FIX: Build ring SVGs with fully inlined styles so they render correctly
-    # regardless of Streamlit's CSS sandboxing between st.markdown() calls.
+    # ── Build ring SVGs with fully inlined styles ──
     def ring_svg(pct, display, stroke_color, glow_color, bg_stroke_color):
-        """Build a single animated ring SVG with all styles inlined."""
         dash = f"{pct:.1f}, 100"
-        ring_style = (
-            f"fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;"
-            f"filter:drop-shadow(0 0 4px {glow_color});"
-            f"transform:rotate(-90deg);transform-origin:18px 18px;"
-            f"animation:scoreProgress 1.2s ease-out forwards;"
+        return (
+            f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
+            f'<defs><style>'
+            f'@keyframes scoreProgress{{from{{stroke-dasharray:0,100}}to{{stroke-dasharray:{dash}}}}}'
+            f'</style></defs>'
+            f'<path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"'
+            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
+            f'<path style="fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;'
+            f'filter:drop-shadow(0 0 4px {glow_color});transform:rotate(-90deg);transform-origin:18px 18px;'
+            f'animation:scoreProgress 1.2s ease-out forwards;" stroke-dasharray="{dash}"'
+            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
+            f'<text x="18" y="21" style="fill:{stroke_color};font-family:sans-serif;'
+            f'font-size:7.5px;font-weight:800;text-anchor:middle;">{display}</text>'
+            f'</svg>'
         )
-        return f"""
-        <svg viewBox="0 0 36 36"
-             style="display:block;width:130px;height:130px;">
-            <defs>
-                <style>
-                    @keyframes scoreProgress {{
-                        from {{ stroke-dasharray: 0, 100; }}
-                        to   {{ stroke-dasharray: {dash}; }}
-                    }}
-                </style>
-            </defs>
-            <path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831
-                             a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <path style="{ring_style}"
-                stroke-dasharray="{dash}"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831
-                             a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <text x="18" y="21"
-                  style="fill:{stroke_color};font-family:sans-serif;font-size:7.5px;
-                         font-weight:800;text-anchor:middle;">
-                {display}
-            </text>
-        </svg>
-        """
 
-    # FIX: Wrap everything — keyframes + SVGs + labels — in ONE st.markdown call
-    # so styles and markup share the same HTML context and the browser renders them.
-    scores_html = f"""
-    <div style="display:flex;gap:48px;align-items:center;
-                margin:24px 0 16px 0;flex-wrap:wrap;">
+    def score_card(svg, label):
+        return (
+            f'<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">'
+            f'{svg}'
+            f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
+            f'color:{meta_color};letter-spacing:2px;text-transform:uppercase;">{label}</div>'
+            f'</div>'
+        )
 
-        <div style="text-align:center;display:flex;flex-direction:column;
-                    align-items:center;gap:10px;">
-            {ring_svg(ai_pct, ai_display,
-                      score_color, score_glow, score_border)}
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
-                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
-                AI Verdict
-            </div>
-        </div>
-
-        <div style="text-align:center;display:flex;flex-direction:column;
-                    align-items:center;gap:10px;">
-            {ring_svg(imdb_pct, imdb_display,
-                      "#f5c518", "rgba(245,197,24,0.5)", "rgba(245,197,24,0.12)")}
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
-                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
-                IMDb
-            </div>
-        </div>
-
-        <div style="text-align:center;display:flex;flex-direction:column;
-                    align-items:center;gap:10px;">
-            {ring_svg(rt_pct, rt_display,
-                      "#fa320a", "rgba(250,50,10,0.5)", "rgba(250,50,10,0.12)")}
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
-                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
-                Rotten Tomatoes
-            </div>
-        </div>
-
-    </div>
-    """
+    scores_html = (
+        '<div style="display:flex;gap:48px;align-items:center;margin:24px 0 16px 0;flex-wrap:wrap;">'
+        + score_card(ring_svg(ai_pct,   ai_display,   score_color, score_glow,              score_border),             "AI Verdict")
+        + score_card(ring_svg(imdb_pct, imdb_display, "#f5c518",   "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.12)"), "IMDb")
+        + score_card(ring_svg(rt_pct,   rt_display,   "#fa320a",   "rgba(250,50,10,0.5)",   "rgba(250,50,10,0.12)"),  "Rotten Tomatoes")
+        + '</div>'
+    )
     st.markdown(scores_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
