@@ -579,7 +579,7 @@ elif movie and result:
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
         st.markdown(
             f"<div class='movie-meta'>{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']}"
-            f" &nbsp;·&nbsp; {movie['runtime']} &nbsp;·&nbsp; ⭐ IMDb {movie['imdb_rating']} &nbsp;·&nbsp; 🍅 RT {movie['rt_rating']}</div>",
+            f" &nbsp;·&nbsp; {movie['runtime']}</div>",
             unsafe_allow_html=True
         )
         st.markdown(
@@ -620,26 +620,76 @@ elif movie and result:
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
     # ── 3. FINAL SCORE (Ring Chart) ─────────────────────────────────────────
-    st.markdown("<div class='section-heading'>🎯 &nbsp; Final Score</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-heading'>🎯 &nbsp; Scores</div>", unsafe_allow_html=True)
     
-    # Extract numerical score for the ring chart
-    raw_score = str(result.get('final_score', 'N/A'))
+    # Extract AI score
+    raw_ai_score = str(result.get('final_score', 'N/A'))
     try:
-        if '/' in raw_score:
-            num_part = raw_score.split('/')[0]
-            score_val = float(num_part) * 10
+        if '/' in raw_ai_score:
+            num_part = raw_ai_score.split('/')[0]
+            ai_val = float(num_part) * 10
         else:
-            score_val = float(re.sub(r'[^\d.]', '', raw_score)) * 10
+            ai_val = float(re.sub(r'[^\d.]', '', raw_ai_score)) * 10
     except:
-        score_val = 0
+        ai_val = 0
+
+    # Extract IMDb score
+    raw_imdb_score = str(movie.get('imdb_rating', '—'))
+    try:
+        if raw_imdb_score not in ('—', 'N/A'):
+            imdb_val = float(raw_imdb_score.split('/')[0] if '/' in raw_imdb_score else raw_imdb_score) * 10
+        else:
+            imdb_val = 0
+    except:
+        imdb_val = 0
+
+    # Extract RT score
+    raw_rt_score = str(movie.get('rt_rating', '—'))
+    try:
+        if raw_rt_score not in ('—', 'N/A'):
+            rt_val = float(raw_rt_score.replace('%', ''))
+        else:
+            rt_val = 0
+    except:
+        rt_val = 0
 
     chart_html = f"""
-    <div class='score-container'>
-        <svg viewBox="0 0 36 36" class="circular-chart">
-            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <path class="circle" stroke-dasharray="{score_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_score}</text>
-        </svg>
+    <div style="display: flex; gap: 60px; align-items: center; margin: 24px 0 16px 0;">
+        <!-- AI Score -->
+        <div style="text-align: center;">
+            <div class='score-container' style='margin: 0;'>
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path class="circle" stroke-dasharray="{ai_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_ai_score}</text>
+                </svg>
+            </div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">AI VERDICT</div>
+        </div>
+
+        <!-- IMDb Score -->
+        <div style="text-align: center;">
+            <div class='score-container' style='margin: 0;'>
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path class="circle" stroke-dasharray="{imdb_val}, 100" style="stroke: #f5c518; filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <text x="18" y="21.5" class="percentage" style="fill: #f5c518; text-shadow: 0 0 10px rgba(245,197,24,0.5);" text-anchor="middle">{raw_imdb_score}</text>
+                </svg>
+            </div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">IMDb</div>
+        </div>
+
+        <!-- Rotten Tomatoes -->
+        <div style="text-align: center;">
+            <div class='score-container' style='margin: 0;'>
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path class="circle" stroke-dasharray="{rt_val}, 100" style="stroke: #fa320a; filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <text x="18" y="21.5" class="percentage" style="fill: #fa320a; text-shadow: 0 0 10px rgba(250,50,10,0.5);" text-anchor="middle">{raw_rt_score}</text>
+                </svg>
+            </div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">ROTTEN TOMATOES</div>
+        </div>
     </div>
     """
     st.markdown(chart_html, unsafe_allow_html=True)
