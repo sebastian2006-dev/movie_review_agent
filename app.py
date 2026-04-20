@@ -127,6 +127,11 @@ if is_dark:
     card_hover_border     = "#9b6fff"
     search_section_bg     = "rgba(255,255,255,0.02)"
     search_section_border = "rgba(255,255,255,0.06)"
+    # Ring chart colors
+    ai_ring_color         = "#22d3ee"
+    ai_ring_glow          = "rgba(34,211,238,0.5)"
+    ai_ring_bg            = "rgba(6,182,212,0.15)"
+    ai_text_color         = "#22d3ee"
 else:
     bg_base               = "#fdfbf7"
     bg_card               = "rgba(255,255,255,0.85)"
@@ -174,6 +179,11 @@ else:
     card_hover_border     = "#d97736"
     search_section_bg     = "rgba(217,119,54,0.03)"
     search_section_border = "rgba(217,119,54,0.1)"
+    # Ring chart colors
+    ai_ring_color         = "#c4554b"
+    ai_ring_glow          = "rgba(196,85,75,0.5)"
+    ai_ring_bg            = "rgba(196,85,75,0.15)"
+    ai_text_color         = "#c4554b"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
@@ -511,93 +521,6 @@ div[data-testid="stButton"] button.card-select-btn {{
     margin-bottom: 8px;
 }}
 
-/* ── Score Ring Charts ── */
-.scores-row {{
-    display: flex;
-    gap: 48px;
-    align-items: center;
-    margin: 24px 0 16px 0;
-    flex-wrap: wrap;
-}}
-.score-item {{
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}}
-.circular-chart {{
-    display: block;
-    width: 130px;
-    height: 130px;
-}}
-.circle-bg {{
-    fill: none;
-    stroke: {score_bg};
-    stroke-width: 3.8;
-}}
-.circle {{
-    fill: none;
-    stroke-width: 2.8;
-    stroke-linecap: round;
-    stroke: {score_color};
-    filter: drop-shadow(0 0 4px {score_glow});
-    animation: progress 1.2s ease-out forwards;
-    transform-origin: center;
-    transform: rotate(-90deg);
-}}
-@keyframes progress {{
-    0% {{ stroke-dasharray: 0, 100; }}
-}}
-.circle-imdb {{
-    fill: none;
-    stroke-width: 2.8;
-    stroke-linecap: round;
-    stroke: #f5c518;
-    filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));
-    animation: progress 1.2s ease-out forwards;
-    transform-origin: center;
-    transform: rotate(-90deg);
-}}
-.circle-rt {{
-    fill: none;
-    stroke-width: 2.8;
-    stroke-linecap: round;
-    stroke: #fa320a;
-    filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));
-    animation: progress 1.2s ease-out forwards;
-    transform-origin: center;
-    transform: rotate(-90deg);
-}}
-.percentage-ai {{
-    fill: {score_color};
-    font-family: 'Syne', sans-serif;
-    font-size: 7.5px;
-    font-weight: 800;
-    text-anchor: middle;
-}}
-.percentage-imdb {{
-    fill: #f5c518;
-    font-family: 'Syne', sans-serif;
-    font-size: 7.5px;
-    font-weight: 800;
-    text-anchor: middle;
-}}
-.percentage-rt {{
-    fill: #fa320a;
-    font-family: 'Syne', sans-serif;
-    font-size: 7.5px;
-    font-weight: 800;
-    text-anchor: middle;
-}}
-.score-label {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: {meta_color};
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}}
-
 /* ── Themes ── */
 .theme-tag {{
     display: inline-block;
@@ -712,14 +635,18 @@ with c2:
 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
 # ---------------- HANDLE SEARCH INPUT ----------------
-if user_input and user_input.strip().lower() != st.session_state.last_typed:
-    st.session_state.last_typed       = user_input.strip().lower()
-    st.session_state.selected_imdb_id = None
-    st.session_state.cached_movie     = None
-    st.session_state.cached_result    = None
-    st.session_state.cached_query     = None
-    with st.spinner("Finding movies..."):
-        st.session_state.search_results = search_movies(user_input)
+# FIX: Allow re-search after selecting a movie (selected_imdb_id cleared means
+# the user is starting fresh, so accept even the same query again).
+if user_input and user_input.strip():
+    query = user_input.strip()
+    if query.lower() != st.session_state.last_typed or st.session_state.selected_imdb_id is None:
+        st.session_state.last_typed       = query.lower()
+        st.session_state.selected_imdb_id = None
+        st.session_state.cached_movie     = None
+        st.session_state.cached_result    = None
+        st.session_state.cached_query     = None
+        with st.spinner("Finding movies..."):
+            st.session_state.search_results = search_movies(query)
 
 # ---------------- NETFLIX-STYLE SEARCH RESULTS ----------------
 search_results = st.session_state.search_results
@@ -898,38 +825,79 @@ elif movie and result:
         rt_pct = 0
     rt_display = raw_rt
 
-    def ring_svg(pct, display, circle_class, text_class):
-        """Build a single ring SVG. pct is 0-100."""
+    # FIX: Build ring SVGs with fully inlined styles so they render correctly
+    # regardless of Streamlit's CSS sandboxing between st.markdown() calls.
+    def ring_svg(pct, display, stroke_color, glow_color, bg_stroke_color):
+        """Build a single animated ring SVG with all styles inlined."""
         dash = f"{pct:.1f}, 100"
+        ring_style = (
+            f"fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;"
+            f"filter:drop-shadow(0 0 4px {glow_color});"
+            f"transform:rotate(-90deg);transform-origin:18px 18px;"
+            f"animation:scoreProgress 1.2s ease-out forwards;"
+        )
         return f"""
-        <svg viewBox="0 0 36 36" class="circular-chart">
-            <path class="circle-bg"
-                d="M18 2.0845
-                   a 15.9155 15.9155 0 0 1 0 31.831
-                   a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <path class="{circle_class}"
+        <svg viewBox="0 0 36 36"
+             style="display:block;width:130px;height:130px;">
+            <defs>
+                <style>
+                    @keyframes scoreProgress {{
+                        from {{ stroke-dasharray: 0, 100; }}
+                        to   {{ stroke-dasharray: {dash}; }}
+                    }}
+                </style>
+            </defs>
+            <path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831
+                             a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path style="{ring_style}"
                 stroke-dasharray="{dash}"
-                d="M18 2.0845
-                   a 15.9155 15.9155 0 0 1 0 31.831
-                   a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <text x="18" y="21" class="{text_class}" text-anchor="middle">{display}</text>
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831
+                             a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <text x="18" y="21"
+                  style="fill:{stroke_color};font-family:sans-serif;font-size:7.5px;
+                         font-weight:800;text-anchor:middle;">
+                {display}
+            </text>
         </svg>
         """
 
+    # FIX: Wrap everything — keyframes + SVGs + labels — in ONE st.markdown call
+    # so styles and markup share the same HTML context and the browser renders them.
     scores_html = f"""
-    <div class="scores-row">
-        <div class="score-item">
-            {ring_svg(ai_pct, ai_display, "circle", "percentage-ai")}
-            <div class="score-label">AI Verdict</div>
+    <div style="display:flex;gap:48px;align-items:center;
+                margin:24px 0 16px 0;flex-wrap:wrap;">
+
+        <div style="text-align:center;display:flex;flex-direction:column;
+                    align-items:center;gap:10px;">
+            {ring_svg(ai_pct, ai_display,
+                      ai_ring_color, ai_ring_glow, ai_ring_bg)}
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
+                AI Verdict
+            </div>
         </div>
-        <div class="score-item">
-            {ring_svg(imdb_pct, imdb_display, "circle-imdb", "percentage-imdb")}
-            <div class="score-label">IMDb</div>
+
+        <div style="text-align:center;display:flex;flex-direction:column;
+                    align-items:center;gap:10px;">
+            {ring_svg(imdb_pct, imdb_display,
+                      "#f5c518", "rgba(245,197,24,0.5)", "rgba(245,197,24,0.12)")}
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
+                IMDb
+            </div>
         </div>
-        <div class="score-item">
-            {ring_svg(rt_pct, rt_display, "circle-rt", "percentage-rt")}
-            <div class="score-label">Rotten Tomatoes</div>
+
+        <div style="text-align:center;display:flex;flex-direction:column;
+                    align-items:center;gap:10px;">
+            {ring_svg(rt_pct, rt_display,
+                      "#fa320a", "rgba(250,50,10,0.5)", "rgba(250,50,10,0.12)")}
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
+                        color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
+                Rotten Tomatoes
+            </div>
         </div>
+
     </div>
     """
     st.markdown(scores_html, unsafe_allow_html=True)
