@@ -8,19 +8,48 @@ API_KEY = st.secrets["OMDB_API_KEY"]
 
 # ---------------- SEARCH MOVIES ----------------
 def search_movies(query: str):
-    """Search OMDB for multiple matching movies."""
+    """Search OMDB. Prepends exact-title match so the best result appears first."""
     if not API_KEY:
         return []
     url = "http://www.omdbapi.com/"
-    params = {"s": query, "apikey": API_KEY, "type": "movie", "r": "json"}
+
+    # 1. Try exact match first
+    exact = None
     try:
-        res = requests.get(url, params=params, timeout=10)
-        data = res.json()
+        r = requests.get(url, params={"t": query, "apikey": API_KEY, "type": "movie", "r": "json"}, timeout=10)
+        d = r.json()
+        if d.get("Response") == "True" and d.get("imdbID"):
+            exact = {
+                "Title":  d.get("Title", query),
+                "Year":   d.get("Year", ""),
+                "imdbID": d.get("imdbID", ""),
+                "Poster": d.get("Poster", "N/A"),
+            }
     except Exception:
-        return []
-    if not data or data.get("Response") == "False":
-        return []
-    return data.get("Search", [])[:6]
+        pass
+
+    # 2. Broader search
+    fuzzy = []
+    try:
+        r = requests.get(url, params={"s": query, "apikey": API_KEY, "type": "movie", "r": "json"}, timeout=10)
+        d = r.json()
+        if d.get("Response") == "True":
+            fuzzy = d.get("Search", [])
+    except Exception:
+        pass
+
+    # 3. Merge: exact first, then deduplicated fuzzy results
+    seen = set()
+    merged = []
+    if exact:
+        merged.append(exact)
+        seen.add(exact["imdbID"])
+    for item in fuzzy:
+        iid = item.get("imdbID", "")
+        if iid not in seen:
+            merged.append(item)
+            seen.add(iid)
+    return merged[:6]
 
 
 # ---------------- FETCH MOVIE DATA BY IMDB ID ----------------
@@ -654,54 +683,41 @@ if user_input and user_input.strip():
 search_results = st.session_state.search_results
 if search_results and not st.session_state.selected_imdb_id:
     st.markdown(
-        f"<div class='search-section-label'>▸ Select a movie to review</div>",
+        "<div class='search-section-label'>▸ Click a movie to begin the review</div>",
         unsafe_allow_html=True,
     )
 
-    num = len(search_results)
+    num  = len(search_results)
     cols = st.columns(num, gap="small")
 
     for i, item in enumerate(search_results):
-        poster     = item.get("Poster", "N/A")
-        title      = item.get("Title", "Unknown")
-        year       = item.get("Year", "")
-        imdb_id    = item.get("imdbID", "")
+        poster  = item.get("Poster", "N/A")
+        title   = item.get("Title", "Unknown")
+        year    = item.get("Year", "")
+        imdb_id = item.get("imdbID", "")
         has_poster = poster and poster != "N/A"
 
         with cols[i]:
-            # Poster / placeholder
+            # ── Poster via st.image (bypasses CSP) ──
             if has_poster:
-                st.markdown(
-                    f"""
-                    <div class="movie-card-wrap" style="margin-bottom:0;">
-                        <img src="{poster}" alt="{title}" />
-                        <div class="movie-card-overlay">
-                            <div class="card-title-text">{title}</div>
-                            <div class="card-year-text">{year}</div>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(poster, use_container_width=True)
             else:
                 st.markdown(
-                    f"""
-                    <div class="movie-card-wrap" style="min-height:200px; margin-bottom:0;">
-                        <div class="card-no-poster">
-                            🎬<br/>{title}<br/><span style="opacity:0.5">{year}</span>
-                        </div>
-                    </div>
-                    """,
+                    f"<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
+                    f"border-radius:10px;display:flex;align-items:center;justify-content:center;"
+                    f"font-size:40px;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
-            # Select button
-            st.markdown("<div class='card-btn-container'>", unsafe_allow_html=True)
-            if st.button("▶  SELECT", key=f"sel_{imdb_id}_{i}", use_container_width=True):
+            # ── Clickable title button (replaces SELECT) ──
+            if st.button(
+                f"{title}\n{year}",
+                key=f"sel_{imdb_id}_{i}",
+                use_container_width=True,
+            ):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
