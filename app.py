@@ -633,7 +633,7 @@ elif movie and result:
     except:
         score_val = 0
 
-    chart_html = f\"\"\"
+    chart_html = f"""
     <div class='score-container'>
         <svg viewBox="0 0 36 36" class="circular-chart">
             <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -641,7 +641,7 @@ elif movie and result:
             <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_score}</text>
         </svg>
     </div>
-    \"\"\"
+    """
     st.markdown(chart_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
