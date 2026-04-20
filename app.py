@@ -687,6 +687,34 @@ if search_results and not st.session_state.selected_imdb_id:
         unsafe_allow_html=True,
     )
 
+    # Scoped CSS: make card buttons look like styled labels, not big dark rectangles
+    st.markdown(f"""
+    <style>
+    div[data-testid="column"] div[data-testid="stButton"] > button {{
+        background: {btn_bg} !important;
+        border: 1px solid {border_color} !important;
+        border-radius: 8px !important;
+        color: {text_primary} !important;
+        -webkit-text-fill-color: {text_primary} !important;
+        font-family: 'Syne', sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        padding: 8px 6px !important;
+        width: 100% !important;
+        margin-top: 6px !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }}
+    div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
+        background: {btn_hover_bg} !important;
+        border-color: {accent1} !important;
+        box-shadow: 0 4px 14px {btn_shadow} !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
     num  = len(search_results)
     cols = st.columns(num, gap="small")
 
@@ -698,23 +726,27 @@ if search_results and not st.session_state.selected_imdb_id:
         has_poster = poster and poster != "N/A"
 
         with cols[i]:
-            # ── Poster via st.image (bypasses CSP) ──
+            # ── Poster ── try st.image; fall back to emoji placeholder on error
             if has_poster:
-                st.image(poster, use_container_width=True)
+                try:
+                    st.image(poster, use_container_width=True)
+                except Exception:
+                    st.markdown(
+                        "<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
+                        "border-radius:10px;display:flex;align-items:center;"
+                        "justify-content:center;font-size:40px;'>🎬</div>",
+                        unsafe_allow_html=True,
+                    )
             else:
                 st.markdown(
-                    f"<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
-                    f"border-radius:10px;display:flex;align-items:center;justify-content:center;"
-                    f"font-size:40px;'>🎬</div>",
+                    "<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
+                    "border-radius:10px;display:flex;align-items:center;"
+                    "justify-content:center;font-size:40px;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
-            # ── Clickable title button (replaces SELECT) ──
-            if st.button(
-                f"{title}\n{year}",
-                key=f"sel_{imdb_id}_{i}",
-                use_container_width=True,
-            ):
+            # ── Click to review ──
+            if st.button(f"{title}  ·  {year}", key=f"sel_{imdb_id}_{i}", use_container_width=True):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
                 st.rerun()
