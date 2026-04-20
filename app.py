@@ -1,3 +1,4 @@
+import re
 import requests
 import streamlit as st
 from agent.sentiment import analyze_movie, MODEL_CRITIC, MODEL_ADVOCATE
@@ -25,6 +26,13 @@ def fetch_movie_data(title: str):
     if not imdb_rating or imdb_rating == "N/A":
         imdb_rating = "—"
 
+    rt_rating = "—"
+    ratings = data.get("Ratings", [])
+    for r in ratings:
+        if r.get("Source") == "Rotten Tomatoes":
+            rt_rating = r.get("Value")
+            break
+
     return {
         "title":       data.get("Title"),
         "year":        data.get("Year"),
@@ -33,6 +41,7 @@ def fetch_movie_data(title: str):
         "genre":       data.get("Genre"),
         "director":    data.get("Director"),
         "imdb_rating": imdb_rating,
+        "rt_rating":   rt_rating,
         "poster":      data.get("Poster"),
         "runtime":     data.get("Runtime"),
     }
@@ -42,7 +51,7 @@ def fetch_movie_data(title: str):
 st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
 
 # ---------------- SESSION STATE ----------------
-if "light_mode"    not in st.session_state: st.session_state.light_mode    = False
+if "light_mode"    not in st.session_state: st.session_state.light_mode    = True
 if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
 if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
 if "cached_result" not in st.session_state: st.session_state.cached_result = None
@@ -373,30 +382,40 @@ div[data-testid="stChatInput"] button svg,
 }}
 
 /* ── Score ── */
-.score-pill {{
-    display: inline-flex;
+.score-container {{
+    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
-    background: {score_bg};
-    border: 1px solid {score_border};
-    border-radius: 14px;
-    padding: 14px 24px;
-    margin: 4px 0 16px 0;
+    margin: 16px 0;
 }}
-.score-label {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;              /* up from 11px */
-    letter-spacing: 2px;
-    color: {meta_color};
-    text-transform: uppercase;
+.circular-chart {{
+    display: block;
+    max-width: 140px;
+    max-height: 140px;
 }}
-.score-value {{
+.circle-bg {{
+    fill: none;
+    stroke: {score_bg};
+    stroke-width: 3.8;
+}}
+.circle {{
+    fill: none;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke: {score_color};
+    filter: drop-shadow(0 0 4px {score_glow});
+    animation: progress 1s ease-out forwards;
+}}
+@keyframes progress {{
+    0% {{ stroke-dasharray: 0, 100; }}
+}}
+.percentage {{
+    fill: {score_color};
     font-family: 'Syne', sans-serif;
-    font-size: 36px;              /* up from 32px */
+    font-size: 10px;
     font-weight: 800;
-    color: {score_color};
-    text-shadow: 0 0 20px {score_glow};
-    line-height: 1;
+    text-anchor: middle;
+    text-shadow: 0 0 10px {score_glow};
 }}
 
 /* ── Themes ── */
@@ -560,7 +579,7 @@ elif movie and result:
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
         st.markdown(
             f"<div class='movie-meta'>{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']}"
-            f" &nbsp;·&nbsp; {movie['runtime']} &nbsp;·&nbsp; ⭐ IMDb {movie['imdb_rating']}</div>",
+            f" &nbsp;·&nbsp; {movie['runtime']} &nbsp;·&nbsp; ⭐ IMDb {movie['imdb_rating']} &nbsp;·&nbsp; 🍅 RT {movie['rt_rating']}</div>",
             unsafe_allow_html=True
         )
         st.markdown(
@@ -575,7 +594,59 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 1. DEBATE TRANSCRIPT ────────────────────────────────────────────────
+    # ── 1. THEMES (Moved to top) ────────────────────────────────────────────
+    st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
+    tags_html = "".join(
+        f"<span class='theme-tag'>#{t.strip()}</span>"
+        for t in result.get("themes", [])
+    )
+    st.markdown(f"<div style='line-height:2.4;'>{tags_html}</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+
+    # ── 2. OVERVIEW & DEBATE SUMMARY ────────────────────────────────────────
+    st.markdown("<div class='section-heading'>🎬 &nbsp; Overview</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of <strong>{movie['title']}</strong>, analyzing its execution, storytelling, and its standing within the {movie['genre']} genre.</div>",
+        unsafe_allow_html=True
+    )
+    
+    st.markdown("<div class='section-heading'>🧠 &nbsp; Debate Summary</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+
+    # ── 3. FINAL SCORE (Ring Chart) ─────────────────────────────────────────
+    st.markdown("<div class='section-heading'>🎯 &nbsp; Final Score</div>", unsafe_allow_html=True)
+    
+    # Extract numerical score for the ring chart
+    raw_score = str(result.get('final_score', 'N/A'))
+    try:
+        if '/' in raw_score:
+            num_part = raw_score.split('/')[0]
+            score_val = float(num_part) * 10
+        else:
+            score_val = float(re.sub(r'[^\d.]', '', raw_score)) * 10
+    except:
+        score_val = 0
+
+    chart_html = f\"\"\"
+    <div class='score-container'>
+        <svg viewBox="0 0 36 36" class="circular-chart">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="circle" stroke-dasharray="{score_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_score}</text>
+        </svg>
+    </div>
+    \"\"\"
+    st.markdown(chart_html, unsafe_allow_html=True)
+
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+
+    # ── 4. DEBATE TRANSCRIPT (Moved to bottom) ──────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
         st.markdown("<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>", unsafe_allow_html=True)
@@ -608,54 +679,3 @@ elif movie and result:
                 )
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # ── 2. DEBATE SUMMARY ───────────────────────────────────────────────────
-    st.markdown("<div class='section-heading'>🧠 &nbsp; Debate Summary</div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
-        unsafe_allow_html=True
-    )
-
-    # ── What Works / What Falls Short ──────────────────────────────────────
-    w1, w2 = st.columns(2, gap="large")
-
-    with w1:
-        st.markdown("<div class='section-heading'>✅ &nbsp; What Works</div>", unsafe_allow_html=True)
-        for item in result.get("what_works", []):
-            st.markdown(
-                f"<div class='point-item'><span class='dot-green'>›</span>{item}</div>",
-                unsafe_allow_html=True
-            )
-
-    with w2:
-        st.markdown("<div class='section-heading'>❌ &nbsp; What Falls Short</div>", unsafe_allow_html=True)
-        for item in result.get("what_fails", []):
-            st.markdown(
-                f"<div class='point-item'><span class='dot-red'>›</span>{item}</div>",
-                unsafe_allow_html=True
-            )
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # ── 3. THEMES + FINAL SCORE ─────────────────────────────────────────────
-    col_themes, col_score = st.columns([3, 1], gap="large")
-
-    with col_themes:
-        st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
-        tags_html = "".join(
-            f"<span class='theme-tag'>#{t.strip()}</span>"
-            for t in result.get("themes", [])
-        )
-        st.markdown(f"<div style='line-height:2.4;'>{tags_html}</div>", unsafe_allow_html=True)
-
-    with col_score:
-        st.markdown("<div class='section-heading'>🎯 &nbsp; Final Score</div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div class='score-pill'>"
-            f"<span class='score-label'>Overall</span>"
-            f"<span class='score-value'>{result.get('final_score', 'N/A')}</span>"
-            f"</div>",
-            unsafe_allow_html=True
-        )
