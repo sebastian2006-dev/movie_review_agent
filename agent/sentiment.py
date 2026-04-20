@@ -175,6 +175,7 @@ All text fields must be 5–7 sentences.
   "debate_summary": "<Balanced synthesis — the most honest, nuanced verdict distilled from the debate. If the film is underrated, say so clearly.>",
   "themes": ["theme1", "theme2", "theme3", "theme4", "theme5"],
   "final_score": "X/10",
+  "scoring_basis": "<A concise explanation of the criteria and reasoning used to arrive at the final score, referencing the scoring rubric and the debate's core tension.>",
   "what_works": ["specific craft point", "specific craft point", "specific craft point"],
   "what_fails": ["specific weakness", "specific weakness", "specific weakness"]
 }}

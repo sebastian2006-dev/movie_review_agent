@@ -815,12 +815,28 @@ elif movie and result:
             f" &nbsp;·&nbsp; {movie['runtime']}</div>",
             unsafe_allow_html=True,
         )
+        
+        st.markdown("<div class='section-heading'>📑 Overview & Analysis Roadmap</div>", unsafe_allow_html=True)
         st.markdown(
             f"<p style='font-size:15px;color:{text_secondary};line-height:1.8;margin-top:12px;'>{movie['plot']}</p>",
             unsafe_allow_html=True,
         )
+        
+        # Debate Roadmap / Agenda
         st.markdown(
-            f"<p style='font-size:13px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:6px;'>"
+            f"<div style='background:{bg_card};border:1px solid {border_color};border-radius:12px;padding:16px;margin-top:20px;'>"
+            f"<div style='font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:{accent1};margin-bottom:8px;'>THE DEBATE AGENDA</div>"
+            f"<div style='font-size:13px;color:{text_secondary};line-height:1.6;'>"
+            f"• <b>Round 1:</b> Initial critical assessment vs. contrarian defense.<br>"
+            f"• <b>Round 2:</b> Deep dive into technical craft and character depth.<br>"
+            f"• <b>Round 3:</b> Final rebuttals on pacing and cultural legacy.<br>"
+            f"• <b>Round 4:</b> Nuanced synthesis and final calibrated score."
+            f"</div></div>",
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"<p style='font-size:13px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:16px;'>"
             f"CAST: {movie['actors']}</p>",
             unsafe_allow_html=True,
         )
@@ -976,3 +992,21 @@ elif movie and result:
                 )
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
+
+    # ── 5. SCORING BASIS ─────────────────────────────────────────────────────
+    basis = result.get("scoring_basis")
+    if basis:
+        st.markdown("<div style='margin-top:32px;'></div>", unsafe_allow_html=True)
+        with st.expander("⚖️ &nbsp; View AI Scoring Basis & Methodology"):
+            st.markdown(
+                f"<div style='padding:12px;color:{text_secondary};line-height:1.7;font-size:14px;'>"
+                f"<b>Criteria for this Rating:</b><br><br>{basis}"
+                f"<br><br><hr style='border:0;border-top:1px solid {border_color};'>"
+                f"<span style='font-size:12px;color:{text_muted};'>"
+                f"Note: This score is calculated using a neutral synthesis model that evaluates the conflicting "
+                f"arguments presented in the debate, calibrated against a global 10-point scale of cinematic quality."
+                f"</span></div>",
+                unsafe_allow_html=True
+            )
+
+    st.markdown("<div style='margin-bottom:100px;'></div>", unsafe_allow_html=True)
