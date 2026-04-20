@@ -356,6 +356,8 @@ div[data-testid="stChatInput"] button svg,
     box-shadow: 0 12px 40px rgba(0,0,0,0.4);
 }}
 .movie-card-wrap img {{
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -777,9 +779,16 @@ elif movie and result:
     # ── 2. OVERVIEW & DEBATE SUMMARY ─────────────────────────────────────────
     st.markdown("<div class='section-heading'>🎬 &nbsp; Overview</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of "
-        f"<strong>{movie['title']}</strong>, analyzing its execution, storytelling, and its standing "
-        f"within the {movie['genre']} genre.</div>",
+        f"<div class='summary-box'>"
+        f"In this session, our AI models debate the merits and flaws of "
+        f"<strong>{movie['title']}</strong> ({movie['year']}), directed by <strong>{movie['director']}</strong>. "
+        f"Starring {movie['actors']}, the film is a notable entry in the <em>{movie['genre']}</em> genre."
+        f"<br><br>"
+        f"<em>{movie['plot']}</em>"
+        f"<br><br>"
+        f"The debate below features a Critic model and an Advocate model arguing their perspectives across "
+        f"multiple rounds — examining cinematic execution, narrative strength, and cultural impact."
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -871,7 +880,7 @@ elif movie and result:
         <div style="text-align:center;display:flex;flex-direction:column;
                     align-items:center;gap:10px;">
             {ring_svg(ai_pct, ai_display,
-                      ai_ring_color, ai_ring_glow, ai_ring_bg)}
+                      score_color, score_glow, score_border)}
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;
                         color:{meta_color};letter-spacing:2px;text-transform:uppercase;">
                 AI Verdict
