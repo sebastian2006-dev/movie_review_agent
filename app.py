@@ -75,7 +75,8 @@ def fetch_movie_by_id(imdb_id: str):
 
     rt_rating = "—"
     for r in data.get("Ratings", []):
-        if r.get("Source") == "Rotten Tomatoes":
+        source = r.get("Source", "")
+        if "Rotten Tomatoes" in source:
             rt_rating = r.get("Value", "—")
             break
 
@@ -891,7 +892,9 @@ elif movie and result:
     # ── Parse RT score ──
     raw_rt = str(movie.get("rt_rating", "—"))
     try:
-        rt_pct = float(raw_rt.replace("%", "").strip())
+        # Handle "88%", "88/100", etc.
+        clean_rt = re.sub(r"[^\d.]", "", raw_rt.split("/")[0])
+        rt_pct = float(clean_rt)
         rt_pct = min(max(rt_pct, 0), 100)
     except Exception:
         rt_pct = 0
@@ -900,6 +903,8 @@ elif movie and result:
     # ── Build ring SVGs with fully inlined styles ──
     def ring_svg(pct, display, stroke_color, glow_color, bg_stroke_color):
         dash = f"{pct:.1f}, 100"
+        # Hide stroke if 0 to avoid the "dot" from round linecaps
+        opacity = 1 if pct > 0 else 0
         return (
             f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
             f'<defs><style>'
@@ -908,11 +913,12 @@ elif movie and result:
             f'<path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
             f'<path style="fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;'
+            f'stroke-opacity:{opacity};'
             f'filter:drop-shadow(0 0 4px {glow_color});transform:rotate(-90deg);transform-origin:18px 18px;'
             f'animation:scoreProgress 1.2s ease-out forwards;" stroke-dasharray="{dash}"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
             f'<text x="18" y="21" style="fill:{stroke_color};font-family:sans-serif;'
-            f'font-size:7.5px;font-weight:800;text-anchor:middle;">{display}</text>'
+            f'font-size:7px;font-weight:800;text-anchor:middle;">{display}</text>'
             f'</svg>'
         )
 
