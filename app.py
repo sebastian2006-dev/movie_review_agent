@@ -683,42 +683,55 @@ if user_input and user_input.strip():
 search_results = st.session_state.search_results
 if search_results and not st.session_state.selected_imdb_id:
     st.markdown(
-        "<div class='search-section-label'>▸ Click a movie to begin the review</div>",
+        "<div class='search-section-label'>▸ Click a movie poster to begin the AI review</div>",
         unsafe_allow_html=True,
     )
 
-    # Scoped CSS: make card buttons look like styled labels, not big dark rectangles
+    # Scoped card button CSS — transparent background, visible title text, hover glow
     st.markdown(f"""
     <style>
+    /* Card image — round corners */
+    div[data-testid="column"] img {{
+        border-radius: 12px 12px 0 0 !important;
+        display: block !important;
+    }}
+    /* Card button — sits flush below the poster, acts as title + click target */
     div[data-testid="column"] div[data-testid="stButton"] > button {{
-        background: {btn_bg} !important;
+        background: {bg_card} !important;
         border: 1px solid {border_color} !important;
-        border-radius: 8px !important;
+        border-top: none !important;
+        border-radius: 0 0 12px 12px !important;
         color: {text_primary} !important;
         -webkit-text-fill-color: {text_primary} !important;
         font-family: 'Syne', sans-serif !important;
-        font-size: 12px !important;
+        font-size: 13px !important;
         font-weight: 700 !important;
-        padding: 8px 6px !important;
+        padding: 10px 8px !important;
         width: 100% !important;
-        margin-top: 6px !important;
+        margin-top: -6px !important;
         line-height: 1.4 !important;
         white-space: normal !important;
         cursor: pointer !important;
+        text-align: center !important;
         transition: all 0.2s ease !important;
+        min-height: 56px !important;
     }}
     div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-        background: {btn_hover_bg} !important;
+        background: {btn_bg} !important;
+        color: {accent1} !important;
+        -webkit-text-fill-color: {accent1} !important;
         border-color: {accent1} !important;
-        box-shadow: 0 4px 14px {btn_shadow} !important;
+        box-shadow: 0 6px 20px {btn_shadow} !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    num  = len(search_results)
-    cols = st.columns(num, gap="small")
+    # Cap at 4 cards for bigger, readable posters
+    display_results = search_results[:4]
+    num  = len(display_results)
+    cols = st.columns(num, gap="medium")
 
-    for i, item in enumerate(search_results):
+    for i, item in enumerate(display_results):
         poster  = item.get("Poster", "N/A")
         title   = item.get("Title", "Unknown")
         year    = item.get("Year", "")
@@ -726,27 +739,26 @@ if search_results and not st.session_state.selected_imdb_id:
         has_poster = poster and poster != "N/A"
 
         with cols[i]:
-            # ── Poster ── try st.image; fall back to emoji placeholder on error
+            # ── Poster ──
             if has_poster:
                 try:
                     st.image(poster, use_container_width=True)
                 except Exception:
                     st.markdown(
-                        "<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
-                        "border-radius:10px;display:flex;align-items:center;"
-                        "justify-content:center;font-size:40px;'>🎬</div>",
+                        f"<div style='height:280px;background:{bg_card};border-radius:12px 12px 0 0;"
+                        f"display:flex;align-items:center;justify-content:center;font-size:48px;'>🎬</div>",
                         unsafe_allow_html=True,
                     )
             else:
                 st.markdown(
-                    "<div style='aspect-ratio:2/3;background:rgba(255,255,255,0.05);"
-                    "border-radius:10px;display:flex;align-items:center;"
-                    "justify-content:center;font-size:40px;'>🎬</div>",
+                    f"<div style='height:280px;background:{bg_card};border-radius:12px 12px 0 0;"
+                    f"display:flex;align-items:center;justify-content:center;font-size:48px;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
-            # ── Click to review ──
-            if st.button(f"{title}  ·  {year}", key=f"sel_{imdb_id}_{i}", use_container_width=True):
+            # ── Clickable title label (flush with poster, acts as card footer) ──
+            label = f"{title}\n{year}" if year else title
+            if st.button(label, key=f"sel_{imdb_id}_{i}", use_container_width=True):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
                 st.rerun()
