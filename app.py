@@ -757,14 +757,11 @@ if search_results and not st.session_state.selected_imdb_id:
                 )
 
             # ── Invisible overlay button — makes the poster area clickable ──
-            if st.button(
-                "\u200b",  # zero-width space — effectively empty label
-                key=f"sel_{imdb_id}_{i}",
-                use_container_width=True,
-                help=f"{title} ({year})",
-            ):
+            if st.button("\u200b", key=f"sel_{imdb_id}_{i}", use_container_width=True):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
+                st.session_state.cached_movie     = None
+                st.session_state.cached_result    = None
                 st.rerun()
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
@@ -903,8 +900,16 @@ elif movie and result:
     # ── Build ring SVGs with fully inlined styles ──
     def ring_svg(pct, display, stroke_color, glow_color, bg_stroke_color):
         dash = f"{pct:.1f}, 100"
-        # Hide stroke if 0 to avoid the "dot" from round linecaps
-        opacity = 1 if pct > 0 else 0
+        # Only render the stroke path if the percentage is > 0
+        stroke_path = ""
+        if pct > 0:
+            stroke_path = (
+                f'<path style="fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;'
+                f'filter:drop-shadow(0 0 4px {glow_color});transform:rotate(-90deg);transform-origin:18px 18px;'
+                f'animation:scoreProgress 1.2s ease-out forwards;" stroke-dasharray="{dash}"'
+                f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
+            )
+
         return (
             f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
             f'<defs><style>'
@@ -912,13 +917,9 @@ elif movie and result:
             f'</style></defs>'
             f'<path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-            f'<path style="fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;'
-            f'stroke-opacity:{opacity};'
-            f'filter:drop-shadow(0 0 4px {glow_color});transform:rotate(-90deg);transform-origin:18px 18px;'
-            f'animation:scoreProgress 1.2s ease-out forwards;" stroke-dasharray="{dash}"'
-            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-            f'<text x="18" y="21" style="fill:{stroke_color};font-family:sans-serif;'
-            f'font-size:7px;font-weight:800;text-anchor:middle;">{display}</text>'
+            f'{stroke_path}'
+            f'<text x="18" y="21.5" style="fill:{stroke_color};font-family:sans-serif;'
+            f'font-size:7.5px;font-weight:800;text-anchor:middle;">{display}</text>'
             f'</svg>'
         )
 
