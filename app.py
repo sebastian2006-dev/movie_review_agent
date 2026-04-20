@@ -607,7 +607,7 @@ elif movie and result:
     # ── 2. OVERVIEW & DEBATE SUMMARY ────────────────────────────────────────
     st.markdown("<div class='section-heading'>🎬 &nbsp; Overview</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of <strong>{movie['title']}</strong>, analyzing its execution, storytelling, and its standing within the {movie['genre']} genre.</div>",
+        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of <strong>{movie['title']}</strong> ({movie['year']}), directed by {movie['director']}. Featuring a cast that includes {movie['actors']}, the film is recognized as a notable entry in the {movie['genre']} genre.<br><br>The following transcript captures a dynamic discussion dissecting the core narrative—where <em>{movie['plot']}</em>—as well as analyzing its cinematic execution, pacing, and legacy. Our Critic model examines its technical and storytelling shortcomings, while the Advocate pushes back to highlight its underappreciated strengths.</div>",
         unsafe_allow_html=True
     )
     
@@ -654,44 +654,44 @@ elif movie and result:
         rt_val = 0
 
     chart_html = f"""
-    <div style="display: flex; gap: 60px; align-items: center; margin: 24px 0 16px 0;">
-        <!-- AI Score -->
-        <div style="text-align: center;">
-            <div class='score-container' style='margin: 0;'>
-                <svg viewBox="0 0 36 36" class="circular-chart">
-                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path class="circle" stroke-dasharray="{ai_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_ai_score}</text>
-                </svg>
-            </div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">AI VERDICT</div>
+<div style="display: flex; gap: 60px; align-items: center; justify-content: center; margin: 24px 0 16px 0;">
+    <!-- AI Score -->
+    <div style="text-align: center;">
+        <div class='score-container' style='margin: 0;'>
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="{ai_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_ai_score}</text>
+            </svg>
         </div>
-
-        <!-- IMDb Score -->
-        <div style="text-align: center;">
-            <div class='score-container' style='margin: 0;'>
-                <svg viewBox="0 0 36 36" class="circular-chart">
-                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path class="circle" stroke-dasharray="{imdb_val}, 100" style="stroke: #f5c518; filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <text x="18" y="21.5" class="percentage" style="fill: #f5c518; text-shadow: 0 0 10px rgba(245,197,24,0.5);" text-anchor="middle">{raw_imdb_score}</text>
-                </svg>
-            </div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">IMDb</div>
-        </div>
-
-        <!-- Rotten Tomatoes -->
-        <div style="text-align: center;">
-            <div class='score-container' style='margin: 0;'>
-                <svg viewBox="0 0 36 36" class="circular-chart">
-                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path class="circle" stroke-dasharray="{rt_val}, 100" style="stroke: #fa320a; filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <text x="18" y="21.5" class="percentage" style="fill: #fa320a; text-shadow: 0 0 10px rgba(250,50,10,0.5);" text-anchor="middle">{raw_rt_score}</text>
-                </svg>
-            </div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{meta_color}}; margin-top: 12px; letter-spacing: 2px;">ROTTEN TOMATOES</div>
-        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">AI VERDICT</div>
     </div>
-    """
+
+    <!-- IMDb Score -->
+    <div style="text-align: center;">
+        <div class='score-container' style='margin: 0;'>
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="{imdb_val}, 100" style="stroke: #f5c518; filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="21.5" class="percentage" style="fill: #f5c518; text-shadow: 0 0 10px rgba(245,197,24,0.5);" text-anchor="middle">{raw_imdb_score}</text>
+            </svg>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">IMDb</div>
+    </div>
+
+    <!-- Rotten Tomatoes -->
+    <div style="text-align: center;">
+        <div class='score-container' style='margin: 0;'>
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="{rt_val}, 100" style="stroke: #fa320a; filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="21.5" class="percentage" style="fill: #fa320a; text-shadow: 0 0 10px rgba(250,50,10,0.5);" text-anchor="middle">{raw_rt_score}</text>
+            </svg>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">ROTTEN TOMATOES</div>
+    </div>
+</div>
+"""
     st.markdown(chart_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
