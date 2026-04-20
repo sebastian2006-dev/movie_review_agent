@@ -5,32 +5,46 @@ from agent.sentiment import analyze_movie, MODEL_CRITIC, MODEL_ADVOCATE
 
 API_KEY = st.secrets["OMDB_API_KEY"]
 
-# ---------------- FETCH MOVIE DATA ----------------
-def fetch_movie_data(title: str):
+
+# ---------------- SEARCH MOVIES ----------------
+def search_movies(query: str):
+    """Search OMDB for multiple matching movies."""
     if not API_KEY:
-        raise ValueError("Missing OMDB_API_KEY.")
-
+        return []
     url = "http://www.omdbapi.com/"
-    params = {"t": title, "apikey": API_KEY, "plot": "full", "r": "json"}
+    params = {"s": query, "apikey": API_KEY, "type": "movie", "r": "json"}
+    try:
+        res = requests.get(url, params=params, timeout=10)
+        data = res.json()
+    except Exception:
+        return []
+    if not data or data.get("Response") == "False":
+        return []
+    return data.get("Search", [])[:6]
 
+
+# ---------------- FETCH MOVIE DATA BY IMDB ID ----------------
+def fetch_movie_by_id(imdb_id: str):
+    if not API_KEY:
+        return None
+    url = "http://www.omdbapi.com/"
+    params = {"i": imdb_id, "apikey": API_KEY, "plot": "full", "r": "json"}
     try:
         res = requests.get(url, params=params, timeout=10)
         data = res.json()
     except Exception:
         return None
-
     if not data or data.get("Response") == "False":
         return None
 
-    imdb_rating = data.get("imdbRating")
+    imdb_rating = data.get("imdbRating", "—")
     if not imdb_rating or imdb_rating == "N/A":
         imdb_rating = "—"
 
     rt_rating = "—"
-    ratings = data.get("Ratings", [])
-    for r in ratings:
+    for r in data.get("Ratings", []):
         if r.get("Source") == "Rotten Tomatoes":
-            rt_rating = r.get("Value")
+            rt_rating = r.get("Value", "—")
             break
 
     return {
@@ -48,13 +62,20 @@ def fetch_movie_data(title: str):
 
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Movie Review Agent", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="Movie Review Agent",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 # ---------------- SESSION STATE ----------------
-if "light_mode"    not in st.session_state: st.session_state.light_mode    = True
-if "cached_query"  not in st.session_state: st.session_state.cached_query  = None
-if "cached_movie"  not in st.session_state: st.session_state.cached_movie  = None
-if "cached_result" not in st.session_state: st.session_state.cached_result = None
+if "light_mode"       not in st.session_state: st.session_state.light_mode       = True
+if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
+if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
+if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
+if "search_results"   not in st.session_state: st.session_state.search_results   = []
+if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
+if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
 
 is_dark = not st.session_state.light_mode
 
@@ -64,12 +85,12 @@ if is_dark:
     bg_card               = "rgba(255,255,255,0.04)"
     bg_card_hover         = "rgba(255,255,255,0.08)"
     border_color          = "rgba(255,255,255,0.08)"
-    text_primary          = "#f0f4ff"          # brighter than before
-    text_secondary        = "#c8d0e8"          # significantly brighter
-    text_muted            = "#7a85a0"          # brighter muted
-    accent1               = "#9b6fff"          # brighter purple
-    accent2               = "#22d3ee"          # brighter cyan
-    accent3               = "#c084fc"          # brighter violet
+    text_primary          = "#f0f4ff"
+    text_secondary        = "#c8d0e8"
+    text_muted            = "#7a85a0"
+    accent1               = "#9b6fff"
+    accent2               = "#22d3ee"
+    accent3               = "#c084fc"
     glow1                 = "rgba(124,58,237,0.35)"
     glow2                 = "rgba(6,182,212,0.25)"
     glow3                 = "rgba(168,85,247,0.06)"
@@ -79,7 +100,7 @@ if is_dark:
     error_border          = "#ef4444"
     tag_bg                = "rgba(124,58,237,0.15)"
     tag_border            = "rgba(124,58,237,0.4)"
-    score_color           = "#22d3ee"          # brighter
+    score_color           = "#22d3ee"
     score_glow            = "rgba(34,211,238,0.5)"
     score_bg              = "rgba(6,182,212,0.07)"
     score_border          = "rgba(6,182,212,0.22)"
@@ -87,7 +108,7 @@ if is_dark:
     eyebrow_color         = "#22d3ee"
     input_border          = "rgba(155,111,255,0.5)"
     input_glow            = "rgba(155,111,255,0.3)"
-    meta_color            = "#8892b0"          # brighter meta
+    meta_color            = "#8892b0"
     expander_bg           = "rgba(124,58,237,0.06)"
     chatinput_bg          = "rgba(255,255,255,0.04)"
     chatinput_text        = "#f0f4ff"
@@ -101,17 +122,22 @@ if is_dark:
     advocate_color        = "#f97316"
     advocate_bg           = "rgba(249,115,22,0.07)"
     advocate_border       = "rgba(249,115,22,0.2)"
+    card_overlay_bg       = "linear-gradient(to top, rgba(6,11,24,0.97) 0%, rgba(6,11,24,0.5) 50%, transparent 100%)"
+    card_bg_empty         = "rgba(255,255,255,0.05)"
+    card_hover_border     = "#9b6fff"
+    search_section_bg     = "rgba(255,255,255,0.02)"
+    search_section_border = "rgba(255,255,255,0.06)"
 else:
-    bg_base               = "#fdfbf7"          # warm off-white/cream
+    bg_base               = "#fdfbf7"
     bg_card               = "rgba(255,255,255,0.85)"
     bg_card_hover         = "rgba(255,255,255,1)"
     border_color          = "rgba(217,119,54,0.15)"
-    text_primary          = "#2c2421"          # deep warm brownish-black
-    text_secondary        = "#4a3f3c"          # warm dark gray/brown
-    text_muted            = "#7a6b68"          # warm gray
-    accent1               = "#d97736"          # terracotta/orange
-    accent2               = "#4a7c59"          # sage green
-    accent3               = "#c4554b"          # muted red
+    text_primary          = "#2c2421"
+    text_secondary        = "#4a3f3c"
+    text_muted            = "#7a6b68"
+    accent1               = "#d97736"
+    accent2               = "#4a7c59"
+    accent3               = "#c4554b"
     glow1                 = "rgba(217,119,54,0.12)"
     glow2                 = "rgba(196,85,75,0.12)"
     glow3                 = "rgba(217,119,54,0.06)"
@@ -127,11 +153,11 @@ else:
     score_border          = "rgba(196,85,75,0.22)"
     header_gradient       = "linear-gradient(135deg, #2c2421 0%, #d97736 60%, #c4554b 100%)"
     eyebrow_color         = "#d97736"
-    input_border          = text_primary
+    input_border          = "#2c2421"
     input_glow            = "rgba(44,36,33,0.25)"
     meta_color            = "#665a58"
     expander_bg           = "rgba(255,255,255,0.7)"
-    chatinput_bg          = text_primary
+    chatinput_bg          = "#2c2421"
     chatinput_text        = "#ffffff"
     chatinput_placeholder = "rgba(255,255,255,0.6)"
     btn_bg                = "linear-gradient(135deg, #d97736, #c4554b)"
@@ -143,6 +169,11 @@ else:
     advocate_color        = "#d97736"
     advocate_bg           = "rgba(217,119,54,0.07)"
     advocate_border       = "rgba(217,119,54,0.2)"
+    card_overlay_bg       = "linear-gradient(to top, rgba(44,36,33,0.97) 0%, rgba(44,36,33,0.5) 50%, transparent 100%)"
+    card_bg_empty         = "rgba(217,119,54,0.06)"
+    card_hover_border     = "#d97736"
+    search_section_bg     = "rgba(217,119,54,0.03)"
+    search_section_border = "rgba(217,119,54,0.1)"
 
 # ---------------- GLOBAL CSS ----------------
 st.markdown(f"""
@@ -176,22 +207,20 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-
-
 /* ── Hero ── */
 .hero-eyebrow {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;              /* up from 11px */
+    font-size: 13px;
     letter-spacing: 5px;
     color: {eyebrow_color};
     text-align: center;
     text-transform: uppercase;
     margin-bottom: 12px;
-    opacity: 1;                   /* was 0.85 */
+    opacity: 1;
 }}
 .hero-title {{
     font-family: 'Syne', sans-serif;
-    font-size: clamp(38px, 6vw, 68px);   /* up from 34/64 */
+    font-size: clamp(38px, 6vw, 68px);
     font-weight: 800;
     text-align: center;
     background: {header_gradient};
@@ -202,33 +231,28 @@ h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
     margin-bottom: 6px;
 }}
 .hero-sub {{
-    font-size: 17px;              /* up from 15px */
+    font-size: 17px;
     color: {text_muted};
     text-align: center;
     margin-bottom: 32px;
 }}
 
 /* ── Chat Input ── */
-/* The entire Chat Input widget container */
 div[data-testid="stChatInput"],
 .stChatInput {{
     background: {chatinput_bg} !important;
-    border: { '1px solid ' + input_border if is_dark else '2px solid ' + input_border } !important;
+    border: 1px solid {input_border} !important;
     border-radius: 16px !important;
-    box-shadow: { 'none' if is_dark else '0 4px 16px rgba(0,0,0,0.06)' } !important;
+    box-shadow: none !important;
     padding-right: 6px !important;
     padding-left: 6px !important;
 }}
-
-/* The div directly wrapping the textarea */
 div[data-testid="stChatInput"] > div,
 .stChatInput > div {{
     background: {chatinput_bg} !important;
     border: none !important;
     border-radius: 16px !important;
 }}
-
-/* The textarea itself */
 textarea[data-testid="stChatInputTextArea"],
 div[data-testid="stChatInput"] textarea,
 .stChatInput textarea {{
@@ -294,17 +318,123 @@ div[data-testid="stChatInput"] button svg,
     height: 16px !important;
 }}
 
+/* ── Netflix Search Cards ── */
+.search-section-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: {eyebrow_color};
+    margin-bottom: 16px;
+    margin-top: 8px;
+}}
+.movie-card-wrap {{
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: {card_bg_empty};
+    border: 1px solid {border_color};
+    transition: all 0.25s ease;
+    cursor: pointer;
+    aspect-ratio: 2/3;
+    display: flex;
+    flex-direction: column;
+}}
+.movie-card-wrap:hover {{
+    border-color: {card_hover_border};
+    transform: scale(1.04);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}}
+.movie-card-wrap img {{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+}}
+.movie-card-overlay {{
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: {card_overlay_bg};
+    padding: 16px 10px 12px;
+    border-radius: 0 0 12px 12px;
+}}
+.card-title-text {{
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 2px 0;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}}
+.card-year-text {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 1px;
+}}
+.card-no-poster {{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    color: {text_muted};
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+    padding: 16px;
+    box-sizing: border-box;
+}}
+
+/* ── Card select buttons ── */
+div[data-testid="stButton"] button.card-select-btn {{
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important; left: 0 !important;
+    cursor: pointer !important;
+    opacity: 0 !important;
+}}
+
+/* Style all buttons inside card containers */
+.card-btn-container button {{
+    background: {btn_bg} !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+    padding: 6px 0 !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    margin-top: 8px !important;
+    transition: all 0.2s ease !important;
+}}
+.card-btn-container button:hover {{
+    background: {btn_hover_bg} !important;
+    box-shadow: 0 4px 14px {btn_shadow} !important;
+}}
+
 /* ── Movie Info ── */
 .movie-meta {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;              /* up from 12px */
+    font-size: 13px;
     color: {meta_color};
     letter-spacing: 1.2px;
     margin-bottom: 12px;
 }}
 .movie-title-display {{
     font-family: 'Syne', sans-serif;
-    font-size: clamp(28px, 4vw, 44px);   /* up from 24/40 */
+    font-size: clamp(28px, 4vw, 44px);
     font-weight: 800;
     color: {text_primary};
     margin-bottom: 6px;
@@ -318,9 +448,9 @@ div[data-testid="stChatInput"] button svg,
     margin-top: 8px;
 }}
 .debate-bubble {{
-    padding: 18px 22px;           /* slightly more padding */
-    font-size: 15px;              /* up from 14px */
-    line-height: 1.75;            /* slightly more leading */
+    padding: 18px 22px;
+    font-size: 15px;
+    line-height: 1.75;
     max-width: 90%;
     color: {text_secondary};
 }}
@@ -338,7 +468,7 @@ div[data-testid="stChatInput"] button svg,
 }}
 .bubble-label {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;              /* up from 10px */
+    font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -348,8 +478,8 @@ div[data-testid="stChatInput"] button svg,
 .bubble-label-advocate {{ color: {advocate_color}; }}
 .bubble-model-tag {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;              /* up from 9px */
-    opacity: 0.6;                 /* was 0.45 — more visible */
+    font-size: 10px;
+    opacity: 0.6;
     margin-left: 8px;
     letter-spacing: 1px;
 }}
@@ -357,7 +487,7 @@ div[data-testid="stChatInput"] button svg,
     display: block;
     width: fit-content;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;              /* up from 9px */
+    font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
     background: {tag_bg};
@@ -375,23 +505,31 @@ div[data-testid="stChatInput"] button svg,
     border-left: 3px solid {verdict_border};
     border-radius: 0 16px 16px 0;
     padding: 22px 26px;
-    font-size: 15px;              /* up from 14px */
+    font-size: 15px;
     color: {text_secondary};
     line-height: 1.85;
     margin-bottom: 8px;
 }}
 
-/* ── Score ── */
-.score-container {{
+/* ── Score Ring Charts ── */
+.scores-row {{
     display: flex;
-    justify-content: center;
+    gap: 48px;
     align-items: center;
-    margin: 16px 0;
+    margin: 24px 0 16px 0;
+    flex-wrap: wrap;
+}}
+.score-item {{
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }}
 .circular-chart {{
     display: block;
-    max-width: 140px;
-    max-height: 140px;
+    width: 130px;
+    height: 130px;
 }}
 .circle-bg {{
     fill: none;
@@ -404,18 +542,60 @@ div[data-testid="stChatInput"] button svg,
     stroke-linecap: round;
     stroke: {score_color};
     filter: drop-shadow(0 0 4px {score_glow});
-    animation: progress 1s ease-out forwards;
+    animation: progress 1.2s ease-out forwards;
+    transform-origin: center;
+    transform: rotate(-90deg);
 }}
 @keyframes progress {{
     0% {{ stroke-dasharray: 0, 100; }}
 }}
-.percentage {{
+.circle-imdb {{
+    fill: none;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke: #f5c518;
+    filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));
+    animation: progress 1.2s ease-out forwards;
+    transform-origin: center;
+    transform: rotate(-90deg);
+}}
+.circle-rt {{
+    fill: none;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke: #fa320a;
+    filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));
+    animation: progress 1.2s ease-out forwards;
+    transform-origin: center;
+    transform: rotate(-90deg);
+}}
+.percentage-ai {{
     fill: {score_color};
     font-family: 'Syne', sans-serif;
-    font-size: 10px;
+    font-size: 7.5px;
     font-weight: 800;
     text-anchor: middle;
-    text-shadow: 0 0 10px {score_glow};
+}}
+.percentage-imdb {{
+    fill: #f5c518;
+    font-family: 'Syne', sans-serif;
+    font-size: 7.5px;
+    font-weight: 800;
+    text-anchor: middle;
+}}
+.percentage-rt {{
+    fill: #fa320a;
+    font-family: 'Syne', sans-serif;
+    font-size: 7.5px;
+    font-weight: 800;
+    text-anchor: middle;
+}}
+.score-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: {meta_color};
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }}
 
 /* ── Themes ── */
@@ -425,7 +605,7 @@ div[data-testid="stChatInput"] button svg,
     border: 1px solid {tag_border};
     color: {accent3};
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;              /* up from 11px */
+    font-size: 12px;
     padding: 5px 14px;
     border-radius: 100px;
     margin: 4px 3px;
@@ -435,7 +615,7 @@ div[data-testid="stChatInput"] button svg,
 /* ── Section Heading ── */
 .section-heading {{
     font-family: 'Syne', sans-serif;
-    font-size: 19px;              /* up from 17px */
+    font-size: 19px;
     font-weight: 700;
     color: {text_primary};
     margin: 24px 0 12px 0;
@@ -449,7 +629,7 @@ div[data-testid="stChatInput"] button svg,
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    font-size: 15px;              /* up from 14px */
+    font-size: 15px;
     color: {text_secondary};
     padding: 9px 0;
     border-bottom: 1px solid {border_color};
@@ -470,7 +650,7 @@ div[data-testid="stChatInput"] button svg,
     border-radius: 12px;
     padding: 18px 22px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;              /* up from 13px */
+    font-size: 14px;
     color: #f87171;
     text-align: center;
 }}
@@ -487,12 +667,10 @@ div[data-testid="stChatInput"] button svg,
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 12px !important;   /* up from 11px */
+    font-size: 12px !important;
     color: {accent1} !important;
     letter-spacing: 1px !important;
 }}
-
-/* ── Body text baseline ── */
 p, li, div {{
     font-size: 15px;
 }}
@@ -503,21 +681,17 @@ p, li, div {{
 _, tog_col = st.columns([8, 2])
 with tog_col:
     label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    label_color = text_primary
-    
     st.toggle(label_text, key="light_mode")
-    
     st.markdown(f"""
     <style>
-    /* Explicitly target the text inside the toggle widget to override Streamlit defaults */
     [data-testid="stWidgetLabel"] p,
     [data-testid="stWidgetLabel"] span,
     [data-testid="stToggle"] p,
     [data-testid="stToggle"] span,
     [data-testid="stCheckbox"] p,
     [data-testid="stCheckbox"] span {{
-        color: {label_color} !important;
-        -webkit-text-fill-color: {label_color} !important;
+        color: {text_primary} !important;
+        -webkit-text-fill-color: {text_primary} !important;
         font-family: 'JetBrains Mono', monospace !important;
         letter-spacing: 1px !important;
         font-size: 14px !important;
@@ -537,35 +711,104 @@ with c2:
 
 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-# ---------------- MAIN LOGIC ----------------
-if user_input:
-    query_key = user_input.strip().lower()
-    if query_key != st.session_state.cached_query:
-        st.session_state.cached_query  = query_key
-        st.session_state.cached_movie  = fetch_movie_data(user_input)
-        st.session_state.cached_result = None
+# ---------------- HANDLE SEARCH INPUT ----------------
+if user_input and user_input.strip().lower() != st.session_state.last_typed:
+    st.session_state.last_typed       = user_input.strip().lower()
+    st.session_state.selected_imdb_id = None
+    st.session_state.cached_movie     = None
+    st.session_state.cached_result    = None
+    st.session_state.cached_query     = None
+    with st.spinner("Finding movies..."):
+        st.session_state.search_results = search_movies(user_input)
 
-        if st.session_state.cached_movie:
-            raw_reviews = {
-                "title":              st.session_state.cached_movie["title"],
-                "critic_reviews":     st.session_state.cached_movie["plot"],
-                "audience_reactions": st.session_state.cached_movie["actors"],
-                "discussion_points":  st.session_state.cached_movie["genre"],
-            }
-            with st.spinner("AI models are debating the film..."):
-                st.session_state.cached_result = analyze_movie(raw_reviews)
+# ---------------- NETFLIX-STYLE SEARCH RESULTS ----------------
+search_results = st.session_state.search_results
+if search_results and not st.session_state.selected_imdb_id:
+    st.markdown(
+        f"<div class='search-section-label'>▸ Select a movie to review</div>",
+        unsafe_allow_html=True,
+    )
+
+    num = len(search_results)
+    cols = st.columns(num, gap="small")
+
+    for i, item in enumerate(search_results):
+        poster     = item.get("Poster", "N/A")
+        title      = item.get("Title", "Unknown")
+        year       = item.get("Year", "")
+        imdb_id    = item.get("imdbID", "")
+        has_poster = poster and poster != "N/A"
+
+        with cols[i]:
+            # Poster / placeholder
+            if has_poster:
+                st.markdown(
+                    f"""
+                    <div class="movie-card-wrap" style="margin-bottom:0;">
+                        <img src="{poster}" alt="{title}" />
+                        <div class="movie-card-overlay">
+                            <div class="card-title-text">{title}</div>
+                            <div class="card-year-text">{year}</div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"""
+                    <div class="movie-card-wrap" style="min-height:200px; margin-bottom:0;">
+                        <div class="card-no-poster">
+                            🎬<br/>{title}<br/><span style="opacity:0.5">{year}</span>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            # Select button
+            st.markdown("<div class='card-btn-container'>", unsafe_allow_html=True)
+            if st.button("▶  SELECT", key=f"sel_{imdb_id}_{i}", use_container_width=True):
+                st.session_state.selected_imdb_id = imdb_id
+                st.session_state.search_results   = []
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+
+# ---------------- RUN ANALYSIS ON SELECTED MOVIE ----------------
+if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
+    with st.spinner("Fetching movie details..."):
+        st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
+        st.session_state.cached_query = st.session_state.selected_imdb_id
+
+    if st.session_state.cached_movie:
+        m = st.session_state.cached_movie
+        raw_reviews = {
+            "title":              m["title"],
+            "critic_reviews":     m["plot"],
+            "audience_reactions": m["actors"],
+            "discussion_points":  m["genre"],
+        }
+        with st.spinner("AI models are debating the film..."):
+            st.session_state.cached_result = analyze_movie(raw_reviews)
 
 movie  = st.session_state.cached_movie
 result = st.session_state.cached_result
 
 # ---------------- ERROR STATE ----------------
-if movie is None and st.session_state.cached_query is not None:
+if (
+    st.session_state.last_typed is not None
+    and not search_results
+    and not movie
+    and not st.session_state.selected_imdb_id
+):
     st.markdown(
         "<div class='err-box'>⚠ &nbsp; No results found for that title. Try a different spelling.</div>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-# ---------------- RENDER ----------------
+# ---------------- RENDER ANALYSIS ----------------
 elif movie and result:
 
     # ── Movie Info ──────────────────────────────────────────────────────────
@@ -580,21 +823,21 @@ elif movie and result:
         st.markdown(
             f"<div class='movie-meta'>{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']}"
             f" &nbsp;·&nbsp; {movie['runtime']}</div>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
         st.markdown(
             f"<p style='font-size:15px;color:{text_secondary};line-height:1.8;margin-top:12px;'>{movie['plot']}</p>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
         st.markdown(
             f"<p style='font-size:13px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:6px;'>"
             f"CAST: {movie['actors']}</p>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 1. THEMES (Moved to top) ────────────────────────────────────────────
+    # ── 1. THEMES ────────────────────────────────────────────────────────────
     st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
     tags_html = "".join(
         f"<span class='theme-tag'>#{t.strip()}</span>"
@@ -604,99 +847,96 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 2. OVERVIEW & DEBATE SUMMARY ────────────────────────────────────────
+    # ── 2. OVERVIEW & DEBATE SUMMARY ─────────────────────────────────────────
     st.markdown("<div class='section-heading'>🎬 &nbsp; Overview</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of <strong>{movie['title']}</strong> ({movie['year']}), directed by {movie['director']}. Featuring a cast that includes {movie['actors']}, the film is recognized as a notable entry in the {movie['genre']} genre.<br><br>The following transcript captures a dynamic discussion dissecting the core narrative—where <em>{movie['plot']}</em>—as well as analyzing its cinematic execution, pacing, and legacy. Our Critic model examines its technical and storytelling shortcomings, while the Advocate pushes back to highlight its underappreciated strengths.</div>",
-        unsafe_allow_html=True
+        f"<div class='summary-box'>In this session, our AI models debate the merits and flaws of "
+        f"<strong>{movie['title']}</strong>, analyzing its execution, storytelling, and its standing "
+        f"within the {movie['genre']} genre.</div>",
+        unsafe_allow_html=True,
     )
-    
+
     st.markdown("<div class='section-heading'>🧠 &nbsp; Debate Summary</div>", unsafe_allow_html=True)
     st.markdown(
         f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 3. FINAL SCORE (Ring Chart) ─────────────────────────────────────────
+    # ── 3. RING CHART SCORES ─────────────────────────────────────────────────
     st.markdown("<div class='section-heading'>🎯 &nbsp; Scores</div>", unsafe_allow_html=True)
-    
-    # Extract AI score
-    raw_ai_score = str(result.get('final_score', 'N/A'))
+
+    # ── Parse AI score ──
+    raw_ai_score = str(result.get("final_score", "N/A"))
     try:
-        if '/' in raw_ai_score:
-            num_part = raw_ai_score.split('/')[0]
-            ai_val = float(num_part) * 10
+        if "/" in raw_ai_score:
+            num_str = raw_ai_score.split("/")[0].strip()
+            ai_pct  = float(num_str) * 10
         else:
-            ai_val = float(re.sub(r'[^\d.]', '', raw_ai_score)) * 10
-    except:
-        ai_val = 0
+            ai_pct  = float(re.sub(r"[^\d.]", "", raw_ai_score)) * 10
+        ai_pct = min(max(ai_pct, 0), 100)
+    except Exception:
+        ai_pct = 0
+    ai_display = raw_ai_score if raw_ai_score != "N/A" else "—"
 
-    # Extract IMDb score
-    raw_imdb_score = str(movie.get('imdb_rating', '—'))
+    # ── Parse IMDb score ──
+    raw_imdb = str(movie.get("imdb_rating", "—"))
     try:
-        if raw_imdb_score not in ('—', 'N/A'):
-            imdb_val = float(raw_imdb_score.split('/')[0] if '/' in raw_imdb_score else raw_imdb_score) * 10
-        else:
-            imdb_val = 0
-    except:
-        imdb_val = 0
+        imdb_pct = float(raw_imdb.split("/")[0] if "/" in raw_imdb else raw_imdb) * 10
+        imdb_pct = min(max(imdb_pct, 0), 100)
+    except Exception:
+        imdb_pct = 0
+    imdb_display = raw_imdb
 
-    # Extract RT score
-    raw_rt_score = str(movie.get('rt_rating', '—'))
+    # ── Parse RT score ──
+    raw_rt = str(movie.get("rt_rating", "—"))
     try:
-        if raw_rt_score not in ('—', 'N/A'):
-            rt_val = float(raw_rt_score.replace('%', ''))
-        else:
-            rt_val = 0
-    except:
-        rt_val = 0
+        rt_pct = float(raw_rt.replace("%", "").strip())
+        rt_pct = min(max(rt_pct, 0), 100)
+    except Exception:
+        rt_pct = 0
+    rt_display = raw_rt
 
-    chart_html = f"""
-<div style="display: flex; gap: 60px; align-items: center; justify-content: center; margin: 24px 0 16px 0;">
-    <!-- AI Score -->
-    <div style="text-align: center;">
-        <div class='score-container' style='margin: 0;'>
-            <svg viewBox="0 0 36 36" class="circular-chart">
-                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle" stroke-dasharray="{ai_val}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <text x="18" y="21.5" class="percentage" text-anchor="middle">{raw_ai_score}</text>
-            </svg>
-        </div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">AI VERDICT</div>
-    </div>
+    def ring_svg(pct, display, circle_class, text_class):
+        """Build a single ring SVG. pct is 0-100."""
+        dash = f"{pct:.1f}, 100"
+        return f"""
+        <svg viewBox="0 0 36 36" class="circular-chart">
+            <path class="circle-bg"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="{circle_class}"
+                stroke-dasharray="{dash}"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <text x="18" y="21" class="{text_class}" text-anchor="middle">{display}</text>
+        </svg>
+        """
 
-    <!-- IMDb Score -->
-    <div style="text-align: center;">
-        <div class='score-container' style='margin: 0;'>
-            <svg viewBox="0 0 36 36" class="circular-chart">
-                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle" stroke-dasharray="{imdb_val}, 100" style="stroke: #f5c518; filter: drop-shadow(0 0 4px rgba(245,197,24,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <text x="18" y="21.5" class="percentage" style="fill: #f5c518; text-shadow: 0 0 10px rgba(245,197,24,0.5);" text-anchor="middle">{raw_imdb_score}</text>
-            </svg>
+    scores_html = f"""
+    <div class="scores-row">
+        <div class="score-item">
+            {ring_svg(ai_pct, ai_display, "circle", "percentage-ai")}
+            <div class="score-label">AI Verdict</div>
         </div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">IMDb</div>
-    </div>
-
-    <!-- Rotten Tomatoes -->
-    <div style="text-align: center;">
-        <div class='score-container' style='margin: 0;'>
-            <svg viewBox="0 0 36 36" class="circular-chart">
-                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle" stroke-dasharray="{rt_val}, 100" style="stroke: #fa320a; filter: drop-shadow(0 0 4px rgba(250,50,10,0.5));" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <text x="18" y="21.5" class="percentage" style="fill: #fa320a; text-shadow: 0 0 10px rgba(250,50,10,0.5);" text-anchor="middle">{raw_rt_score}</text>
-            </svg>
+        <div class="score-item">
+            {ring_svg(imdb_pct, imdb_display, "circle-imdb", "percentage-imdb")}
+            <div class="score-label">IMDb</div>
         </div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {meta_color}; margin-top: 12px; letter-spacing: 2px;">ROTTEN TOMATOES</div>
+        <div class="score-item">
+            {ring_svg(rt_pct, rt_display, "circle-rt", "percentage-rt")}
+            <div class="score-label">Rotten Tomatoes</div>
+        </div>
     </div>
-</div>
-"""
-    st.markdown(chart_html, unsafe_allow_html=True)
+    """
+    st.markdown(scores_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 4. DEBATE TRANSCRIPT (Moved to bottom) ──────────────────────────────
+    # ── 4. DEBATE TRANSCRIPT ─────────────────────────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
         st.markdown("<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>", unsafe_allow_html=True)
@@ -704,7 +944,7 @@ elif movie and result:
             f"<p style='font-size:13px;color:{text_muted};margin-bottom:12px;"
             f"font-family:JetBrains Mono,monospace;'>"
             f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 rounds</p>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
         with st.expander("▸ Click to read the full debate"):
             bubbles_html = "<div class='debate-wrap'>"
