@@ -855,21 +855,40 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 2. OVERVIEW & DEBATE SUMMARY ──────────────────────────────
-    st.markdown("<div class='section-heading'>Film Overview</div>", unsafe_allow_html=True)
-    st.markdown(
-        f"<div class='summary-box'>"
-        f"In this session, our AI models debate the merits and flaws of "
-        f"<strong style='color:{C['on_surface']}'>{movie['title']}</strong> ({movie['year']}), "
-        f"directed by <strong style='color:{C['on_surface']}'>{movie['director']}</strong>. "
-        f"Starring {movie['actors']}, the film is a notable entry in the "
-        f"<em style='color:{C['secondary']}'>{movie['genre']}</em> genre."
-        f"<br><br>{movie['plot']}<br><br>"
-        f"The debate below features a Critic model and an Advocate model arguing their perspectives "
-        f"across multiple rounds — examining cinematic execution, narrative strength, and cultural impact."
-        f"</div>",
-        unsafe_allow_html=True,
-    )
+    # ── 2. QUICK FACTS CARD + DEBATE SUMMARY ──────────────────────
+    st.markdown("<div class='section-heading'>At a Glance</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="agenda-card" style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>Director</b><br>
+            <span style="color:{C['primary_container']}">{movie['director']}</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>Year</b><br>
+            <span style="color:{C['primary_container']}">{movie['year']}</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>Genre</b><br>
+            <span style="color:{C['on_surface_var']}">{movie['genre']}</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>Runtime</b><br>
+            <span style="color:{C['on_surface_var']}">{movie['runtime']}</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>IMDb Rating</b><br>
+            <span style="color:#f5c518;font-weight:700;">{movie['imdb_rating']} / 10</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
+            <b>Rotten Tomatoes</b><br>
+            <span style="color:#ff6b35;font-weight:700;">{movie['rt_rating']}</span>
+        </div>
+        <div class="agenda-item" style="padding:6px 0;grid-column:1/-1;">
+            <b>Cast</b><br>
+            <span style="color:{C['on_surface_var']}">{movie['actors']}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<div class='section-heading'>Debate Summary</div>", unsafe_allow_html=True)
     st.markdown(
@@ -908,22 +927,34 @@ elif movie and result:
         rt_pct = 0
 
     def ring_svg(pct, display, stroke, glow, track):
-        dash = f"{pct:.1f}, 100"
-        arc  = (
-            f'<path style="fill:none;stroke:{stroke};stroke-width:2.8;stroke-linecap:round;'
-            f'filter:drop-shadow(0 0 5px {glow});transform:rotate(-90deg);transform-origin:18px 18px;'
-            f'animation:scoreAnim 1.3s ease-out forwards;" stroke-dasharray="{dash}"'
+        # pathLength="100" makes stroke-dasharray directly map to 0-100%
+        dash_to   = f"{pct:.1f} 100"
+        dash_from = f"0 100"
+        arc = (
+            f'<path pathLength="100" style="fill:none;stroke:{stroke};stroke-width:2.8;'
+            f'stroke-linecap:round;'
+            f'filter:drop-shadow(0 0 6px {glow});'
+            f'transform:rotate(-90deg);transform-origin:18px 18px;'
+            f'animation:scoreAnim 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"'
+            f' stroke-dasharray="{dash_to}"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
         ) if pct > 0 else ""
         return (
-            f'<svg viewBox="0 0 36 36" style="display:block;width:120px;height:120px;">'
-            f'<defs><style>@keyframes scoreAnim{{from{{stroke-dasharray:0,100}}'
-            f'to{{stroke-dasharray:{dash}}}}}</style></defs>'
-            f'<path style="fill:none;stroke:{track};stroke-width:3.5;"'
+            f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
+            f'<defs><style>'
+            f'@keyframes scoreAnim{{'
+            f'  from{{stroke-dasharray:{dash_from}}}'
+            f'  to{{stroke-dasharray:{dash_to}}}'
+            f'}}'
+            f'</style></defs>'
+            # Track ring
+            f'<path pathLength="100" style="fill:none;stroke:{track};stroke-width:3.5;"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
+            # Filled arc
             f'{arc}'
-            f'<text x="18" y="21" style="fill:{stroke};font-family:Epilogue,sans-serif;'
-            f'font-size:7px;font-weight:800;text-anchor:middle;letter-spacing:-0.5px;">{display}</text>'
+            # Center score text
+            f'<text x="18" y="19.5" style="fill:{stroke};font-family:Epilogue,sans-serif;'
+            f'font-size:6.5px;font-weight:800;text-anchor:middle;letter-spacing:-0.3px;">{display}</text>'
             f'</svg>'
         )
 
