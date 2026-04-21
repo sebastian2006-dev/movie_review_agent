@@ -8,14 +8,10 @@ API_KEY = st.secrets["OMDB_API_KEY"]
 
 # ---------------- SEARCH MOVIES ----------------
 def search_movies(query: str):
-    """Search OMDB. Prepends exact-title match so the best result appears first.
-    No type filter so TV series (e.g. Breaking Bad) are included.
-    """
     if not API_KEY:
-        return []
+        return [], None
     url = "http://www.omdbapi.com/"
 
-    # 1. Try exact match first (no type filter — supports series too)
     exact = None
     try:
         r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json"}, timeout=10)
@@ -31,7 +27,6 @@ def search_movies(query: str):
     except Exception:
         pass
 
-    # 2. Broader search (no type filter)
     fuzzy = []
     try:
         r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json"}, timeout=10)
@@ -41,18 +36,30 @@ def search_movies(query: str):
     except Exception:
         pass
 
-    # 3. Merge: exact first, then deduplicated fuzzy results
     seen = set()
     merged = []
+    error_msg = None
+
     if exact:
         merged.append(exact)
         seen.add(exact["imdbID"])
+
     for item in fuzzy:
         iid = item.get("imdbID", "")
         if iid not in seen:
             merged.append(item)
             seen.add(iid)
-    return merged[:6]
+
+    if not merged:
+        try:
+            r = requests.get(url, params={"s": query, "apikey": API_KEY}, timeout=10)
+            d = r.json()
+            if d.get("Response") == "False":
+                error_msg = d.get("Error")
+        except Exception:
+            pass
+
+    return merged[:6], error_msg
 
 
 # ---------------- FETCH MOVIE DATA BY IMDB ID ----------------
@@ -94,640 +101,628 @@ def fetch_movie_by_id(imdb_id: str):
     }
 
 
-# ---------------- PAGE CONFIG ----------------
+# ================================================================
+# PAGE CONFIG
+# ================================================================
 st.set_page_config(
-    page_title="Movie Review Agent",
+    page_title="CineGlow · Movie Review Agent",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# ---------------- SESSION STATE ----------------
-if "light_mode"       not in st.session_state: st.session_state.light_mode       = True
+# ================================================================
+# SESSION STATE
+# ================================================================
 if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
 if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
 if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
 if "search_results"   not in st.session_state: st.session_state.search_results   = []
 if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
+if "search_error"     not in st.session_state: st.session_state.search_error     = None
 
-is_dark = not st.session_state.light_mode
+# ================================================================
+# CINEMATIC EMBER — DESIGN TOKENS
+# ================================================================
+C = {
+    # Surfaces
+    "bg":               "#161311",
+    "bg_lowest":        "#110d0c",
+    "bg_low":           "#1f1b19",
+    "bg_container":     "#231f1d",
+    "bg_high":          "#2e2927",
+    "bg_highest":       "#393431",
+    "bg_bright":        "#3d3836",
+    # Text
+    "on_surface":       "#eae1dd",
+    "on_surface_var":   "#d6c4ad",
+    "on_primary":       "#442b00",
+    "text_muted":       "#9f8e79",
+    "text_dim":         "#514533",
+    # Primaries / Accents
+    "primary":          "#ffd79e",
+    "primary_dim":      "#ffba47",
+    "primary_container":"#ffb224",
+    "secondary":        "#ffb77e",
+    "tertiary":         "#fed4c2",
+    "outline":          "#9f8e79",
+    "outline_var":      "#514533",
+    # Glow helpers
+    "glow_amber":       "rgba(255,178,36,0.18)",
+    "glow_amber_md":    "rgba(255,178,36,0.28)",
+    "glow_amber_btn":   "rgba(255,178,36,0.22)",
+    "glow_orange":      "rgba(255,183,126,0.15)",
+    "critic_color":     "#ffba47",
+    "advocate_color":   "#ffb77e",
+    "critic_bg":        "rgba(255,186,71,0.07)",
+    "advocate_bg":      "rgba(255,183,126,0.07)",
+    "critic_border":    "rgba(255,186,71,0.22)",
+    "advocate_border":  "rgba(255,183,126,0.22)",
+}
 
-# ---------------- THEME VARIABLES ----------------
-if is_dark:
-    bg_base               = "#060b18"
-    bg_card               = "rgba(255,255,255,0.04)"
-    bg_card_hover         = "rgba(255,255,255,0.08)"
-    border_color          = "rgba(255,255,255,0.08)"
-    text_primary          = "#f0f4ff"
-    text_secondary        = "#c8d0e8"
-    text_muted            = "#7a85a0"
-    accent1               = "#9b6fff"
-    accent2               = "#22d3ee"
-    accent3               = "#c084fc"
-    glow1                 = "rgba(124,58,237,0.35)"
-    glow2                 = "rgba(6,182,212,0.25)"
-    glow3                 = "rgba(168,85,247,0.06)"
-    verdict_bg            = "rgba(124,58,237,0.08)"
-    verdict_border        = "#9b6fff"
-    error_bg              = "rgba(239,68,68,0.1)"
-    error_border          = "#ef4444"
-    tag_bg                = "rgba(124,58,237,0.15)"
-    tag_border            = "rgba(124,58,237,0.4)"
-    score_color           = "#22d3ee"
-    score_glow            = "rgba(34,211,238,0.5)"
-    score_bg              = "rgba(6,182,212,0.07)"
-    score_border          = "rgba(6,182,212,0.22)"
-    header_gradient       = "linear-gradient(135deg, #f0f4ff 0%, #c084fc 50%, #22d3ee 100%)"
-    eyebrow_color         = "#22d3ee"
-    input_border          = "rgba(155,111,255,0.5)"
-    input_glow            = "rgba(155,111,255,0.3)"
-    meta_color            = "#8892b0"
-    expander_bg           = "rgba(124,58,237,0.06)"
-    chatinput_bg          = "rgba(255,255,255,0.04)"
-    chatinput_text        = "#f0f4ff"
-    chatinput_placeholder = "#6a7590"
-    btn_bg                = "linear-gradient(135deg, #7c3aed, #06b6d4)"
-    btn_hover_bg          = "linear-gradient(135deg, #6d28d9, #0891b2)"
-    btn_shadow            = "rgba(124,58,237,0.45)"
-    critic_color          = "#22d3ee"
-    critic_bg             = "rgba(6,182,212,0.07)"
-    critic_border         = "rgba(6,182,212,0.2)"
-    advocate_color        = "#f97316"
-    advocate_bg           = "rgba(249,115,22,0.07)"
-    advocate_border       = "rgba(249,115,22,0.2)"
-    card_overlay_bg       = "linear-gradient(to top, rgba(6,11,24,0.97) 0%, rgba(6,11,24,0.5) 50%, transparent 100%)"
-    card_bg_empty         = "rgba(255,255,255,0.05)"
-    card_hover_border     = "#9b6fff"
-    search_section_bg     = "rgba(255,255,255,0.02)"
-    search_section_border = "rgba(255,255,255,0.06)"
-    # Ring chart colors
-    ai_ring_color         = "#22d3ee"
-    ai_ring_glow          = "rgba(34,211,238,0.5)"
-    ai_ring_bg            = "rgba(6,182,212,0.15)"
-    ai_text_color         = "#22d3ee"
-else:
-    bg_base               = "#fdfbf7"
-    bg_card               = "rgba(255,255,255,0.85)"
-    bg_card_hover         = "rgba(255,255,255,1)"
-    border_color          = "rgba(217,119,54,0.15)"
-    text_primary          = "#2c2421"
-    text_secondary        = "#4a3f3c"
-    text_muted            = "#7a6b68"
-    accent1               = "#d97736"
-    accent2               = "#4a7c59"
-    accent3               = "#c4554b"
-    glow1                 = "rgba(217,119,54,0.12)"
-    glow2                 = "rgba(196,85,75,0.12)"
-    glow3                 = "rgba(217,119,54,0.06)"
-    verdict_bg            = "rgba(217,119,54,0.06)"
-    verdict_border        = "#d97736"
-    error_bg              = "rgba(220,38,38,0.06)"
-    error_border          = "#dc2626"
-    tag_bg                = "rgba(217,119,54,0.08)"
-    tag_border            = "rgba(217,119,54,0.25)"
-    score_color           = "#c4554b"
-    score_glow            = "rgba(196,85,75,0.15)"
-    score_bg              = "rgba(196,85,75,0.07)"
-    score_border          = "rgba(196,85,75,0.22)"
-    header_gradient       = "linear-gradient(135deg, #2c2421 0%, #d97736 60%, #c4554b 100%)"
-    eyebrow_color         = "#d97736"
-    input_border          = "#2c2421"
-    input_glow            = "rgba(44,36,33,0.25)"
-    meta_color            = "#665a58"
-    expander_bg           = "rgba(255,255,255,0.7)"
-    chatinput_bg          = "#2c2421"
-    chatinput_text        = "#ffffff"
-    chatinput_placeholder = "rgba(255,255,255,0.6)"
-    btn_bg                = "linear-gradient(135deg, #d97736, #c4554b)"
-    btn_hover_bg          = "linear-gradient(135deg, #c4554b, #a34139)"
-    btn_shadow            = "rgba(217,119,54,0.2)"
-    critic_color          = "#4a7c59"
-    critic_bg             = "rgba(74,124,89,0.07)"
-    critic_border         = "rgba(74,124,89,0.2)"
-    advocate_color        = "#d97736"
-    advocate_bg           = "rgba(217,119,54,0.07)"
-    advocate_border       = "rgba(217,119,54,0.2)"
-    card_overlay_bg       = "linear-gradient(to top, rgba(44,36,33,0.97) 0%, rgba(44,36,33,0.5) 50%, transparent 100%)"
-    card_bg_empty         = "rgba(217,119,54,0.06)"
-    card_hover_border     = "#d97736"
-    search_section_bg     = "rgba(217,119,54,0.03)"
-    search_section_border = "rgba(217,119,54,0.1)"
-    # Ring chart colors
-    ai_ring_color         = "#c4554b"
-    ai_ring_glow          = "rgba(196,85,75,0.5)"
-    ai_ring_bg            = "rgba(196,85,75,0.15)"
-    ai_text_color         = "#c4554b"
-
-# ---------------- GLOBAL CSS ----------------
+# ================================================================
+# GLOBAL CSS — CINEMATIC EMBER DESIGN SYSTEM
+# ================================================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500&display=swap');
 
+/* ── Reset sidebar toggle ── */
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
+/* ── App Shell ── */
 .stApp {{
-    background-color: {bg_base} !important;
-    color: {text_primary};
-    font-family: 'DM Sans', sans-serif;
+    background-color: {C["bg"]} !important;
+    color: {C["on_surface"]};
+    font-family: 'Be Vietnam Pro', sans-serif;
 }}
 .block-container {{
-    max-width: 1180px;
-    padding-top: 1.2rem;
-    padding-bottom: 4rem;
+    max-width: 1200px;
+    padding-top: 0 !important;
+    padding-bottom: 6rem;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }}
+
+/* ── Ambient background glow ── */
 .stApp::before {{
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
     background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, {glow1} 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, {glow2} 0%, transparent 55%),
-        radial-gradient(ellipse 40% 40% at 50% 50%, {glow3} 0%, transparent 70%);
+        radial-gradient(ellipse 70% 55% at 15% 5%,  {C["glow_amber"]}   0%, transparent 65%),
+        radial-gradient(ellipse 50% 45% at 85% 85%, {C["glow_orange"]}  0%, transparent 55%),
+        radial-gradient(ellipse 35% 35% at 50% 50%, rgba(255,178,36,0.04) 0%, transparent 70%);
     pointer-events: none;
 }}
-h1, h2, h3 {{ font-family: 'Syne', sans-serif !important; }}
 
-/* ── Hero ── */
-.hero-eyebrow {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 5px;
-    color: {eyebrow_color};
-    text-align: center;
+/* ── Scrollbar ── */
+::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+::-webkit-scrollbar-track {{ background: {C["bg_lowest"]}; }}
+::-webkit-scrollbar-thumb {{ background: {C["bg_highest"]}; border-radius: 4px; }}
+::-webkit-scrollbar-thumb:hover {{ background: {C["outline_var"]}; }}
+
+h1, h2, h3, h4 {{ font-family: 'Epilogue', sans-serif !important; }}
+
+/* ════════════════════════════════════════
+   TOP NAV BAR
+════════════════════════════════════════ */
+.cineglow-nav {{
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 68px;
+    background: rgba(17,13,12,0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid {C["outline_var"]}40;
+    box-shadow: 0 10px 40px -15px {C["glow_amber_md"]};
+    margin-left: -2rem;
+    margin-right: -2rem;
+    margin-bottom: 2.5rem;
+}}
+.nav-brand {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: {C["primary_container"]};
+    letter-spacing: -0.03em;
+    cursor: pointer;
+}}
+.nav-brand span {{
+    color: {C["on_surface"]};
+    font-weight: 400;
+    opacity: 0.5;
+    font-size: 14px;
+    margin-left: 6px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 12px;
-    opacity: 1;
+    vertical-align: middle;
+}}
+.nav-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: {C["bg_high"]};
+    border: 1px solid {C["outline_var"]};
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: {C["on_surface_var"]};
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}}
+.nav-dot {{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: {C["primary_container"]};
+    box-shadow: 0 0 8px {C["primary_container"]};
+    animation: pulse-dot 2.5s ease-in-out infinite;
+}}
+@keyframes pulse-dot {{
+    0%, 100% {{ opacity: 1; transform: scale(1); }}
+    50%       {{ opacity: 0.5; transform: scale(0.75); }}
+}}
+
+/* ════════════════════════════════════════
+   HERO / PAGE HEADER
+════════════════════════════════════════ */
+.hero-eyebrow {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: {C["primary_container"]};
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 14px;
 }}
 .hero-title {{
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(38px, 6vw, 68px);
+    font-family: 'Epilogue', sans-serif;
+    font-size: clamp(36px, 5.5vw, 60px);
     font-weight: 800;
-    text-align: center;
-    background: {header_gradient};
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    letter-spacing: -0.02em;
     line-height: 1.1;
-    margin-bottom: 6px;
+    text-align: center;
+    color: {C["on_surface"]};
+    margin-bottom: 10px;
+}}
+.hero-title em {{
+    font-style: normal;
+    color: {C["primary_container"]};
 }}
 .hero-sub {{
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 17px;
-    color: {text_muted};
+    color: {C["on_surface_var"]};
     text-align: center;
-    margin-bottom: 32px;
+    max-width: 520px;
+    margin: 0 auto 36px auto;
+    line-height: 1.6;
 }}
 
-/* ── Chat Input ── */
+/* ════════════════════════════════════════
+   CHAT INPUT — RECESSED DARK FIELD
+════════════════════════════════════════ */
 div[data-testid="stChatInput"],
 .stChatInput {{
-    background: {chatinput_bg} !important;
-    border: 1px solid {input_border} !important;
-    border-radius: 16px !important;
-    box-shadow: none !important;
-    padding-right: 6px !important;
-    padding-left: 6px !important;
+    background: {C["bg_lowest"]} !important;
+    border: 1px solid {C["outline_var"]} !important;
+    border-radius: 9999px !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}}
+div[data-testid="stChatInput"]:focus-within,
+.stChatInput:focus-within {{
+    border-color: {C["primary_container"]}80 !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 24px {C["glow_amber"]} !important;
 }}
 div[data-testid="stChatInput"] > div,
 .stChatInput > div {{
-    background: {chatinput_bg} !important;
+    background: transparent !important;
     border: none !important;
-    border-radius: 16px !important;
+    border-radius: 9999px !important;
 }}
 textarea[data-testid="stChatInputTextArea"],
 div[data-testid="stChatInput"] textarea,
 .stChatInput textarea {{
     background: transparent !important;
     border: none !important;
-    color: {chatinput_text} !important;
-    -webkit-text-fill-color: {chatinput_text} !important;
-    font-family: 'DM Sans', sans-serif !important;
+    color: {C["on_surface"]} !important;
+    -webkit-text-fill-color: {C["on_surface"]} !important;
+    font-family: 'Be Vietnam Pro', sans-serif !important;
     font-size: 16px !important;
-    padding: 16px 20px !important;
+    padding: 14px 20px !important;
     box-shadow: none !important;
-    outline: none !important;
-    caret-color: {accent1} !important;
+    caret-color: {C["primary_container"]} !important;
 }}
 textarea[data-testid="stChatInputTextArea"]::placeholder,
-div[data-testid="stChatInput"] textarea::placeholder,
-.stChatInput textarea::placeholder {{
-    color: {chatinput_placeholder} !important;
-    -webkit-text-fill-color: {chatinput_placeholder} !important;
-}}
-textarea[data-testid="stChatInputTextArea"]:focus,
-div[data-testid="stChatInput"] textarea:focus,
-.stChatInput textarea:focus {{
-    box-shadow: none !important; outline: none !important; border: none !important;
-}}
-div[data-testid="stChatInput"]:focus-within,
-.stChatInput:focus-within {{
-    border-color: {accent1} !important;
-    box-shadow: 0 0 20px {input_glow} !important;
+div[data-testid="stChatInput"] textarea::placeholder {{
+    color: {C["text_muted"]} !important;
+    -webkit-text-fill-color: {C["text_muted"]} !important;
 }}
 
 /* ── Send Button ── */
 button[data-testid="stChatInputSubmitButton"],
 div[data-testid="stChatInput"] button,
 .stChatInput button {{
-    background: {btn_bg} !important;
+    background: {C["primary_container"]} !important;
     border: none !important;
-    border-radius: 10px !important;
-    width: 36px !important;
-    height: 36px !important;
+    border-radius: 9999px !important;
+    width: 38px !important;
+    height: 38px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px {btn_shadow} !important;
+    box-shadow: 0 4px 20px {C["glow_amber_btn"]} !important;
     transition: all 0.2s ease !important;
     flex-shrink: 0 !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
 }}
-button[data-testid="stChatInputSubmitButton"]:hover,
-div[data-testid="stChatInput"] button:hover,
-.stChatInput button:hover {{
-    background: {btn_hover_bg} !important;
-    box-shadow: 0 6px 20px {btn_shadow} !important;
-    transform: scale(1.06) !important;
+button[data-testid="stChatInputSubmitButton"]:hover {{
+    background: {C["primary_dim"]} !important;
+    box-shadow: 0 6px 28px {C["glow_amber_md"]} !important;
+    transform: scale(1.08) !important;
 }}
 button[data-testid="stChatInputSubmitButton"] svg,
-div[data-testid="stChatInput"] button svg,
-.stChatInput button svg {{
-    stroke: #ffffff !important;
+div[data-testid="stChatInput"] button svg {{
+    stroke: {C["on_primary"]} !important;
     fill: none !important;
-    width: 16px !important;
-    height: 16px !important;
+    width: 16px !important; height: 16px !important;
 }}
 
-/* ── Netflix Search Cards ── */
-.search-section-label {{
-    font-family: 'JetBrains Mono', monospace;
+/* ════════════════════════════════════════
+   SEARCH RESULT CARDS — Poster Grid
+════════════════════════════════════════ */
+.search-label {{
+    font-family: 'Epilogue', sans-serif;
     font-size: 11px;
-    letter-spacing: 3px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: {eyebrow_color};
-    margin-bottom: 16px;
-    margin-top: 8px;
-}}
-.movie-card-wrap {{
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    background: {card_bg_empty};
-    border: 1px solid {border_color};
-    transition: all 0.25s ease;
-    cursor: pointer;
-    aspect-ratio: 2/3;
-    display: flex;
-    flex-direction: column;
-}}
-.movie-card-wrap:hover {{
-    border-color: {card_hover_border};
-    transform: scale(1.04);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-}}
-.movie-card-wrap img {{
-    position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-}}
-.movie-card-overlay {{
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: {card_overlay_bg};
-    padding: 16px 10px 12px;
-    border-radius: 0 0 12px 12px;
-}}
-.card-title-text {{
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 2px 0;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}}
-.card-year-text {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(255,255,255,0.6);
-    letter-spacing: 1px;
-}}
-.card-no-poster {{
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 8px;
-    color: {text_muted};
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    text-align: center;
-    padding: 16px;
-    box-sizing: border-box;
+    color: {C["primary_container"]};
+    margin-bottom: 18px;
+    margin-top: 6px;
 }}
 
-/* ── Card select buttons ── */
-div[data-testid="stButton"] button.card-select-btn {{
+/* Override streamlit image rounding + hover */
+div[data-testid="column"] img {{
+    border-radius: 12px !important;
+    display: block !important;
+    cursor: pointer !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}}
+div[data-testid="column"] img:hover {{
+    transform: scale(1.04) !important;
+    box-shadow: 0 16px 48px -8px {C["glow_amber_md"]} !important;
+}}
+
+/* Invisible poster overlay button */
+div[data-testid="column"] div[data-testid="stButton"] > button {{
     background: transparent !important;
     border: none !important;
+    border-radius: 0 !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    font-size: 1px !important;
     padding: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    position: absolute !important;
-    top: 0 !important; left: 0 !important;
-    cursor: pointer !important;
-    opacity: 0 !important;
-}}
-
-/* Style all buttons inside card containers */
-.card-btn-container button {{
-    background: {btn_bg} !important;
-    border: none !important;
-    border-radius: 8px !important;
-    color: white !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 10px !important;
-    letter-spacing: 1px !important;
-    padding: 6px 0 !important;
+    margin-top: -300px !important;
+    height: 300px !important;
     width: 100% !important;
     cursor: pointer !important;
-    margin-top: 8px !important;
-    transition: all 0.2s ease !important;
+    position: relative !important;
+    z-index: 10 !important;
 }}
-.card-btn-container button:hover {{
-    background: {btn_hover_bg} !important;
-    box-shadow: 0 4px 14px {btn_shadow} !important;
+div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
+    background: rgba(255,178,36,0.06) !important;
 }}
 
-/* ── Movie Info ── */
+/* ════════════════════════════════════════
+   MOVIE DETAIL — TITLE / META
+════════════════════════════════════════ */
+.movie-title-display {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: clamp(26px, 3.5vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: {C["on_surface"]};
+    margin-bottom: 8px;
+}}
 .movie-meta {{
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Epilogue', sans-serif;
     font-size: 13px;
-    color: {meta_color};
-    letter-spacing: 1.2px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: {C["text_muted"]};
+    margin-bottom: 18px;
+    text-transform: uppercase;
+}}
+.movie-meta b {{
+    color: {C["primary_container"]};
+}}
+
+/* ════════════════════════════════════════
+   SECTION HEADING
+════════════════════════════════════════ */
+.section-heading {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: {C["primary_container"]};
+    margin: 32px 0 14px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}}
+.section-heading::after {{
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, {C["outline_var"]}80, transparent);
+}}
+
+/* ════════════════════════════════════════
+   AGENDA / INFO CARD
+════════════════════════════════════════ */
+.agenda-card {{
+    background: {C["bg_container"]};
+    border: 1px solid {C["outline_var"]}60;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 18px;
+    box-shadow: 0 8px 32px -12px rgba(0,0,0,0.5);
+}}
+.agenda-title {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: {C["primary_container"]};
     margin-bottom: 12px;
 }}
-.movie-title-display {{
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(28px, 4vw, 44px);
-    font-weight: 800;
-    color: {text_primary};
-    margin-bottom: 6px;
+.agenda-item {{
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 14px;
+    color: {C["on_surface_var"]};
+    line-height: 1.7;
+    padding: 3px 0;
+}}
+.agenda-item b {{
+    color: {C["on_surface"]};
 }}
 
-/* ── Debate Bubbles ── */
+/* ════════════════════════════════════════
+   SUMMARY / VERDICT BOX
+════════════════════════════════════════ */
+.summary-box {{
+    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}60 100%);
+    border-left: 3px solid {C["primary_container"]};
+    border-radius: 0 12px 12px 0;
+    padding: 22px 28px;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 15px;
+    color: {C["on_surface_var"]};
+    line-height: 1.85;
+    box-shadow: 0 4px 20px -8px rgba(0,0,0,0.4);
+}}
+
+/* ════════════════════════════════════════
+   THEME CHIPS
+════════════════════════════════════════ */
+.theme-tag {{
+    display: inline-block;
+    background: rgba(255,178,36,0.09);
+    border: 1px solid rgba(255,178,36,0.25);
+    color: {C["secondary"]};
+    font-family: 'Epilogue', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    margin: 4px 3px;
+    transition: all 0.2s ease;
+}}
+
+/* ════════════════════════════════════════
+   DEBATE TRANSCRIPT BUBBLES
+════════════════════════════════════════ */
 .debate-wrap {{
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-top: 8px;
+    gap: 18px;
+    margin-top: 10px;
 }}
 .debate-bubble {{
     padding: 18px 22px;
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 15px;
     line-height: 1.75;
-    max-width: 90%;
-    color: {text_secondary};
+    max-width: 88%;
+    color: {C["on_surface_var"]};
+    box-shadow: 0 4px 18px -8px rgba(0,0,0,0.35);
 }}
 .bubble-critic {{
-    background: {critic_bg};
-    border: 1px solid {critic_border};
+    background: {C["critic_bg"]};
+    border: 1px solid {C["critic_border"]};
     border-radius: 16px 16px 16px 4px;
     align-self: flex-start;
 }}
 .bubble-advocate {{
-    background: {advocate_bg};
-    border: 1px solid {advocate_border};
+    background: {C["advocate_bg"]};
+    border: 1px solid {C["advocate_border"]};
     border-radius: 16px 16px 4px 16px;
     align-self: flex-end;
 }}
 .bubble-label {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    font-weight: 700;
-}}
-.bubble-label-critic   {{ color: {critic_color}; }}
-.bubble-label-advocate {{ color: {advocate_color}; }}
-.bubble-model-tag {{
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    opacity: 0.6;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}}
+.bubble-label-critic   {{ color: {C["critic_color"]}; }}
+.bubble-label-advocate {{ color: {C["advocate_color"]}; }}
+.bubble-model-tag {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 10px;
+    opacity: 0.5;
     margin-left: 8px;
-    letter-spacing: 1px;
+    letter-spacing: 0.05em;
 }}
 .round-pill {{
     display: block;
     width: fit-content;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    letter-spacing: 2px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    background: {tag_bg};
-    border: 1px solid {tag_border};
-    color: {accent3};
-    padding: 3px 10px;
-    border-radius: 100px;
-    margin: 12px auto 4px auto;
+    background: rgba(255,186,71,0.1);
+    border: 1px solid rgba(255,186,71,0.3);
+    color: {C["primary_dim"]};
+    padding: 3px 12px;
+    border-radius: 9999px;
+    margin: 14px auto 6px auto;
     text-align: center;
 }}
 
-/* ── Summary Box ── */
-.summary-box {{
-    background: {verdict_bg};
-    border-left: 3px solid {verdict_border};
-    border-radius: 0 16px 16px 0;
-    padding: 22px 26px;
-    font-size: 15px;
-    color: {text_secondary};
-    line-height: 1.85;
-    margin-bottom: 8px;
-}}
-
-/* ── Themes ── */
-.theme-tag {{
-    display: inline-block;
-    background: {tag_bg};
-    border: 1px solid {tag_border};
-    color: {accent3};
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    padding: 5px 14px;
-    border-radius: 100px;
-    margin: 4px 3px;
-    letter-spacing: 0.5px;
-}}
-
-/* ── Section Heading ── */
-.section-heading {{
-    font-family: 'Syne', sans-serif;
-    font-size: 19px;
-    font-weight: 700;
-    color: {text_primary};
-    margin: 24px 0 12px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}}
-
-/* ── Point Items ── */
-.point-item {{
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: 15px;
-    color: {text_secondary};
-    padding: 9px 0;
-    border-bottom: 1px solid {border_color};
-    line-height: 1.6;
-}}
-.dot-green {{ color: #34d399; font-size: 17px; }}
-.dot-red   {{ color: #f87171; font-size: 17px; }}
-
-/* ── Misc ── */
+/* ════════════════════════════════════════
+   DIVIDER
+════════════════════════════════════════ */
 .fancy-divider {{
     height: 1px;
-    background: linear-gradient(to right, transparent, {border_color}, transparent);
-    margin: 28px 0;
+    background: linear-gradient(to right, transparent, {C["outline_var"]}60, transparent);
+    margin: 32px 0;
 }}
+
+/* ════════════════════════════════════════
+   ERROR BOX
+════════════════════════════════════════ */
 .err-box {{
-    background: {error_bg};
-    border: 1px solid {error_border};
+    background: rgba(255,178,36,0.06);
+    border: 1px solid rgba(255,178,36,0.2);
     border-radius: 12px;
-    padding: 18px 22px;
-    font-family: 'JetBrains Mono', monospace;
+    padding: 20px 28px;
+    font-family: 'Epilogue', sans-serif;
     font-size: 14px;
-    color: #f87171;
+    font-weight: 500;
+    color: {C["secondary"]};
     text-align: center;
+    letter-spacing: 0.02em;
 }}
+
+/* ════════════════════════════════════════
+   POSTER IMAGE
+════════════════════════════════════════ */
 [data-testid="stImage"] img {{
-    border-radius: 16px !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
-}}
-[data-testid="stExpander"] {{
-    background: {expander_bg} !important;
-    border: 1px solid {border_color} !important;
     border-radius: 12px !important;
-    margin-top: 2px !important;
+    box-shadow: 0 24px 64px -12px rgba(0,0,0,0.65),
+                0 0 40px -15px {C["glow_amber"]} !important;
+}}
+
+/* ════════════════════════════════════════
+   EXPANDERS
+════════════════════════════════════════ */
+[data-testid="stExpander"] {{
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline_var"]}60 !important;
+    border-radius: 12px !important;
+    margin-top: 4px !important;
 }}
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 12px !important;
-    color: {accent1} !important;
-    letter-spacing: 1px !important;
+    font-family: 'Epilogue', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    color: {C["primary_container"]} !important;
 }}
+
+/* ════════════════════════════════════════
+   GENERAL TEXT
+════════════════════════════════════════ */
 p, li, div {{
     font-size: 15px;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- THEME TOGGLE (top right) ----------------
-_, tog_col = st.columns([8, 2])
-with tog_col:
-    label_text  = "🌙 Dark" if is_dark else "☀️ Light"
-    st.toggle(label_text, key="light_mode")
-    st.markdown(f"""
-    <style>
-    [data-testid="stWidgetLabel"] p,
-    [data-testid="stWidgetLabel"] span,
-    [data-testid="stToggle"] p,
-    [data-testid="stToggle"] span,
-    [data-testid="stCheckbox"] p,
-    [data-testid="stCheckbox"] span {{
-        color: {text_primary} !important;
-        -webkit-text-fill-color: {text_primary} !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        letter-spacing: 1px !important;
-        font-size: 14px !important;
-        font-weight: 800 !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
 
-# ---------------- HERO ----------------
-st.markdown("<div class='hero-eyebrow'>⬡ Multi-Agent Intelligence · Powered by AI</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-title'>Movie Review Agent</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-sub'>Ask about any film — two AI models debate it, then deliver a verdict.</div>", unsafe_allow_html=True)
+# ================================================================
+# TOP NAV BAR
+# ================================================================
+st.markdown(f"""
+<div class="cineglow-nav">
+    <div class="nav-brand">CineGlow <span>Movie Agent</span></div>
+    <div class="nav-pill">
+        <div class="nav-dot"></div>
+        Multi-Agent · AI Debate Engine
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-c1, c2, c3 = st.columns([1, 2.5, 1])
+
+# ================================================================
+# HERO SECTION
+# ================================================================
+st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
+st.markdown(
+    "<div class='hero-sub'>Search any film — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
+    unsafe_allow_html=True,
+)
+
+c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
-    user_input = st.chat_input("Search a movie title...")
+    user_input = st.chat_input("Search a film title, e.g. Oppenheimer…")
 
-st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
-# ---------------- HANDLE SEARCH INPUT ----------------
-# FIX: Allow re-search after selecting a movie (selected_imdb_id cleared means
-# the user is starting fresh, so accept even the same query again).
+
+# ================================================================
+# HANDLE SEARCH INPUT
+# ================================================================
 if user_input and user_input.strip():
-    query = user_input.strip()
-    if query.lower() != st.session_state.last_typed or st.session_state.selected_imdb_id is None:
-        st.session_state.last_typed       = query.lower()
+    if user_input != st.session_state.last_typed:
+        st.session_state.last_typed       = user_input
         st.session_state.selected_imdb_id = None
         st.session_state.cached_movie     = None
         st.session_state.cached_result    = None
-        st.session_state.cached_query     = None
-        with st.spinner("Finding movies..."):
-            st.session_state.search_results = search_movies(query)
+        with st.spinner("Searching the archive…"):
+            results, err = search_movies(user_input)
+            st.session_state.search_results = results
+            st.session_state.search_error   = err
+        st.rerun()
 
-# ---------------- NETFLIX-STYLE SEARCH RESULTS ----------------
+
+# ================================================================
+# POSTER GRID — SEARCH RESULTS
+# ================================================================
 search_results = st.session_state.search_results
 if search_results and not st.session_state.selected_imdb_id:
-    st.markdown(
-        "<div class='search-section-label'>▸ Click a poster to begin the AI review</div>",
-        unsafe_allow_html=True,
-    )
 
-    # CSS: poster images with rounded tops; invisible click-strip button below
-    st.markdown(f"""
-    <style>
-    div[data-testid="column"] img {{
-        border-radius: 12px !important;
-        display: block !important;
-        cursor: pointer !important;
-        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    }}
-    div[data-testid="column"] img:hover {{
-        transform: scale(1.03) !important;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.35) !important;
-    }}
-    div[data-testid="column"] div[data-testid="stButton"] > button {{
-        background: transparent !important;
-        border: none !important;
-        border-radius: 0 !important;
-        color: transparent !important;
-        -webkit-text-fill-color: transparent !important;
-        font-size: 1px !important;
-        padding: 0 !important;
-        margin-top: -300px !important;
-        height: 300px !important;
-        width: 100% !important;
-        cursor: pointer !important;
-        position: relative !important;
-        z-index: 10 !important;
-    }}
-    div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-        background: rgba(255,255,255,0.08) !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+    st.markdown("<div class='search-label'>▸ Select a film to begin the AI debate</div>", unsafe_allow_html=True)
 
     display_results = search_results[:4]
-    num  = len(display_results)
-    cols = st.columns(num, gap="medium")
+    cols = st.columns(len(display_results), gap="medium")
 
     for i, item in enumerate(display_results):
         poster  = item.get("Poster", "N/A")
@@ -737,26 +732,24 @@ if search_results and not st.session_state.selected_imdb_id:
         has_poster = poster and poster != "N/A"
 
         with cols[i]:
-            # ── Poster ──
             if has_poster:
                 try:
                     st.image(poster, use_container_width=True)
                 except Exception:
                     st.markdown(
-                        f"<div style='height:300px;background:{bg_card};border-radius:12px;"
-                        f"display:flex;align-items:center;justify-content:center;font-size:48px;"
-                        f"cursor:pointer;'>🎬</div>",
+                        f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
+                        f"display:flex;align-items:center;justify-content:center;"
+                        f"font-size:42px;cursor:pointer;'>🎬</div>",
                         unsafe_allow_html=True,
                     )
             else:
                 st.markdown(
-                    f"<div style='height:300px;background:{bg_card};border-radius:12px;"
-                    f"display:flex;align-items:center;justify-content:center;font-size:48px;"
-                    f"cursor:pointer;'>🎬</div>",
+                    f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
+                    f"display:flex;align-items:center;justify-content:center;"
+                    f"font-size:42px;cursor:pointer;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
-            # ── Invisible overlay button — makes the poster area clickable ──
             if st.button("\u200b", key=f"sel_{imdb_id}_{i}", use_container_width=True):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
@@ -766,9 +759,12 @@ if search_results and not st.session_state.selected_imdb_id:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-# ---------------- RUN ANALYSIS ON SELECTED MOVIE ----------------
+
+# ================================================================
+# RUN ANALYSIS
+# ================================================================
 if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
-    with st.spinner("Fetching movie details..."):
+    with st.spinner("Fetching film details…"):
         st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
         st.session_state.cached_query = st.session_state.selected_imdb_id
 
@@ -780,29 +776,34 @@ if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
             "audience_reactions": m["actors"],
             "discussion_points":  m["genre"],
         }
-        with st.spinner("AI models are debating the film..."):
+        with st.spinner("AI models are entering the debate hall…"):
             st.session_state.cached_result = analyze_movie(raw_reviews)
+
 
 movie  = st.session_state.cached_movie
 result = st.session_state.cached_result
 
-# ---------------- ERROR STATE ----------------
+
+# ================================================================
+# ERROR STATE
+# ================================================================
 if (
     st.session_state.last_typed is not None
     and not search_results
     and not movie
     and not st.session_state.selected_imdb_id
 ):
-    st.markdown(
-        "<div class='err-box'>⚠ &nbsp; No results found for that title. Try a different spelling.</div>",
-        unsafe_allow_html=True,
-    )
+    err_msg = st.session_state.get("search_error") or "No results found. Try a different title or spelling."
+    st.markdown(f"<div class='err-box'>⚠ &nbsp; {err_msg}</div>", unsafe_allow_html=True)
 
-# ---------------- RENDER ANALYSIS ----------------
+
+# ================================================================
+# RENDER ANALYSIS
+# ================================================================
 elif movie and result:
 
-    # ── Movie Info ──────────────────────────────────────────────────────────
-    col_poster, col_info = st.columns([1, 2.6], gap="large")
+    # ── MOVIE HEADER ─────────────────────────────────────────────
+    col_poster, col_info = st.columns([1, 2.8], gap="large")
 
     with col_poster:
         if movie["poster"] and movie["poster"] != "N/A":
@@ -811,65 +812,66 @@ elif movie and result:
     with col_info:
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<div class='movie-meta'>{movie['year']} &nbsp;·&nbsp; DIR: {movie['director']}"
-            f" &nbsp;·&nbsp; {movie['runtime']}</div>",
+            f"<div class='movie-meta'>"
+            f"{movie['year']} &nbsp;·&nbsp; <b>{movie['director']}</b> &nbsp;·&nbsp; {movie['runtime']}"
+            f"</div>",
             unsafe_allow_html=True,
-        )
-        
-        st.markdown("<div class='section-heading'>📑 Overview & Analysis Roadmap</div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<p style='font-size:15px;color:{text_secondary};line-height:1.8;margin-top:12px;'>{movie['plot']}</p>",
-            unsafe_allow_html=True,
-        )
-        
-        # Debate Roadmap / Agenda
-        st.markdown(
-            f"<div style='background:{bg_card};border:1px solid {border_color};border-radius:12px;padding:16px;margin-top:20px;'>"
-            f"<div style='font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:{accent1};margin-bottom:8px;'>THE DEBATE AGENDA</div>"
-            f"<div style='font-size:13px;color:{text_secondary};line-height:1.6;'>"
-            f"• <b>Round 1:</b> Initial critical assessment vs. contrarian defense.<br>"
-            f"• <b>Round 2:</b> Deep dive into technical craft and character depth.<br>"
-            f"• <b>Round 3:</b> Final rebuttals on pacing and cultural legacy.<br>"
-            f"• <b>Round 4:</b> Nuanced synthesis and final calibrated score."
-            f"</div></div>",
-            unsafe_allow_html=True
         )
 
+        st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-size:13px;color:{text_muted};font-family:JetBrains Mono,monospace;margin-top:16px;'>"
-            f"CAST: {movie['actors']}</p>",
+            f"<p style='font-family:Be Vietnam Pro,sans-serif;font-size:15px;"
+            f"color:{C['on_surface_var']};line-height:1.8;margin-top:0;'>{movie['plot']}</p>",
+            unsafe_allow_html=True,
+        )
+
+        # Debate Agenda Card
+        st.markdown(f"""
+        <div class="agenda-card">
+            <div class="agenda-title">The Debate Agenda</div>
+            <div class="agenda-item"><b>Round 1 —</b> Initial critical assessment vs. contrarian defence</div>
+            <div class="agenda-item"><b>Round 2 —</b> Deep dive into craft, cinematography &amp; character</div>
+            <div class="agenda-item"><b>Round 3 —</b> Rebuttals on pacing and cultural legacy</div>
+            <div class="agenda-item"><b>Round 4 —</b> Nuanced synthesis and calibrated final score</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(
+            f"<p style='font-family:Epilogue,sans-serif;font-size:12px;"
+            f"letter-spacing:0.05em;color:{C['text_muted']};margin-top:16px;'>"
+            f"CAST &nbsp;·&nbsp; {movie['actors']}</p>",
             unsafe_allow_html=True,
         )
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 1. THEMES ────────────────────────────────────────────────────────────
-    st.markdown("<div class='section-heading'>🏷 &nbsp; Core Themes</div>", unsafe_allow_html=True)
+    # ── 1. THEMES ─────────────────────────────────────────────────
+    st.markdown("<div class='section-heading'>Core Themes</div>", unsafe_allow_html=True)
     tags_html = "".join(
         f"<span class='theme-tag'>#{t.strip()}</span>"
         for t in result.get("themes", [])
     )
-    st.markdown(f"<div style='line-height:2.4;'>{tags_html}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='line-height:2.6;'>{tags_html}</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 2. OVERVIEW & DEBATE SUMMARY ─────────────────────────────────────────
-    st.markdown("<div class='section-heading'>🎬 &nbsp; Overview</div>", unsafe_allow_html=True)
+    # ── 2. OVERVIEW & DEBATE SUMMARY ──────────────────────────────
+    st.markdown("<div class='section-heading'>Film Overview</div>", unsafe_allow_html=True)
     st.markdown(
         f"<div class='summary-box'>"
         f"In this session, our AI models debate the merits and flaws of "
-        f"<strong>{movie['title']}</strong> ({movie['year']}), directed by <strong>{movie['director']}</strong>. "
-        f"Starring {movie['actors']}, the film is a notable entry in the <em>{movie['genre']}</em> genre."
-        f"<br><br>"
-        f"<em>{movie['plot']}</em>"
-        f"<br><br>"
-        f"The debate below features a Critic model and an Advocate model arguing their perspectives across "
-        f"multiple rounds — examining cinematic execution, narrative strength, and cultural impact."
+        f"<strong style='color:{C['on_surface']}'>{movie['title']}</strong> ({movie['year']}), "
+        f"directed by <strong style='color:{C['on_surface']}'>{movie['director']}</strong>. "
+        f"Starring {movie['actors']}, the film is a notable entry in the "
+        f"<em style='color:{C['secondary']}'>{movie['genre']}</em> genre."
+        f"<br><br>{movie['plot']}<br><br>"
+        f"The debate below features a Critic model and an Advocate model arguing their perspectives "
+        f"across multiple rounds — examining cinematic execution, narrative strength, and cultural impact."
         f"</div>",
         unsafe_allow_html=True,
     )
 
-    st.markdown("<div class='section-heading'>🧠 &nbsp; Debate Summary</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-heading'>Debate Summary</div>", unsafe_allow_html=True)
     st.markdown(
         f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
         unsafe_allow_html=True,
@@ -877,65 +879,51 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 3. RING CHART SCORES ─────────────────────────────────────────────────
-    st.markdown("<div class='section-heading'>🎯 &nbsp; Scores</div>", unsafe_allow_html=True)
+    # ── 3. SCORES — RING CHARTS ───────────────────────────────────
+    st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
-    # ── Parse AI score ──
     raw_ai_score = str(result.get("final_score", "N/A"))
     try:
         if "/" in raw_ai_score:
-            num_str = raw_ai_score.split("/")[0].strip()
-            ai_pct  = float(num_str) * 10
+            ai_pct = float(raw_ai_score.split("/")[0].strip()) * 10
         else:
-            ai_pct  = float(re.sub(r"[^\d.]", "", raw_ai_score)) * 10
+            ai_pct = float(re.sub(r"[^\d.]", "", raw_ai_score)) * 10
         ai_pct = min(max(ai_pct, 0), 100)
     except Exception:
         ai_pct = 0
     ai_display = raw_ai_score if raw_ai_score != "N/A" else "—"
 
-    # ── Parse IMDb score ──
     raw_imdb = str(movie.get("imdb_rating", "—"))
     try:
         imdb_pct = float(raw_imdb.split("/")[0] if "/" in raw_imdb else raw_imdb) * 10
         imdb_pct = min(max(imdb_pct, 0), 100)
     except Exception:
         imdb_pct = 0
-    imdb_display = raw_imdb
 
-    # ── Parse RT score ──
     raw_rt = str(movie.get("rt_rating", "—"))
     try:
-        # Handle "88%", "88/100", etc.
-        clean_rt = re.sub(r"[^\d.]", "", raw_rt.split("/")[0])
-        rt_pct = float(clean_rt)
+        rt_pct = float(re.sub(r"[^\d.]", "", raw_rt.split("/")[0]))
         rt_pct = min(max(rt_pct, 0), 100)
     except Exception:
         rt_pct = 0
-    rt_display = raw_rt
 
-    # ── Build ring SVGs with fully inlined styles ──
-    def ring_svg(pct, display, stroke_color, glow_color, bg_stroke_color):
+    def ring_svg(pct, display, stroke, glow, track):
         dash = f"{pct:.1f}, 100"
-        # Only render the stroke path if the percentage is > 0
-        stroke_path = ""
-        if pct > 0:
-            stroke_path = (
-                f'<path style="fill:none;stroke:{stroke_color};stroke-width:2.8;stroke-linecap:round;'
-                f'filter:drop-shadow(0 0 4px {glow_color});transform:rotate(-90deg);transform-origin:18px 18px;'
-                f'animation:scoreProgress 1.2s ease-out forwards;" stroke-dasharray="{dash}"'
-                f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-            )
-
-        return (
-            f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
-            f'<defs><style>'
-            f'@keyframes scoreProgress{{from{{stroke-dasharray:0,100}}to{{stroke-dasharray:{dash}}}}}'
-            f'</style></defs>'
-            f'<path style="fill:none;stroke:{bg_stroke_color};stroke-width:3.8;"'
+        arc  = (
+            f'<path style="fill:none;stroke:{stroke};stroke-width:2.8;stroke-linecap:round;'
+            f'filter:drop-shadow(0 0 5px {glow});transform:rotate(-90deg);transform-origin:18px 18px;'
+            f'animation:scoreAnim 1.3s ease-out forwards;" stroke-dasharray="{dash}"'
             f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-            f'{stroke_path}'
-            f'<text x="18" y="21.5" style="fill:{stroke_color};font-family:sans-serif;'
-            f'font-size:7.5px;font-weight:800;text-anchor:middle;">{display}</text>'
+        ) if pct > 0 else ""
+        return (
+            f'<svg viewBox="0 0 36 36" style="display:block;width:120px;height:120px;">'
+            f'<defs><style>@keyframes scoreAnim{{from{{stroke-dasharray:0,100}}'
+            f'to{{stroke-dasharray:{dash}}}}}</style></defs>'
+            f'<path style="fill:none;stroke:{track};stroke-width:3.5;"'
+            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
+            f'{arc}'
+            f'<text x="18" y="21" style="fill:{stroke};font-family:Epilogue,sans-serif;'
+            f'font-size:7px;font-weight:800;text-anchor:middle;letter-spacing:-0.5px;">{display}</text>'
             f'</svg>'
         )
 
@@ -943,30 +931,30 @@ elif movie and result:
         return (
             f'<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">'
             f'{svg}'
-            f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
-            f'color:{meta_color};letter-spacing:2px;text-transform:uppercase;">{label}</div>'
+            f'<div style="font-family:Epilogue,sans-serif;font-size:10px;font-weight:600;'
+            f'color:#9f8e79;letter-spacing:0.15em;text-transform:uppercase;">{label}</div>'
             f'</div>'
         )
 
     scores_html = (
-        '<div style="display:flex;gap:48px;align-items:center;margin:24px 0 16px 0;flex-wrap:wrap;">'
-        + score_card(ring_svg(ai_pct,   ai_display,   score_color, score_glow,              score_border),             "AI Verdict")
-        + score_card(ring_svg(imdb_pct, imdb_display, "#f5c518",   "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.12)"), "IMDb")
-        + score_card(ring_svg(rt_pct,   rt_display,   "#fa320a",   "rgba(250,50,10,0.5)",   "rgba(250,50,10,0.12)"),  "Rotten Tomatoes")
+        f'<div style="display:flex;gap:52px;align-items:center;margin:20px 0 16px 0;flex-wrap:wrap;">'
+        + score_card(ring_svg(ai_pct,   ai_display,       C["primary_container"],  "rgba(255,178,36,0.6)",  "rgba(255,178,36,0.12)"), "AI Verdict")
+        + score_card(ring_svg(imdb_pct, raw_imdb,         "#f5c518",               "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.1)"),  "IMDb")
+        + score_card(ring_svg(rt_pct,   raw_rt,           "#ff6b35",               "rgba(255,107,53,0.5)",  "rgba(255,107,53,0.1)"),  "Rotten Tomatoes")
         + '</div>'
     )
     st.markdown(scores_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 4. DEBATE TRANSCRIPT ─────────────────────────────────────────────────
+    # ── 4. DEBATE TRANSCRIPT ──────────────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
-        st.markdown("<div class='section-heading'>⚔️ &nbsp; Live Debate Transcript</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-size:13px;color:{text_muted};margin-bottom:12px;"
-            f"font-family:JetBrains Mono,monospace;'>"
-            f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 rounds</p>",
+            f"<p style='font-family:Epilogue,sans-serif;font-size:12px;"
+            f"letter-spacing:0.06em;color:{C['text_muted']};margin-bottom:14px;text-transform:uppercase;'>"
+            f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 Rounds</p>",
             unsafe_allow_html=True,
         )
         with st.expander("▸ Click to read the full debate"):
@@ -976,11 +964,9 @@ elif movie and result:
                 if i % 2 == 0:
                     round_num += 1
                     bubbles_html += f"<div class='round-pill'>Round {round_num}</div>"
-
                 is_critic    = turn["role"] == "Movie Critique Model"
                 bubble_class = "bubble-critic"       if is_critic else "bubble-advocate"
                 label_class  = "bubble-label-critic" if is_critic else "bubble-label-advocate"
-
                 bubbles_html += (
                     f"<div class='debate-bubble {bubble_class}'>"
                     f"<div class='bubble-label {label_class}'>"
@@ -993,20 +979,23 @@ elif movie and result:
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
 
-    # ── 5. SCORING BASIS ─────────────────────────────────────────────────────
+    # ── 5. SCORING BASIS ──────────────────────────────────────────
     basis = result.get("scoring_basis")
     if basis:
-        st.markdown("<div style='margin-top:32px;'></div>", unsafe_allow_html=True)
-        with st.expander("⚖️ &nbsp; View AI Scoring Basis & Methodology"):
+        st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
+        with st.expander("⚖ View AI Scoring Basis & Methodology"):
             st.markdown(
-                f"<div style='padding:12px;color:{text_secondary};line-height:1.7;font-size:14px;'>"
-                f"<b>Criteria for this Rating:</b><br><br>{basis}"
-                f"<br><br><hr style='border:0;border-top:1px solid {border_color};'>"
-                f"<span style='font-size:12px;color:{text_muted};'>"
-                f"Note: This score is calculated using a neutral synthesis model that evaluates the conflicting "
-                f"arguments presented in the debate, calibrated against a global 10-point scale of cinematic quality."
+                f"<div style='padding:14px;font-family:Be Vietnam Pro,sans-serif;"
+                f"color:{C['on_surface_var']};line-height:1.75;font-size:14px;'>"
+                f"<b style='color:{C['on_surface']};'>Criteria for this Rating:</b><br><br>{basis}"
+                f"<br><br>"
+                f"<hr style='border:0;border-top:1px solid {C['outline_var']}40;margin:16px 0;'>"
+                f"<span style='font-size:12px;color:{C['text_muted']};font-family:Epilogue,sans-serif;"
+                f"letter-spacing:0.03em;'>"
+                f"This score is calculated using a neutral synthesis model that evaluates conflicting "
+                f"arguments from the debate, calibrated against a global 10-point scale of cinematic quality."
                 f"</span></div>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
     st.markdown("<div style='margin-bottom:100px;'></div>", unsafe_allow_html=True)
