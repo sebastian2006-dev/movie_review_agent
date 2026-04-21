@@ -87,13 +87,17 @@ def fetch_movie_by_id(imdb_id: str):
             rt_rating = r.get("Value", "—")
             break
 
+    director = data.get("Director", "")
+    if not director or director == "N/A":
+        director = "—"
+
     return {
         "title":       data.get("Title"),
         "year":        data.get("Year"),
         "plot":        data.get("Plot"),
         "actors":      data.get("Actors"),
         "genre":       data.get("Genre"),
-        "director":    data.get("Director"),
+        "director":    director,
         "imdb_rating": imdb_rating,
         "rt_rating":   rt_rating,
         "poster":      data.get("Poster"),
@@ -206,72 +210,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 ::-webkit-scrollbar-thumb:hover {{ background: {C["outline_var"]}; }}
 
 h1, h2, h3, h4 {{ font-family: 'Epilogue', sans-serif !important; }}
-
-/* ════════════════════════════════════════
-   TOP NAV BAR
-════════════════════════════════════════ */
-.cineglow-nav {{
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    height: 68px;
-    background: rgba(17,13,12,0.85);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-bottom: 1px solid {C["outline_var"]}40;
-    box-shadow: 0 10px 40px -15px {C["glow_amber_md"]};
-    margin-left: -2rem;
-    margin-right: -2rem;
-    margin-bottom: 2.5rem;
-}}
-.nav-brand {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    color: {C["primary_container"]};
-    letter-spacing: -0.03em;
-    cursor: pointer;
-}}
-.nav-brand span {{
-    color: {C["on_surface"]};
-    font-weight: 400;
-    opacity: 0.5;
-    font-size: 14px;
-    margin-left: 6px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    vertical-align: middle;
-}}
-.nav-pill {{
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: {C["bg_high"]};
-    border: 1px solid {C["outline_var"]};
-    border-radius: 9999px;
-    padding: 6px 14px;
-    font-family: 'Epilogue', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: {C["on_surface_var"]};
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}}
-.nav-dot {{
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: {C["primary_container"]};
-    box-shadow: 0 0 8px {C["primary_container"]};
-    animation: pulse-dot 2.5s ease-in-out infinite;
-}}
-@keyframes pulse-dot {{
-    0%, 100% {{ opacity: 1; transform: scale(1); }}
-    50%       {{ opacity: 0.5; transform: scale(0.75); }}
-}}
 
 /* ════════════════════════════════════════
    HERO / PAGE HEADER
@@ -441,17 +379,43 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     color: {C["on_surface"]};
     margin-bottom: 8px;
 }}
-.movie-meta {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: {C["text_muted"]};
-    margin-bottom: 18px;
-    text-transform: uppercase;
+.movie-meta-inline {{
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 14px;
+    color: {C["on_surface_var"]};
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 0;
+    align-items: center;
+    line-height: 1.8;
 }}
-.movie-meta b {{
+.movie-meta-inline .meta-item {{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}}
+.movie-meta-inline .meta-label {{
+    font-family: 'Epilogue', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: {C["text_muted"]};
+}}
+.movie-meta-inline .meta-value {{
+    font-size: 14px;
+    color: {C["on_surface_var"]};
+}}
+.movie-meta-inline .meta-value.accent {{
     color: {C["primary_container"]};
+    font-weight: 600;
+}}
+.meta-sep {{
+    color: {C["outline_var"]};
+    margin: 0 10px;
+    font-size: 12px;
+    opacity: 0.6;
 }}
 
 /* ════════════════════════════════════════
@@ -667,22 +631,9 @@ p, li, div {{
 
 
 # ================================================================
-# TOP NAV BAR
+# HERO SECTION  (nav bar removed — starts directly here)
 # ================================================================
-st.markdown(f"""
-<div class="cineglow-nav">
-    <div class="nav-brand">CineGlow <span>Movie Agent</span></div>
-    <div class="nav-pill">
-        <div class="nav-dot"></div>
-        Multi-Agent · AI Debate Engine
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-
-# ================================================================
-# HERO SECTION
-# ================================================================
+st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
 st.markdown(
@@ -810,14 +761,49 @@ elif movie and result:
             st.image(movie["poster"], use_column_width=True)
 
     with col_info:
+        # Title
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
-        st.markdown(
-            f"<div class='movie-meta'>"
-            f"{movie['year']} &nbsp;·&nbsp; <b>{movie['director']}</b> &nbsp;·&nbsp; {movie['runtime']}"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
 
+        # Inline meta: Director · Year · Runtime · Cast
+        director_val = movie.get("director") or "—"
+        year_val     = movie.get("year")     or "—"
+        runtime_val  = movie.get("runtime")  or "—"
+        actors_val   = movie.get("actors")   or "—"
+
+        st.markdown(f"""
+        <div class="movie-meta-inline">
+            <span class="meta-item">
+                <span class="meta-label">Dir.</span>
+                <span class="meta-value accent">&nbsp;{director_val}</span>
+            </span>
+            <span class="meta-sep">·</span>
+            <span class="meta-item">
+                <span class="meta-label">Year</span>
+                <span class="meta-value">&nbsp;{year_val}</span>
+            </span>
+            <span class="meta-sep">·</span>
+            <span class="meta-item">
+                <span class="meta-label">Runtime</span>
+                <span class="meta-value">&nbsp;{runtime_val}</span>
+            </span>
+        </div>
+        <div style="font-family:'Epilogue',sans-serif;font-size:12px;
+                    letter-spacing:0.05em;color:{C['text_muted']};margin-bottom:18px;">
+            CAST &nbsp;·&nbsp; {actors_val}
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── CORE THEMES — moved above Overview ───────────────────
+        themes = result.get("themes", [])
+        if themes:
+            st.markdown("<div class='section-heading' style='margin-top:10px;'>Core Themes</div>", unsafe_allow_html=True)
+            tags_html = "".join(
+                f"<span class='theme-tag'>#{t.strip()}</span>"
+                for t in themes
+            )
+            st.markdown(f"<div style='line-height:2.6;margin-bottom:8px;'>{tags_html}</div>", unsafe_allow_html=True)
+
+        # ── OVERVIEW ─────────────────────────────────────────────
         st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
         st.markdown(
             f"<p style='font-family:Be Vietnam Pro,sans-serif;font-size:15px;"
@@ -836,60 +822,9 @@ elif movie and result:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown(
-            f"<p style='font-family:Epilogue,sans-serif;font-size:12px;"
-            f"letter-spacing:0.05em;color:{C['text_muted']};margin-top:16px;'>"
-            f"CAST &nbsp;·&nbsp; {movie['actors']}</p>",
-            unsafe_allow_html=True,
-        )
-
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 1. THEMES ─────────────────────────────────────────────────
-    st.markdown("<div class='section-heading'>Core Themes</div>", unsafe_allow_html=True)
-    tags_html = "".join(
-        f"<span class='theme-tag'>#{t.strip()}</span>"
-        for t in result.get("themes", [])
-    )
-    st.markdown(f"<div style='line-height:2.6;'>{tags_html}</div>", unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # ── 2. QUICK FACTS CARD + DEBATE SUMMARY ──────────────────────
-    st.markdown("<div class='section-heading'>At a Glance</div>", unsafe_allow_html=True)
-    st.markdown(f"""
-    <div class="agenda-card" style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>Director</b><br>
-            <span style="color:{C['primary_container']}">{movie['director']}</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>Year</b><br>
-            <span style="color:{C['primary_container']}">{movie['year']}</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>Genre</b><br>
-            <span style="color:{C['on_surface_var']}">{movie['genre']}</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>Runtime</b><br>
-            <span style="color:{C['on_surface_var']}">{movie['runtime']}</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>IMDb Rating</b><br>
-            <span style="color:#f5c518;font-weight:700;">{movie['imdb_rating']} / 10</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;border-bottom:1px solid {C['outline_var']}30;">
-            <b>Rotten Tomatoes</b><br>
-            <span style="color:#ff6b35;font-weight:700;">{movie['rt_rating']}</span>
-        </div>
-        <div class="agenda-item" style="padding:6px 0;grid-column:1/-1;">
-            <b>Cast</b><br>
-            <span style="color:{C['on_surface_var']}">{movie['actors']}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    # ── DEBATE SUMMARY ────────────────────────────────────────────
     st.markdown("<div class='section-heading'>Debate Summary</div>", unsafe_allow_html=True)
     st.markdown(
         f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
@@ -898,15 +833,20 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 3. SCORES — RING CHARTS ───────────────────────────────────
+    # ── SCORES — RING CHARTS ──────────────────────────────────────
     st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
+    # ── Parse scores to 0-100 percentage ──
     raw_ai_score = str(result.get("final_score", "N/A"))
     try:
         if "/" in raw_ai_score:
-            ai_pct = float(raw_ai_score.split("/")[0].strip()) * 10
+            ai_num = float(raw_ai_score.split("/")[0].strip())
+            ai_den = float(raw_ai_score.split("/")[1].strip())
+            ai_pct = (ai_num / ai_den) * 100
         else:
-            ai_pct = float(re.sub(r"[^\d.]", "", raw_ai_score)) * 10
+            ai_num = float(re.sub(r"[^\d.]", "", raw_ai_score))
+            # assume /10 scale if bare number
+            ai_pct = ai_num * 10
         ai_pct = min(max(ai_pct, 0), 100)
     except Exception:
         ai_pct = 0
@@ -914,49 +854,63 @@ elif movie and result:
 
     raw_imdb = str(movie.get("imdb_rating", "—"))
     try:
-        imdb_pct = float(raw_imdb.split("/")[0] if "/" in raw_imdb else raw_imdb) * 10
+        imdb_num = float(raw_imdb.split("/")[0] if "/" in raw_imdb else raw_imdb)
+        imdb_pct = (imdb_num / 10) * 100
         imdb_pct = min(max(imdb_pct, 0), 100)
     except Exception:
         imdb_pct = 0
 
     raw_rt = str(movie.get("rt_rating", "—"))
     try:
-        rt_pct = float(re.sub(r"[^\d.]", "", raw_rt.split("/")[0]))
-        rt_pct = min(max(rt_pct, 0), 100)
+        rt_num = float(re.sub(r"[^\d.]", "", raw_rt.split("/")[0]))
+        # RT is already a percentage (e.g. "87%")
+        rt_pct = min(max(rt_num, 0), 100)
     except Exception:
         rt_pct = 0
 
-    def ring_svg(pct, display, stroke, glow, track):
-        # pathLength="100" makes stroke-dasharray directly map to 0-100%
-        dash_to   = f"{pct:.1f} 100"
-        dash_from = f"0 100"
-        arc = (
-            f'<path pathLength="100" style="fill:none;stroke:{stroke};stroke-width:2.8;'
-            f'stroke-linecap:round;'
-            f'filter:drop-shadow(0 0 6px {glow});'
-            f'transform:rotate(-90deg);transform-origin:18px 18px;'
-            f'animation:scoreAnim 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"'
-            f' stroke-dasharray="{dash_to}"'
-            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-        ) if pct > 0 else ""
-        return (
-            f'<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">'
-            f'<defs><style>'
-            f'@keyframes scoreAnim{{'
-            f'  from{{stroke-dasharray:{dash_from}}}'
-            f'  to{{stroke-dasharray:{dash_to}}}'
-            f'}}'
-            f'</style></defs>'
-            # Track ring
-            f'<path pathLength="100" style="fill:none;stroke:{track};stroke-width:3.5;"'
-            f' d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>'
-            # Filled arc
-            f'{arc}'
-            # Center score text
-            f'<text x="18" y="19.5" style="fill:{stroke};font-family:Epilogue,sans-serif;'
-            f'font-size:6.5px;font-weight:800;text-anchor:middle;letter-spacing:-0.3px;">{display}</text>'
-            f'</svg>'
-        )
+    # ── Ring SVG builder ──────────────────────────────────────────
+    # Uses a standard SVG circle (r=15.9155 → circumference ≈ 100) so
+    # stroke-dasharray values map directly to percentages without pathLength hacks.
+    # Each chart gets a unique animation name to avoid keyframe collisions.
+    CIRC = 100.0  # circumference when r = 15.9155...
+
+    def ring_svg(pct, display, stroke, glow, track, anim_id):
+        filled   = round(pct, 2)
+        gap      = round(CIRC - filled, 2)
+        anim_name = f"scoreAnim_{anim_id}"
+        return f"""
+<svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">
+  <defs>
+    <style>
+      @keyframes {anim_name} {{
+        from {{ stroke-dasharray: 0 {CIRC}; }}
+        to   {{ stroke-dasharray: {filled} {gap}; }}
+      }}
+    </style>
+  </defs>
+  <!-- Track ring -->
+  <circle cx="18" cy="18" r="15.9155"
+    style="fill:none;stroke:{track};stroke-width:3.5;"/>
+  <!-- Filled arc — rotated so it starts at 12 o'clock -->
+  <circle cx="18" cy="18" r="15.9155"
+    style="fill:none;
+           stroke:{stroke};
+           stroke-width:2.8;
+           stroke-linecap:round;
+           filter:drop-shadow(0 0 6px {glow});
+           transform:rotate(-90deg);
+           transform-origin:18px 18px;
+           stroke-dasharray:{filled} {gap};
+           animation:{anim_name} 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"/>
+  <!-- Centre label -->
+  <text x="18" y="19.5"
+    style="fill:{stroke};
+           font-family:Epilogue,sans-serif;
+           font-size:6.5px;
+           font-weight:800;
+           text-anchor:middle;
+           letter-spacing:-0.3px;">{display}</text>
+</svg>"""
 
     def score_card(svg, label):
         return (
@@ -969,16 +923,16 @@ elif movie and result:
 
     scores_html = (
         f'<div style="display:flex;gap:52px;align-items:center;margin:20px 0 16px 0;flex-wrap:wrap;">'
-        + score_card(ring_svg(ai_pct,   ai_display,       C["primary_container"],  "rgba(255,178,36,0.6)",  "rgba(255,178,36,0.12)"), "AI Verdict")
-        + score_card(ring_svg(imdb_pct, raw_imdb,         "#f5c518",               "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.1)"),  "IMDb")
-        + score_card(ring_svg(rt_pct,   raw_rt,           "#ff6b35",               "rgba(255,107,53,0.5)",  "rgba(255,107,53,0.1)"),  "Rotten Tomatoes")
+        + score_card(ring_svg(ai_pct,   ai_display, C["primary_container"], "rgba(255,178,36,0.6)",  "rgba(255,178,36,0.12)", "ai"),   "AI Verdict")
+        + score_card(ring_svg(imdb_pct, raw_imdb,   "#f5c518",              "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.1)",  "imdb"), "IMDb")
+        + score_card(ring_svg(rt_pct,   raw_rt,     "#ff6b35",              "rgba(255,107,53,0.5)",  "rgba(255,107,53,0.1)",  "rt"),   "Rotten Tomatoes")
         + '</div>'
     )
     st.markdown(scores_html, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── 4. DEBATE TRANSCRIPT ──────────────────────────────────────
+    # ── DEBATE TRANSCRIPT ─────────────────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
         st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
@@ -1010,7 +964,7 @@ elif movie and result:
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
 
-    # ── 5. SCORING BASIS ──────────────────────────────────────────
+    # ── SCORING BASIS ─────────────────────────────────────────────
     basis = result.get("scoring_basis")
     if basis:
         st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
