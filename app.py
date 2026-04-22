@@ -126,61 +126,64 @@ if "last_typed"       not in st.session_state: st.session_state.last_typed      
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 
 # ================================================================
-# CINEMATIC EMBER — DESIGN TOKENS
+# DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
 C = {
-    # Surfaces
-    "bg":               "#161311",
-    "bg_lowest":        "#110d0c",
-    "bg_low":           "#1f1b19",
-    "bg_container":     "#231f1d",
-    "bg_high":          "#2e2927",
-    "bg_highest":       "#393431",
-    "bg_bright":        "#3d3836",
+    # Surfaces — deep mahogany-black
+    "bg":               "#120c09",
+    "bg_lowest":        "#0d0806",
+    "bg_low":           "#1a120d",
+    "bg_container":     "#201610",
+    "bg_high":          "#2a1d15",
+    "bg_highest":       "#36261c",
+    "bg_bright":        "#423024",
+
     # Text
-    "on_surface":       "#eae1dd",
-    "on_surface_var":   "#d6c4ad",
-    "on_primary":       "#442b00",
-    "text_muted":       "#9f8e79",
-    "text_dim":         "#514533",
-    # Primaries / Accents
-    "primary":          "#ffd79e",
-    "primary_dim":      "#ffba47",
-    "primary_container":"#ffb224",
-    "secondary":        "#ffb77e",
-    "tertiary":         "#fed4c2",
-    "outline":          "#9f8e79",
-    "outline_var":      "#514533",
+    "on_surface":       "#f0e4d4",
+    "on_surface_var":   "#c9b098",
+    "on_primary":       "#1a0a00",
+    "text_muted":       "#7a5c42",
+    "text_dim":         "#3d2415",
+
+    # Accents — molten copper / ember orange
+    "primary":          "#e8833a",
+    "primary_dim":      "#d4692a",
+    "primary_container":"#f09050",
+    "secondary":        "#c8603a",
+    "tertiary":         "#f0b87a",
+    "outline":          "#4a3020",
+    "outline_var":      "#2e1e12",
+
     # Glow helpers
-    "glow_amber":       "rgba(255,178,36,0.18)",
-    "glow_amber_md":    "rgba(255,178,36,0.28)",
-    "glow_amber_btn":   "rgba(255,178,36,0.22)",
-    "glow_orange":      "rgba(255,183,126,0.15)",
-    "critic_color":     "#ffba47",
-    "advocate_color":   "#ffb77e",
-    "critic_bg":        "rgba(255,186,71,0.07)",
-    "advocate_bg":      "rgba(255,183,126,0.07)",
-    "critic_border":    "rgba(255,186,71,0.22)",
-    "advocate_border":  "rgba(255,183,126,0.22)",
+    "glow_copper":      "rgba(232,131,58,0.14)",
+    "glow_copper_md":   "rgba(232,131,58,0.26)",
+    "glow_copper_btn":  "rgba(232,131,58,0.30)",
+    "glow_ember":       "rgba(200,96,58,0.12)",
+
+    # Debate personas
+    "critic_color":     "#e8833a",
+    "advocate_color":   "#c8a070",
+    "critic_bg":        "rgba(232,131,58,0.07)",
+    "advocate_bg":      "rgba(200,160,112,0.07)",
+    "critic_border":    "rgba(232,131,58,0.20)",
+    "advocate_border":  "rgba(200,160,112,0.20)",
 }
 
 # ================================================================
-# GLOBAL CSS — CINEMATIC EMBER DESIGN SYSTEM
+# GLOBAL CSS — DARK VELVET CINEMA
 # ================================================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Outfit:wght@300;400;500;600&display=swap');
 
-/* ── Reset sidebar toggle ── */
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
-/* ── App Shell ── */
 .stApp {{
     background-color: {C["bg"]} !important;
     color: {C["on_surface"]};
-    font-family: 'Be Vietnam Pro', sans-serif;
+    font-family: 'Outfit', sans-serif;
 }}
 .block-container {{
     max-width: 1200px;
@@ -190,448 +193,281 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-right: 2rem !important;
 }}
 
-/* ── Ambient background glow ── */
+/* Multi-layer ambient warm glow */
 .stApp::before {{
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
     background:
-        radial-gradient(ellipse 70% 55% at 15% 5%,  {C["glow_amber"]}   0%, transparent 65%),
-        radial-gradient(ellipse 50% 45% at 85% 85%, {C["glow_orange"]}  0%, transparent 55%),
-        radial-gradient(ellipse 35% 35% at 50% 50%, rgba(255,178,36,0.04) 0%, transparent 70%);
+        radial-gradient(ellipse 65% 50% at 8% 0%,    rgba(232,131,58,0.13)  0%, transparent 60%),
+        radial-gradient(ellipse 45% 40% at 92% 95%,  rgba(200,96,58,0.10)   0%, transparent 55%),
+        radial-gradient(ellipse 30% 30% at 50% 55%,  rgba(240,144,80,0.05)  0%, transparent 65%),
+        radial-gradient(ellipse 80% 20% at 50% 100%, rgba(42,29,21,0.80)    0%, transparent 80%);
     pointer-events: none;
 }}
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+::-webkit-scrollbar {{ width: 5px; height: 5px; }}
 ::-webkit-scrollbar-track {{ background: {C["bg_lowest"]}; }}
 ::-webkit-scrollbar-thumb {{ background: {C["bg_highest"]}; border-radius: 4px; }}
-::-webkit-scrollbar-thumb:hover {{ background: {C["outline_var"]}; }}
+::-webkit-scrollbar-thumb:hover {{ background: {C["outline"]}; }}
 
-h1, h2, h3, h4 {{ font-family: 'Epilogue', sans-serif !important; }}
+h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 
-/* ════════════════════════════════════════
-   HERO / PAGE HEADER
-════════════════════════════════════════ */
+/* ── HERO ── */
 .hero-eyebrow {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    color: {C["primary_container"]};
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.28em;
+    color: {C["primary"]}; text-transform: uppercase; text-align: center;
+    margin-bottom: 16px; opacity: 0.9;
 }}
 .hero-title {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: clamp(36px, 5.5vw, 60px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    text-align: center;
-    color: {C["on_surface"]};
-    margin-bottom: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 5.5vw, 66px); font-weight: 800;
+    letter-spacing: -0.01em; line-height: 1.08;
+    text-align: center; color: {C["on_surface"]}; margin-bottom: 12px;
 }}
 .hero-title em {{
-    font-style: normal;
-    color: {C["primary_container"]};
+    font-style: italic; color: {C["primary_container"]};
+    text-shadow: 0 0 40px rgba(240,144,80,0.35);
 }}
 .hero-sub {{
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 17px;
-    color: {C["on_surface_var"]};
-    text-align: center;
-    max-width: 520px;
-    margin: 0 auto 36px auto;
-    line-height: 1.6;
+    font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
+    color: {C["on_surface_var"]}; text-align: center;
+    max-width: 500px; margin: 0 auto 12px auto; line-height: 1.65;
+}}
+.hero-ornament {{
+    text-align: center; font-size: 18px; color: {C["primary"]};
+    opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 32px;
 }}
 
-/* ════════════════════════════════════════
-   CHAT INPUT — RECESSED DARK FIELD
-════════════════════════════════════════ */
-div[data-testid="stChatInput"],
-.stChatInput {{
-    background: {C["bg_lowest"]} !important;
-    border: 1px solid {C["outline_var"]} !important;
+/* ── CHAT INPUT ── */
+div[data-testid="stChatInput"] {{
+    background: {C["bg_low"]} !important;
+    border: 1px solid {C["outline"]} !important;
     border-radius: 9999px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
-    padding-right: 8px !important;
-    padding-left: 8px !important;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
+    padding-right: 8px !important; padding-left: 8px !important;
+    transition: border-color 0.3s, box-shadow 0.3s !important;
 }}
-div[data-testid="stChatInput"]:focus-within,
-.stChatInput:focus-within {{
-    border-color: {C["primary_container"]}80 !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 24px {C["glow_amber"]} !important;
+div[data-testid="stChatInput"]:focus-within {{
+    border-color: {C["primary"]}70 !important;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 32px {C["glow_copper"]} !important;
 }}
-div[data-testid="stChatInput"] > div,
-.stChatInput > div {{
-    background: transparent !important;
-    border: none !important;
-    border-radius: 9999px !important;
-}}
-textarea[data-testid="stChatInputTextArea"],
-div[data-testid="stChatInput"] textarea,
-.stChatInput textarea {{
-    background: transparent !important;
-    border: none !important;
-    color: {C["on_surface"]} !important;
-    -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Be Vietnam Pro', sans-serif !important;
-    font-size: 16px !important;
-    padding: 14px 20px !important;
-    box-shadow: none !important;
+div[data-testid="stChatInput"] > div {{ background: transparent !important; border: none !important; border-radius: 9999px !important; }}
+textarea[data-testid="stChatInputTextArea"] {{
+    background: transparent !important; border: none !important;
+    color: {C["on_surface"]} !important; -webkit-text-fill-color: {C["on_surface"]} !important;
+    font-family: 'Outfit', sans-serif !important; font-size: 16px !important; font-weight: 400 !important;
+    padding: 14px 20px !important; box-shadow: none !important;
     caret-color: {C["primary_container"]} !important;
 }}
-textarea[data-testid="stChatInputTextArea"]::placeholder,
-div[data-testid="stChatInput"] textarea::placeholder {{
-    color: {C["text_muted"]} !important;
-    -webkit-text-fill-color: {C["text_muted"]} !important;
+textarea[data-testid="stChatInputTextArea"]::placeholder {{
+    color: {C["text_muted"]} !important; -webkit-text-fill-color: {C["text_muted"]} !important;
 }}
-
-/* ── Send Button ── */
-button[data-testid="stChatInputSubmitButton"],
-div[data-testid="stChatInput"] button,
-.stChatInput button {{
-    background: {C["primary_container"]} !important;
-    border: none !important;
-    border-radius: 9999px !important;
-    width: 38px !important;
-    height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 20px {C["glow_amber_btn"]} !important;
-    transition: all 0.2s ease !important;
-    flex-shrink: 0 !important;
-    margin-top: 4px !important;
+button[data-testid="stChatInputSubmitButton"] {{
+    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
+    border: none !important; border-radius: 9999px !important;
+    width: 38px !important; height: 38px !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
+    transition: all 0.2s !important; flex-shrink: 0 !important; margin-top: 4px !important;
 }}
 button[data-testid="stChatInputSubmitButton"]:hover {{
-    background: {C["primary_dim"]} !important;
-    box-shadow: 0 6px 28px {C["glow_amber_md"]} !important;
-    transform: scale(1.08) !important;
+    transform: scale(1.10) !important; box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
 }}
-button[data-testid="stChatInputSubmitButton"] svg,
-div[data-testid="stChatInput"] button svg {{
-    stroke: {C["on_primary"]} !important;
-    fill: none !important;
-    width: 16px !important; height: 16px !important;
+button[data-testid="stChatInputSubmitButton"] svg {{
+    stroke: {C["on_primary"]} !important; fill: none !important; width: 16px !important; height: 16px !important;
 }}
 
-/* ════════════════════════════════════════
-   SEARCH RESULT CARDS — Poster Grid
-════════════════════════════════════════ */
+/* ── SEARCH LABEL ── */
 .search-label {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: {C["primary_container"]};
-    margin-bottom: 18px;
-    margin-top: 6px;
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase;
+    color: {C["primary"]}; margin-bottom: 18px; margin-top: 6px; opacity: 0.8;
 }}
 
-/* Override streamlit image rounding + hover */
+/* ── POSTER GRID ── */
 div[data-testid="column"] img {{
-    border-radius: 12px !important;
-    display: block !important;
-    cursor: pointer !important;
+    border-radius: 10px !important; display: block !important; cursor: pointer !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
 }}
 div[data-testid="column"] img:hover {{
     transform: scale(1.04) !important;
-    box-shadow: 0 16px 48px -8px {C["glow_amber_md"]} !important;
+    box-shadow: 0 18px 52px -8px rgba(0,0,0,0.7), 0 0 30px {C["glow_copper_md"]} !important;
 }}
-
-/* Invisible poster overlay button */
 div[data-testid="column"] div[data-testid="stButton"] > button {{
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    color: transparent !important;
-    -webkit-text-fill-color: transparent !important;
-    font-size: 1px !important;
-    padding: 0 !important;
-    margin-top: -300px !important;
-    height: 300px !important;
-    width: 100% !important;
-    cursor: pointer !important;
-    position: relative !important;
-    z-index: 10 !important;
+    background: transparent !important; border: none !important; border-radius: 0 !important;
+    color: transparent !important; -webkit-text-fill-color: transparent !important;
+    font-size: 1px !important; padding: 0 !important; margin-top: -300px !important;
+    height: 300px !important; width: 100% !important; cursor: pointer !important;
+    position: relative !important; z-index: 10 !important;
 }}
 div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-    background: rgba(255,178,36,0.06) !important;
+    background: rgba(232,131,58,0.06) !important;
 }}
 
-/* ════════════════════════════════════════
-   MOVIE DETAIL — TITLE / META
-════════════════════════════════════════ */
+/* ── MOVIE TITLE / META ── */
 .movie-title-display {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: clamp(26px, 3.5vw, 42px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    color: {C["on_surface"]};
-    margin-bottom: 8px;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3.5vw, 46px); font-weight: 800;
+    letter-spacing: -0.01em; line-height: 1.08;
+    color: {C["on_surface"]}; margin-bottom: 10px;
 }}
 .movie-meta-inline {{
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 14px;
-    color: {C["on_surface_var"]};
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 0;
-    align-items: center;
-    line-height: 1.8;
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
+    color: {C["on_surface_var"]}; margin-bottom: 20px;
+    display: flex; flex-wrap: wrap; gap: 6px 0; align-items: center;
 }}
-.movie-meta-inline .meta-item {{
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+.meta-label {{
+    font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: {C["text_muted"]};
 }}
-.movie-meta-inline .meta-label {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: {C["text_muted"]};
-}}
-.movie-meta-inline .meta-value {{
-    font-size: 14px;
-    color: {C["on_surface_var"]};
-}}
-.movie-meta-inline .meta-value.accent {{
-    color: {C["primary_container"]};
-    font-weight: 600;
-}}
-.meta-sep {{
-    color: {C["outline_var"]};
-    margin: 0 10px;
-    font-size: 12px;
-    opacity: 0.6;
-}}
+.meta-value {{ font-size: 13px; color: {C["on_surface_var"]}; }}
+.meta-value.accent {{ color: {C["primary_container"]}; font-weight: 600; }}
+.meta-sep {{ color: {C["outline"]}; margin: 0 10px; font-size: 11px; opacity: 0.5; }}
 
-/* ════════════════════════════════════════
-   SECTION HEADING
-════════════════════════════════════════ */
+/* ── SECTION HEADING ── */
 .section-heading {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: {C["primary_container"]};
-    margin: 32px 0 14px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase; color: {C["primary"]};
+    margin: 32px 0 14px 0; display: flex; align-items: center; gap: 10px; opacity: 0.85;
 }}
 .section-heading::after {{
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(to right, {C["outline_var"]}80, transparent);
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, {C["outline"]}80, transparent);
 }}
 
-/* ════════════════════════════════════════
-   AGENDA / INFO CARD
-════════════════════════════════════════ */
-.agenda-card {{
+/* ══════════════════════════════════════════════════
+   DEBATE AGENDA — FULL-WIDTH HORIZONTAL STEP STRIP
+══════════════════════════════════════════════════ */
+.agenda-strip {{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
     background: {C["bg_container"]};
-    border: 1px solid {C["outline_var"]}60;
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-top: 18px;
-    box-shadow: 0 8px 32px -12px rgba(0,0,0,0.5);
+    border: 1px solid {C["outline"]};
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(232,131,58,0.08);
+    width: 100%;
 }}
-.agenda-title {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: {C["primary_container"]};
-    margin-bottom: 12px;
+.agenda-cell {{
+    padding: 26px 24px 26px 24px;
+    border-right: 1px solid {C["outline_var"]};
+    position: relative;
+    transition: background 0.25s ease;
 }}
-.agenda-item {{
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 14px;
-    color: {C["on_surface_var"]};
-    line-height: 1.7;
-    padding: 3px 0;
+.agenda-cell:last-child {{ border-right: none; }}
+.agenda-cell:hover {{ background: rgba(232,131,58,0.05); }}
+.agenda-cell::before {{
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, {C["primary"]}00, {C["primary"]}55, {C["primary"]}00);
+    opacity: 0; transition: opacity 0.25s ease;
 }}
-.agenda-item b {{
-    color: {C["on_surface"]};
+.agenda-cell:hover::before {{ opacity: 1; }}
+.agenda-round {{
+    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: {C["primary"]}; margin-bottom: 10px; opacity: 0.70;
 }}
+.agenda-num {{
+    font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700;
+    color: {C["bg_highest"]}; line-height: 1; margin-bottom: 14px;
+    letter-spacing: -0.02em;
+}}
+.agenda-text {{
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
+    color: {C["on_surface_var"]}; line-height: 1.6;
+}}
+.agenda-text b {{ color: {C["on_surface"]}; font-weight: 600; }}
 
-/* ════════════════════════════════════════
-   SUMMARY / VERDICT BOX
-════════════════════════════════════════ */
+/* ── SUMMARY BOX ── */
 .summary-box {{
-    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}60 100%);
-    border-left: 3px solid {C["primary_container"]};
-    border-radius: 0 12px 12px 0;
-    padding: 22px 28px;
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 15px;
-    color: {C["on_surface_var"]};
-    line-height: 1.85;
-    box-shadow: 0 4px 20px -8px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}80 100%);
+    border-left: 3px solid {C["primary"]};
+    border-radius: 0 14px 14px 0; padding: 24px 30px;
+    font-family: 'Playfair Display', serif; font-size: 17px; font-style: italic;
+    color: {C["on_surface_var"]}; line-height: 1.9;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
 }}
 
-/* ════════════════════════════════════════
-   THEME CHIPS
-════════════════════════════════════════ */
+/* ── THEME CHIPS ── */
 .theme-tag {{
     display: inline-block;
-    background: rgba(255,178,36,0.09);
-    border: 1px solid rgba(255,178,36,0.25);
-    color: {C["secondary"]};
-    font-family: 'Epilogue', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    padding: 5px 14px;
-    border-radius: 9999px;
-    margin: 4px 3px;
-    transition: all 0.2s ease;
+    background: rgba(232,131,58,0.08); border: 1px solid rgba(232,131,58,0.22);
+    color: {C["tertiary"]}; font-family: 'Outfit', sans-serif;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
+    padding: 5px 14px; border-radius: 9999px; margin: 4px 3px; transition: all 0.2s ease;
 }}
+.theme-tag:hover {{ background: rgba(232,131,58,0.14); border-color: rgba(232,131,58,0.40); }}
 
-/* ════════════════════════════════════════
-   DEBATE TRANSCRIPT BUBBLES
-════════════════════════════════════════ */
-.debate-wrap {{
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 10px;
-}}
+/* ── DEBATE BUBBLES ── */
+.debate-wrap {{ display: flex; flex-direction: column; gap: 18px; margin-top: 10px; }}
 .debate-bubble {{
-    padding: 18px 22px;
-    font-family: 'Be Vietnam Pro', sans-serif;
-    font-size: 15px;
-    line-height: 1.75;
-    max-width: 88%;
-    color: {C["on_surface_var"]};
-    box-shadow: 0 4px 18px -8px rgba(0,0,0,0.35);
+    padding: 18px 22px; font-family: 'Outfit', sans-serif;
+    font-size: 15px; font-weight: 400; line-height: 1.75;
+    max-width: 88%; color: {C["on_surface_var"]};
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }}
-.bubble-critic {{
-    background: {C["critic_bg"]};
-    border: 1px solid {C["critic_border"]};
-    border-radius: 16px 16px 16px 4px;
-    align-self: flex-start;
-}}
-.bubble-advocate {{
-    background: {C["advocate_bg"]};
-    border: 1px solid {C["advocate_border"]};
-    border-radius: 16px 16px 4px 16px;
-    align-self: flex-end;
-}}
-.bubble-label {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-}}
+.bubble-critic  {{ background: {C["critic_bg"]}; border: 1px solid {C["critic_border"]}; border-radius: 16px 16px 16px 4px; align-self: flex-start; }}
+.bubble-advocate{{ background: {C["advocate_bg"]}; border: 1px solid {C["advocate_border"]}; border-radius: 16px 16px 4px 16px; align-self: flex-end; }}
+.bubble-label {{ font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 10px; }}
 .bubble-label-critic   {{ color: {C["critic_color"]}; }}
 .bubble-label-advocate {{ color: {C["advocate_color"]}; }}
-.bubble-model-tag {{
-    font-family: 'Epilogue', sans-serif;
-    font-size: 10px;
-    opacity: 0.5;
-    margin-left: 8px;
-    letter-spacing: 0.05em;
-}}
+.bubble-model-tag {{ font-size: 9px; opacity: 0.4; margin-left: 8px; letter-spacing: 0.06em; }}
 .round-pill {{
-    display: block;
-    width: fit-content;
-    font-family: 'Epilogue', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    background: rgba(255,186,71,0.1);
-    border: 1px solid rgba(255,186,71,0.3);
-    color: {C["primary_dim"]};
-    padding: 3px 12px;
-    border-radius: 9999px;
-    margin: 14px auto 6px auto;
-    text-align: center;
+    display: block; width: fit-content;
+    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    background: rgba(232,131,58,0.09); border: 1px solid rgba(232,131,58,0.25);
+    color: {C["primary"]}; padding: 3px 14px; border-radius: 9999px;
+    margin: 14px auto 6px auto; text-align: center;
 }}
 
-/* ════════════════════════════════════════
-   DIVIDER
-════════════════════════════════════════ */
+/* ── DIVIDER ── */
 .fancy-divider {{
     height: 1px;
-    background: linear-gradient(to right, transparent, {C["outline_var"]}60, transparent);
+    background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
     margin: 32px 0;
 }}
 
-/* ════════════════════════════════════════
-   ERROR BOX
-════════════════════════════════════════ */
+/* ── ERROR BOX ── */
 .err-box {{
-    background: rgba(255,178,36,0.06);
-    border: 1px solid rgba(255,178,36,0.2);
-    border-radius: 12px;
-    padding: 20px 28px;
-    font-family: 'Epilogue', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: {C["secondary"]};
-    text-align: center;
-    letter-spacing: 0.02em;
+    background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
+    border-radius: 12px; padding: 20px 28px;
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
+    color: {C["primary"]}; text-align: center; letter-spacing: 0.02em;
 }}
 
-/* ════════════════════════════════════════
-   POSTER IMAGE
-════════════════════════════════════════ */
+/* ── POSTER ── */
 [data-testid="stImage"] img {{
     border-radius: 12px !important;
-    box-shadow: 0 24px 64px -12px rgba(0,0,0,0.65),
-                0 0 40px -15px {C["glow_amber"]} !important;
+    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75), 0 0 50px -18px {C["glow_copper_md"]} !important;
 }}
 
-/* ════════════════════════════════════════
-   EXPANDERS
-════════════════════════════════════════ */
+/* ── EXPANDERS ── */
 [data-testid="stExpander"] {{
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline_var"]}60 !important;
-    border-radius: 12px !important;
-    margin-top: 4px !important;
+    background: {C["bg_container"]} !important; border: 1px solid {C["outline"]} !important;
+    border-radius: 12px !important; margin-top: 4px !important;
 }}
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
-    font-family: 'Epilogue', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
+    font-family: 'Outfit', sans-serif !important; font-size: 13px !important;
+    font-weight: 600 !important; letter-spacing: 0.06em !important;
     color: {C["primary_container"]} !important;
 }}
 
-/* ════════════════════════════════════════
-   GENERAL TEXT
-════════════════════════════════════════ */
-p, li, div {{
-    font-size: 15px;
-}}
+p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ================================================================
-# HERO SECTION  (nav bar removed — starts directly here)
+# HERO
 # ================================================================
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
@@ -640,6 +476,7 @@ st.markdown(
     "<div class='hero-sub'>Search any film — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
     unsafe_allow_html=True,
 )
+st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
@@ -665,11 +502,10 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# POSTER GRID — SEARCH RESULTS
+# POSTER GRID
 # ================================================================
 search_results = st.session_state.search_results
 if search_results and not st.session_state.selected_imdb_id:
-
     st.markdown("<div class='search-label'>▸ Select a film to begin the AI debate</div>", unsafe_allow_html=True)
 
     display_results = search_results[:4]
@@ -688,16 +524,14 @@ if search_results and not st.session_state.selected_imdb_id:
                     st.image(poster, use_container_width=True)
                 except Exception:
                     st.markdown(
-                        f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
-                        f"display:flex;align-items:center;justify-content:center;"
-                        f"font-size:42px;cursor:pointer;'>🎬</div>",
+                        f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
+                        f"display:flex;align-items:center;justify-content:center;font-size:42px;cursor:pointer;'>🎬</div>",
                         unsafe_allow_html=True,
                     )
             else:
                 st.markdown(
-                    f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
-                    f"display:flex;align-items:center;justify-content:center;"
-                    f"font-size:42px;cursor:pointer;'>🎬</div>",
+                    f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
+                    f"display:flex;align-items:center;justify-content:center;font-size:42px;cursor:pointer;'>🎬</div>",
                     unsafe_allow_html=True,
                 )
 
@@ -761,10 +595,8 @@ elif movie and result:
             st.image(movie["poster"], use_column_width=True)
 
     with col_info:
-        # Title
         st.markdown(f"<div class='movie-title-display'>{movie['title']}</div>", unsafe_allow_html=True)
 
-        # Inline meta: Director · Year · Runtime · Cast
         director_val = movie.get("director") or "—"
         year_val     = movie.get("year")     or "—"
         runtime_val  = movie.get("runtime")  or "—"
@@ -772,55 +604,68 @@ elif movie and result:
 
         st.markdown(f"""
         <div class="movie-meta-inline">
-            <span class="meta-item">
+            <span style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="meta-label">Dir.</span>
                 <span class="meta-value accent">&nbsp;{director_val}</span>
             </span>
             <span class="meta-sep">·</span>
-            <span class="meta-item">
+            <span style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="meta-label">Year</span>
                 <span class="meta-value">&nbsp;{year_val}</span>
             </span>
             <span class="meta-sep">·</span>
-            <span class="meta-item">
+            <span style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="meta-label">Runtime</span>
                 <span class="meta-value">&nbsp;{runtime_val}</span>
             </span>
         </div>
-        <div style="font-family:'Epilogue',sans-serif;font-size:12px;
-                    letter-spacing:0.05em;color:{C['text_muted']};margin-bottom:18px;">
+        <div style="font-family:'Outfit',sans-serif;font-size:11px;
+                    letter-spacing:0.08em;color:{C['text_muted']};margin-bottom:18px;font-weight:500;">
             CAST &nbsp;·&nbsp; {actors_val}
         </div>
         """, unsafe_allow_html=True)
 
-        # ── CORE THEMES — moved above Overview ───────────────────
+        # Core themes
         themes = result.get("themes", [])
         if themes:
             st.markdown("<div class='section-heading' style='margin-top:10px;'>Core Themes</div>", unsafe_allow_html=True)
-            tags_html = "".join(
-                f"<span class='theme-tag'>#{t.strip()}</span>"
-                for t in themes
-            )
+            tags_html = "".join(f"<span class='theme-tag'>#{t.strip()}</span>" for t in themes)
             st.markdown(f"<div style='line-height:2.6;margin-bottom:8px;'>{tags_html}</div>", unsafe_allow_html=True)
 
-        # ── OVERVIEW ─────────────────────────────────────────────
+        # Overview
         st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-family:Be Vietnam Pro,sans-serif;font-size:15px;"
-            f"color:{C['on_surface_var']};line-height:1.8;margin-top:0;'>{movie['plot']}</p>",
+            f"<p style='font-family:Outfit,sans-serif;font-size:15px;font-weight:300;"
+            f"color:{C['on_surface_var']};line-height:1.85;margin-top:0;'>{movie['plot']}</p>",
             unsafe_allow_html=True,
         )
 
-        # Debate Agenda Card
-        st.markdown(f"""
-        <div class="agenda-card">
-            <div class="agenda-title">The Debate Agenda</div>
-            <div class="agenda-item"><b>Round 1 —</b> Initial critical assessment vs. contrarian defence</div>
-            <div class="agenda-item"><b>Round 2 —</b> Deep dive into craft, cinematography &amp; character</div>
-            <div class="agenda-item"><b>Round 3 —</b> Rebuttals on pacing and cultural legacy</div>
-            <div class="agenda-item"><b>Round 4 —</b> Nuanced synthesis and calibrated final score</div>
+    # ── DEBATE AGENDA — full-width horizontal strip ───────────────
+    st.markdown("<div class='section-heading'>The Debate Agenda</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="agenda-strip">
+        <div class="agenda-cell">
+            <div class="agenda-round">Round 01</div>
+            <div class="agenda-num">01</div>
+            <div class="agenda-text"><b>Opening Statements</b><br>Initial critical assessment versus a contrarian defence of the film's core premise and intent</div>
         </div>
-        """, unsafe_allow_html=True)
+        <div class="agenda-cell">
+            <div class="agenda-round">Round 02</div>
+            <div class="agenda-num">02</div>
+            <div class="agenda-text"><b>Craft &amp; Vision</b><br>Deep dive into cinematography, direction, character arcs, score, and the film's technical artistry</div>
+        </div>
+        <div class="agenda-cell">
+            <div class="agenda-round">Round 03</div>
+            <div class="agenda-num">03</div>
+            <div class="agenda-text"><b>Rebuttals</b><br>Pacing critiques, narrative coherence, thematic depth, and competing views on cultural legacy</div>
+        </div>
+        <div class="agenda-cell">
+            <div class="agenda-round">Round 04</div>
+            <div class="agenda-num">04</div>
+            <div class="agenda-text"><b>Final Synthesis</b><br>Nuanced convergence delivering a calibrated score on a global 10-point cinematic quality scale</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
@@ -833,10 +678,9 @@ elif movie and result:
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── SCORES — RING CHARTS ──────────────────────────────────────
+    # ── SCORES ────────────────────────────────────────────────────
     st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
-    # ── Parse scores to 0-100 percentage ──
     raw_ai_score = str(result.get("final_score", "N/A"))
     try:
         if "/" in raw_ai_score:
@@ -845,7 +689,6 @@ elif movie and result:
             ai_pct = (ai_num / ai_den) * 100
         else:
             ai_num = float(re.sub(r"[^\d.]", "", raw_ai_score))
-            # assume /10 scale if bare number
             ai_pct = ai_num * 10
         ai_pct = min(max(ai_pct, 0), 100)
     except Exception:
@@ -863,69 +706,53 @@ elif movie and result:
     raw_rt = str(movie.get("rt_rating", "—"))
     try:
         rt_num = float(re.sub(r"[^\d.]", "", raw_rt.split("/")[0]))
-        # RT is already a percentage (e.g. "87%")
         rt_pct = min(max(rt_num, 0), 100)
     except Exception:
         rt_pct = 0
 
-    # ── Ring SVG builder ──────────────────────────────────────────
-    # Uses a standard SVG circle (r=15.9155 → circumference ≈ 100) so
-    # stroke-dasharray values map directly to percentages without pathLength hacks.
-    # Each chart gets a unique animation name to avoid keyframe collisions.
-    CIRC = 100.0  # circumference when r = 15.9155...
+    CIRC = 100.0
 
     def ring_svg(pct, display, stroke, glow, track, anim_id):
-        filled   = round(pct, 2)
-        gap      = round(CIRC - filled, 2)
-        anim_name = f"scoreAnim_{anim_id}"
+        filled = round(pct, 2)
+        gap    = round(CIRC - filled, 2)
+        aname  = f"scoreAnim_{anim_id}"
         return f"""
 <svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">
   <defs>
     <style>
-      @keyframes {anim_name} {{
+      @keyframes {aname} {{
         from {{ stroke-dasharray: 0 {CIRC}; }}
         to   {{ stroke-dasharray: {filled} {gap}; }}
       }}
     </style>
   </defs>
-  <!-- Track ring -->
   <circle cx="18" cy="18" r="15.9155"
-    style="fill:none;stroke:{track};stroke-width:3.5;"/>
-  <!-- Filled arc — rotated so it starts at 12 o'clock -->
+    style="fill:none;stroke:{track};stroke-width:3.2;"/>
   <circle cx="18" cy="18" r="15.9155"
-    style="fill:none;
-           stroke:{stroke};
-           stroke-width:2.8;
-           stroke-linecap:round;
+    style="fill:none;stroke:{stroke};stroke-width:2.6;stroke-linecap:round;
            filter:drop-shadow(0 0 6px {glow});
-           transform:rotate(-90deg);
-           transform-origin:18px 18px;
+           transform:rotate(-90deg);transform-origin:18px 18px;
            stroke-dasharray:{filled} {gap};
-           animation:{anim_name} 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"/>
-  <!-- Centre label -->
+           animation:{aname} 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"/>
   <text x="18" y="19.5"
-    style="fill:{stroke};
-           font-family:Epilogue,sans-serif;
-           font-size:6.5px;
-           font-weight:800;
-           text-anchor:middle;
-           letter-spacing:-0.3px;">{display}</text>
+    style="fill:{stroke};font-family:Playfair Display,serif;
+           font-size:6.5px;font-weight:700;text-anchor:middle;letter-spacing:-0.3px;">{display}</text>
 </svg>"""
 
     def score_card(svg, label):
         return (
             f'<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">'
             f'{svg}'
-            f'<div style="font-family:Epilogue,sans-serif;font-size:10px;font-weight:600;'
-            f'color:#9f8e79;letter-spacing:0.15em;text-transform:uppercase;">{label}</div>'
+            f'<div style="font-family:Outfit,sans-serif;font-size:9px;font-weight:600;'
+            f'color:{C["text_muted"]};letter-spacing:0.20em;text-transform:uppercase;">{label}</div>'
             f'</div>'
         )
 
     scores_html = (
         f'<div style="display:flex;gap:52px;align-items:center;margin:20px 0 16px 0;flex-wrap:wrap;">'
-        + score_card(ring_svg(ai_pct,   ai_display, C["primary_container"], "rgba(255,178,36,0.6)",  "rgba(255,178,36,0.12)", "ai"),   "AI Verdict")
-        + score_card(ring_svg(imdb_pct, raw_imdb,   "#f5c518",              "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.1)",  "imdb"), "IMDb")
-        + score_card(ring_svg(rt_pct,   raw_rt,     "#ff6b35",              "rgba(255,107,53,0.5)",  "rgba(255,107,53,0.1)",  "rt"),   "Rotten Tomatoes")
+        + score_card(ring_svg(ai_pct,   ai_display, C["primary"],  "rgba(232,131,58,0.55)", C["bg_highest"], "ai"),   "AI Verdict")
+        + score_card(ring_svg(imdb_pct, raw_imdb,   "#e8b84a",     "rgba(232,184,74,0.45)", C["bg_highest"], "imdb"), "IMDb")
+        + score_card(ring_svg(rt_pct,   raw_rt,     "#e86040",     "rgba(232,96,64,0.45)",  C["bg_highest"], "rt"),   "Rotten Tomatoes")
         + '</div>'
     )
     st.markdown(scores_html, unsafe_allow_html=True)
@@ -937,8 +764,9 @@ elif movie and result:
     if debate:
         st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-family:Epilogue,sans-serif;font-size:12px;"
-            f"letter-spacing:0.06em;color:{C['text_muted']};margin-bottom:14px;text-transform:uppercase;'>"
+            f"<p style='font-family:Outfit,sans-serif;font-size:11px;"
+            f"letter-spacing:0.08em;color:{C['text_muted']};margin-bottom:14px;"
+            f"text-transform:uppercase;font-weight:500;'>"
             f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 Rounds</p>",
             unsafe_allow_html=True,
         )
@@ -970,13 +798,13 @@ elif movie and result:
         st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
         with st.expander("⚖ View AI Scoring Basis & Methodology"):
             st.markdown(
-                f"<div style='padding:14px;font-family:Be Vietnam Pro,sans-serif;"
-                f"color:{C['on_surface_var']};line-height:1.75;font-size:14px;'>"
-                f"<b style='color:{C['on_surface']};'>Criteria for this Rating:</b><br><br>{basis}"
+                f"<div style='padding:14px;font-family:Outfit,sans-serif;"
+                f"color:{C['on_surface_var']};line-height:1.75;font-size:14px;font-weight:400;'>"
+                f"<b style='color:{C['on_surface']};font-weight:600;'>Criteria for this Rating:</b><br><br>{basis}"
                 f"<br><br>"
-                f"<hr style='border:0;border-top:1px solid {C['outline_var']}40;margin:16px 0;'>"
-                f"<span style='font-size:12px;color:{C['text_muted']};font-family:Epilogue,sans-serif;"
-                f"letter-spacing:0.03em;'>"
+                f"<hr style='border:0;border-top:1px solid {C['outline']}60;margin:16px 0;'>"
+                f"<span style='font-size:12px;color:{C['text_muted']};font-family:Outfit,sans-serif;"
+                f"letter-spacing:0.03em;font-weight:400;'>"
                 f"This score is calculated using a neutral synthesis model that evaluates conflicting "
                 f"arguments from the debate, calibrated against a global 10-point scale of cinematic quality."
                 f"</span></div>",
