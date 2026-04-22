@@ -126,55 +126,50 @@ if "last_typed"       not in st.session_state: st.session_state.last_typed      
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 
 # ================================================================
-# WARM PARCHMENT LIGHT — DESIGN TOKENS
+# CINEMATIC EMBER — DESIGN TOKENS
 # ================================================================
 C = {
-    # Surfaces — warm cream / parchment scale
-    "bg":               "#fdf6ec",   # warm cream page
-    "bg_lowest":        "#fef9f3",   # lightest wash
-    "bg_low":           "#f9f0e1",   # soft parchment
-    "bg_container":     "#f4e8d4",   # card background
-    "bg_high":          "#ecdcc5",   # deeper parchment
-    "bg_highest":       "#e0ccb0",   # rich tan
-    "bg_bright":        "#d9c4a0",   # warm linen
-
-    # Text — warm ink scale
-    "on_surface":       "#2e1f0a",   # dark espresso ink
-    "on_surface_var":   "#4d3520",   # warm brown
-    "on_primary":       "#fff8ee",   # light text on accent
-    "text_muted":       "#9e7a52",   # warm taupe
-    "text_dim":         "#c8a87a",   # faded amber
-
-    # Primaries / Accents — warm amber / sienna
-    "primary":          "#c45e00",   # rich sienna
-    "primary_dim":      "#e07020",   # warm amber-orange
-    "primary_container":"#b5440e",   # deep burnt sienna
-    "secondary":        "#9b5a1a",   # warm chestnut
-    "tertiary":         "#d4824a",   # terracotta
-    "outline":          "#c8a87a",   # warm tan border
-    "outline_var":      "#ddc9a8",   # soft parchment border
-
-    # Glow helpers — warm amber
-    "glow_amber":       "rgba(196,94,0,0.10)",
-    "glow_amber_md":    "rgba(196,94,0,0.18)",
-    "glow_amber_btn":   "rgba(196,94,0,0.20)",
-    "glow_orange":      "rgba(212,130,74,0.12)",
-
-    # Debate personas
-    "critic_color":     "#b5440e",
-    "advocate_color":   "#7a4a1e",
-    "critic_bg":        "rgba(181,68,14,0.06)",
-    "advocate_bg":      "rgba(122,74,30,0.06)",
-    "critic_border":    "rgba(181,68,14,0.20)",
-    "advocate_border":  "rgba(122,74,30,0.20)",
+    # Surfaces
+    "bg":               "#161311",
+    "bg_lowest":        "#110d0c",
+    "bg_low":           "#1f1b19",
+    "bg_container":     "#231f1d",
+    "bg_high":          "#2e2927",
+    "bg_highest":       "#393431",
+    "bg_bright":        "#3d3836",
+    # Text
+    "on_surface":       "#eae1dd",
+    "on_surface_var":   "#d6c4ad",
+    "on_primary":       "#442b00",
+    "text_muted":       "#9f8e79",
+    "text_dim":         "#514533",
+    # Primaries / Accents
+    "primary":          "#ffd79e",
+    "primary_dim":      "#ffba47",
+    "primary_container":"#ffb224",
+    "secondary":        "#ffb77e",
+    "tertiary":         "#fed4c2",
+    "outline":          "#9f8e79",
+    "outline_var":      "#514533",
+    # Glow helpers
+    "glow_amber":       "rgba(255,178,36,0.18)",
+    "glow_amber_md":    "rgba(255,178,36,0.28)",
+    "glow_amber_btn":   "rgba(255,178,36,0.22)",
+    "glow_orange":      "rgba(255,183,126,0.15)",
+    "critic_color":     "#ffba47",
+    "advocate_color":   "#ffb77e",
+    "critic_bg":        "rgba(255,186,71,0.07)",
+    "advocate_bg":      "rgba(255,183,126,0.07)",
+    "critic_border":    "rgba(255,186,71,0.22)",
+    "advocate_border":  "rgba(255,183,126,0.22)",
 }
 
 # ================================================================
-# GLOBAL CSS — WARM PARCHMENT LIGHT DESIGN SYSTEM
+# GLOBAL CSS — CINEMATIC EMBER DESIGN SYSTEM
 # ================================================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500&display=swap');
 
 /* ── Reset sidebar toggle ── */
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
@@ -185,7 +180,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp {{
     background-color: {C["bg"]} !important;
     color: {C["on_surface"]};
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Be Vietnam Pro', sans-serif;
 }}
 .block-container {{
     max-width: 1200px;
@@ -195,93 +190,81 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-right: 2rem !important;
 }}
 
-/* ── Ambient warm paper texture overlay ── */
+/* ── Ambient background glow ── */
 .stApp::before {{
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
     background:
-        radial-gradient(ellipse 75% 60% at 10% 0%,   rgba(212,170,100,0.22) 0%, transparent 60%),
-        radial-gradient(ellipse 55% 50% at 90% 90%,  rgba(196,94,0,0.10)   0%, transparent 55%),
-        radial-gradient(ellipse 40% 40% at 55% 45%,  rgba(255,220,160,0.12) 0%, transparent 65%);
+        radial-gradient(ellipse 70% 55% at 15% 5%,  {C["glow_amber"]}   0%, transparent 65%),
+        radial-gradient(ellipse 50% 45% at 85% 85%, {C["glow_orange"]}  0%, transparent 55%),
+        radial-gradient(ellipse 35% 35% at 50% 50%, rgba(255,178,36,0.04) 0%, transparent 70%);
     pointer-events: none;
 }}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
-::-webkit-scrollbar-track {{ background: {C["bg_low"]}; }}
-::-webkit-scrollbar-thumb {{ background: {C["outline"]}; border-radius: 4px; }}
-::-webkit-scrollbar-thumb:hover {{ background: {C["primary_dim"]}; }}
+::-webkit-scrollbar-track {{ background: {C["bg_lowest"]}; }}
+::-webkit-scrollbar-thumb {{ background: {C["bg_highest"]}; border-radius: 4px; }}
+::-webkit-scrollbar-thumb:hover {{ background: {C["outline_var"]}; }}
 
-h1, h2, h3, h4 {{ font-family: 'Cormorant Garamond', serif !important; }}
+h1, h2, h3, h4 {{ font-family: 'Epilogue', sans-serif !important; }}
 
 /* ════════════════════════════════════════
    HERO / PAGE HEADER
 ════════════════════════════════════════ */
 .hero-eyebrow {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.22em;
-    color: {C["primary"]};
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: {C["primary_container"]};
     text-transform: uppercase;
     text-align: center;
     margin-bottom: 14px;
-    opacity: 0.85;
 }}
 .hero-title {{
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(40px, 5.5vw, 68px);
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-family: 'Epilogue', sans-serif;
+    font-size: clamp(36px, 5.5vw, 60px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
     line-height: 1.1;
     text-align: center;
     color: {C["on_surface"]};
     margin-bottom: 10px;
 }}
 .hero-title em {{
-    font-style: italic;
+    font-style: normal;
     color: {C["primary_container"]};
 }}
 .hero-sub {{
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 17px;
     color: {C["on_surface_var"]};
     text-align: center;
     max-width: 520px;
     margin: 0 auto 36px auto;
-    line-height: 1.65;
-    font-weight: 400;
-}}
-
-/* Thin warm rule under hero */
-.hero-rule {{
-    width: 64px;
-    height: 2px;
-    background: linear-gradient(to right, {C["primary_container"]}, {C["primary_dim"]});
-    border-radius: 9999px;
-    margin: 0 auto 36px auto;
-    opacity: 0.6;
+    line-height: 1.6;
 }}
 
 /* ════════════════════════════════════════
-   CHAT INPUT — WARM RECESSED FIELD
+   CHAT INPUT — RECESSED DARK FIELD
 ════════════════════════════════════════ */
 div[data-testid="stChatInput"],
 .stChatInput {{
-    background: {C["bg_low"]} !important;
-    border: 1.5px solid {C["outline_var"]} !important;
+    background: {C["bg_lowest"]} !important;
+    border: 1px solid {C["outline_var"]} !important;
     border-radius: 9999px !important;
-    box-shadow: inset 0 2px 6px rgba(100,60,0,0.06), 0 2px 12px rgba(180,100,20,0.06) !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
     padding-right: 8px !important;
     padding-left: 8px !important;
     transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
 }}
 div[data-testid="stChatInput"]:focus-within,
 .stChatInput:focus-within {{
-    border-color: {C["primary"]}60 !important;
-    box-shadow: inset 0 2px 6px rgba(100,60,0,0.06), 0 0 24px {C["glow_amber"]} !important;
+    border-color: {C["primary_container"]}80 !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 24px {C["glow_amber"]} !important;
 }}
 div[data-testid="stChatInput"] > div,
 .stChatInput > div {{
@@ -296,7 +279,7 @@ div[data-testid="stChatInput"] textarea,
     border: none !important;
     color: {C["on_surface"]} !important;
     -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Be Vietnam Pro', sans-serif !important;
     font-size: 16px !important;
     padding: 14px 20px !important;
     box-shadow: none !important;
@@ -321,14 +304,14 @@ div[data-testid="stChatInput"] button,
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 16px {C["glow_amber_btn"]} !important;
+    box-shadow: 0 4px 20px {C["glow_amber_btn"]} !important;
     transition: all 0.2s ease !important;
     flex-shrink: 0 !important;
     margin-top: 4px !important;
 }}
 button[data-testid="stChatInputSubmitButton"]:hover {{
     background: {C["primary_dim"]} !important;
-    box-shadow: 0 6px 24px {C["glow_amber_md"]} !important;
+    box-shadow: 0 6px 28px {C["glow_amber_md"]} !important;
     transform: scale(1.08) !important;
 }}
 button[data-testid="stChatInputSubmitButton"] svg,
@@ -342,29 +325,29 @@ div[data-testid="stChatInput"] button svg {{
    SEARCH RESULT CARDS — Poster Grid
 ════════════════════════════════════════ */
 .search-label {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.20em;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: {C["primary"]};
+    color: {C["primary_container"]};
     margin-bottom: 18px;
     margin-top: 6px;
-    opacity: 0.8;
 }}
 
+/* Override streamlit image rounding + hover */
 div[data-testid="column"] img {{
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     display: block !important;
     cursor: pointer !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-    box-shadow: 0 4px 20px rgba(100,50,0,0.12) !important;
 }}
 div[data-testid="column"] img:hover {{
     transform: scale(1.04) !important;
-    box-shadow: 0 14px 40px -6px rgba(180,80,20,0.22) !important;
+    box-shadow: 0 16px 48px -8px {C["glow_amber_md"]} !important;
 }}
 
+/* Invisible poster overlay button */
 div[data-testid="column"] div[data-testid="stButton"] > button {{
     background: transparent !important;
     border: none !important;
@@ -381,23 +364,23 @@ div[data-testid="column"] div[data-testid="stButton"] > button {{
     z-index: 10 !important;
 }}
 div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-    background: rgba(196,94,0,0.04) !important;
+    background: rgba(255,178,36,0.06) !important;
 }}
 
 /* ════════════════════════════════════════
    MOVIE DETAIL — TITLE / META
 ════════════════════════════════════════ */
 .movie-title-display {{
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(28px, 3.5vw, 48px);
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-family: 'Epilogue', sans-serif;
+    font-size: clamp(26px, 3.5vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
     line-height: 1.1;
     color: {C["on_surface"]};
     margin-bottom: 8px;
 }}
 .movie-meta-inline {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 14px;
     color: {C["on_surface_var"]};
     margin-bottom: 20px;
@@ -413,10 +396,10 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     gap: 4px;
 }}
 .movie-meta-inline .meta-label {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: {C["text_muted"]};
 }}
@@ -429,33 +412,32 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     font-weight: 600;
 }}
 .meta-sep {{
-    color: {C["outline"]};
+    color: {C["outline_var"]};
     margin: 0 10px;
     font-size: 12px;
-    opacity: 0.5;
+    opacity: 0.6;
 }}
 
 /* ════════════════════════════════════════
    SECTION HEADING
 ════════════════════════════════════════ */
 .section-heading {{
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.22em;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: {C["primary"]};
+    color: {C["primary_container"]};
     margin: 32px 0 14px 0;
     display: flex;
     align-items: center;
     gap: 10px;
-    opacity: 0.85;
 }}
 .section-heading::after {{
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(to right, {C["outline_var"]}, transparent);
+    background: linear-gradient(to right, {C["outline_var"]}80, transparent);
 }}
 
 /* ════════════════════════════════════════
@@ -463,24 +445,23 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 ════════════════════════════════════════ */
 .agenda-card {{
     background: {C["bg_container"]};
-    border: 1px solid {C["outline_var"]};
+    border: 1px solid {C["outline_var"]}60;
     border-radius: 12px;
     padding: 20px 24px;
     margin-top: 18px;
-    box-shadow: 0 4px 20px rgba(120,70,10,0.07);
+    box-shadow: 0 8px 32px -12px rgba(0,0,0,0.5);
 }}
 .agenda-title {{
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: {C["primary"]};
+    color: {C["primary_container"]};
     margin-bottom: 12px;
-    opacity: 0.8;
 }}
 .agenda-item {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 14px;
     color: {C["on_surface_var"]};
     line-height: 1.7;
@@ -494,15 +475,15 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
    SUMMARY / VERDICT BOX
 ════════════════════════════════════════ */
 .summary-box {{
-    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}80 100%);
+    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}60 100%);
     border-left: 3px solid {C["primary_container"]};
     border-radius: 0 12px 12px 0;
     padding: 22px 28px;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 17px;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 15px;
     color: {C["on_surface_var"]};
     line-height: 1.85;
-    box-shadow: 0 4px 18px rgba(120,70,10,0.08);
+    box-shadow: 0 4px 20px -8px rgba(0,0,0,0.4);
 }}
 
 /* ════════════════════════════════════════
@@ -510,12 +491,12 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 ════════════════════════════════════════ */
 .theme-tag {{
     display: inline-block;
-    background: rgba(181,68,14,0.07);
-    border: 1px solid rgba(181,68,14,0.22);
-    color: {C["primary_container"]};
-    font-family: 'DM Sans', sans-serif;
+    background: rgba(255,178,36,0.09);
+    border: 1px solid rgba(255,178,36,0.25);
+    color: {C["secondary"]};
+    font-family: 'Epilogue', sans-serif;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.04em;
     padding: 5px 14px;
     border-radius: 9999px;
@@ -534,12 +515,12 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 }}
 .debate-bubble {{
     padding: 18px 22px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Be Vietnam Pro', sans-serif;
     font-size: 15px;
     line-height: 1.75;
     max-width: 88%;
     color: {C["on_surface_var"]};
-    box-shadow: 0 3px 14px rgba(120,70,10,0.07);
+    box-shadow: 0 4px 18px -8px rgba(0,0,0,0.35);
 }}
 .bubble-critic {{
     background: {C["critic_bg"]};
@@ -554,33 +535,33 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     align-self: flex-end;
 }}
 .bubble-label {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     margin-bottom: 10px;
 }}
 .bubble-label-critic   {{ color: {C["critic_color"]}; }}
 .bubble-label-advocate {{ color: {C["advocate_color"]}; }}
 .bubble-model-tag {{
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    opacity: 0.45;
+    opacity: 0.5;
     margin-left: 8px;
     letter-spacing: 0.05em;
 }}
 .round-pill {{
     display: block;
     width: fit-content;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    background: rgba(181,68,14,0.08);
-    border: 1px solid rgba(181,68,14,0.22);
-    color: {C["primary"]};
+    background: rgba(255,186,71,0.1);
+    border: 1px solid rgba(255,186,71,0.3);
+    color: {C["primary_dim"]};
     padding: 3px 12px;
     border-radius: 9999px;
     margin: 14px auto 6px auto;
@@ -592,7 +573,7 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 ════════════════════════════════════════ */
 .fancy-divider {{
     height: 1px;
-    background: linear-gradient(to right, transparent, {C["outline_var"]}, transparent);
+    background: linear-gradient(to right, transparent, {C["outline_var"]}60, transparent);
     margin: 32px 0;
 }}
 
@@ -600,14 +581,14 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
    ERROR BOX
 ════════════════════════════════════════ */
 .err-box {{
-    background: rgba(196,94,0,0.05);
-    border: 1px solid rgba(196,94,0,0.18);
+    background: rgba(255,178,36,0.06);
+    border: 1px solid rgba(255,178,36,0.2);
     border-radius: 12px;
     padding: 20px 28px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-size: 14px;
     font-weight: 500;
-    color: {C["primary"]};
+    color: {C["secondary"]};
     text-align: center;
     letter-spacing: 0.02em;
 }}
@@ -617,8 +598,8 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 ════════════════════════════════════════ */
 [data-testid="stImage"] img {{
     border-radius: 12px !important;
-    box-shadow: 0 20px 56px -12px rgba(100,50,0,0.25),
-                0 0 32px -12px rgba(196,94,0,0.12) !important;
+    box-shadow: 0 24px 64px -12px rgba(0,0,0,0.65),
+                0 0 40px -15px {C["glow_amber"]} !important;
 }}
 
 /* ════════════════════════════════════════
@@ -626,16 +607,16 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 ════════════════════════════════════════ */
 [data-testid="stExpander"] {{
     background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline_var"]} !important;
+    border: 1px solid {C["outline_var"]}60 !important;
     border-radius: 12px !important;
     margin-top: 4px !important;
 }}
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Epilogue', sans-serif !important;
     font-size: 13px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.04em !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
     color: {C["primary_container"]} !important;
 }}
 
@@ -650,12 +631,11 @@ p, li, div {{
 
 
 # ================================================================
-# HERO SECTION
+# HERO SECTION  (nav bar removed — starts directly here)
 # ================================================================
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-rule'></div>", unsafe_allow_html=True)
 st.markdown(
     "<div class='hero-sub'>Search any film — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
     unsafe_allow_html=True,
@@ -708,14 +688,14 @@ if search_results and not st.session_state.selected_imdb_id:
                     st.image(poster, use_container_width=True)
                 except Exception:
                     st.markdown(
-                        f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
+                        f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
                         f"display:flex;align-items:center;justify-content:center;"
                         f"font-size:42px;cursor:pointer;'>🎬</div>",
                         unsafe_allow_html=True,
                     )
             else:
                 st.markdown(
-                    f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
+                    f"<div style='height:300px;background:{C['bg_high']};border-radius:12px;"
                     f"display:flex;align-items:center;justify-content:center;"
                     f"font-size:42px;cursor:pointer;'>🎬</div>",
                     unsafe_allow_html=True,
@@ -807,13 +787,13 @@ elif movie and result:
                 <span class="meta-value">&nbsp;{runtime_val}</span>
             </span>
         </div>
-        <div style="font-family:'DM Sans',sans-serif;font-size:12px;
-                    letter-spacing:0.06em;color:{C['text_muted']};margin-bottom:18px;">
+        <div style="font-family:'Epilogue',sans-serif;font-size:12px;
+                    letter-spacing:0.05em;color:{C['text_muted']};margin-bottom:18px;">
             CAST &nbsp;·&nbsp; {actors_val}
         </div>
         """, unsafe_allow_html=True)
 
-        # ── CORE THEMES ───────────────────────────────────────────
+        # ── CORE THEMES — moved above Overview ───────────────────
         themes = result.get("themes", [])
         if themes:
             st.markdown("<div class='section-heading' style='margin-top:10px;'>Core Themes</div>", unsafe_allow_html=True)
@@ -826,8 +806,8 @@ elif movie and result:
         # ── OVERVIEW ─────────────────────────────────────────────
         st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-family:Cormorant Garamond,serif;font-size:17px;"
-            f"color:{C['on_surface_var']};line-height:1.85;margin-top:0;'>{movie['plot']}</p>",
+            f"<p style='font-family:Be Vietnam Pro,sans-serif;font-size:15px;"
+            f"color:{C['on_surface_var']};line-height:1.8;margin-top:0;'>{movie['plot']}</p>",
             unsafe_allow_html=True,
         )
 
@@ -856,6 +836,7 @@ elif movie and result:
     # ── SCORES — RING CHARTS ──────────────────────────────────────
     st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
+    # ── Parse scores to 0-100 percentage ──
     raw_ai_score = str(result.get("final_score", "N/A"))
     try:
         if "/" in raw_ai_score:
@@ -864,6 +845,7 @@ elif movie and result:
             ai_pct = (ai_num / ai_den) * 100
         else:
             ai_num = float(re.sub(r"[^\d.]", "", raw_ai_score))
+            # assume /10 scale if bare number
             ai_pct = ai_num * 10
         ai_pct = min(max(ai_pct, 0), 100)
     except Exception:
@@ -881,11 +863,16 @@ elif movie and result:
     raw_rt = str(movie.get("rt_rating", "—"))
     try:
         rt_num = float(re.sub(r"[^\d.]", "", raw_rt.split("/")[0]))
+        # RT is already a percentage (e.g. "87%")
         rt_pct = min(max(rt_num, 0), 100)
     except Exception:
         rt_pct = 0
 
-    CIRC = 100.0
+    # ── Ring SVG builder ──────────────────────────────────────────
+    # Uses a standard SVG circle (r=15.9155 → circumference ≈ 100) so
+    # stroke-dasharray values map directly to percentages without pathLength hacks.
+    # Each chart gets a unique animation name to avoid keyframe collisions.
+    CIRC = 100.0  # circumference when r = 15.9155...
 
     def ring_svg(pct, display, stroke, glow, track, anim_id):
         filled   = round(pct, 2)
@@ -901,23 +888,26 @@ elif movie and result:
       }}
     </style>
   </defs>
+  <!-- Track ring -->
   <circle cx="18" cy="18" r="15.9155"
     style="fill:none;stroke:{track};stroke-width:3.5;"/>
+  <!-- Filled arc — rotated so it starts at 12 o'clock -->
   <circle cx="18" cy="18" r="15.9155"
     style="fill:none;
            stroke:{stroke};
            stroke-width:2.8;
            stroke-linecap:round;
-           filter:drop-shadow(0 0 5px {glow});
+           filter:drop-shadow(0 0 6px {glow});
            transform:rotate(-90deg);
            transform-origin:18px 18px;
            stroke-dasharray:{filled} {gap};
            animation:{anim_name} 1.4s cubic-bezier(0.4,0,0.2,1) forwards;"/>
+  <!-- Centre label -->
   <text x="18" y="19.5"
     style="fill:{stroke};
-           font-family:Cormorant Garamond,serif;
+           font-family:Epilogue,sans-serif;
            font-size:6.5px;
-           font-weight:700;
+           font-weight:800;
            text-anchor:middle;
            letter-spacing:-0.3px;">{display}</text>
 </svg>"""
@@ -926,16 +916,16 @@ elif movie and result:
         return (
             f'<div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">'
             f'{svg}'
-            f'<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:500;'
-            f'color:{C["text_muted"]};letter-spacing:0.18em;text-transform:uppercase;">{label}</div>'
+            f'<div style="font-family:Epilogue,sans-serif;font-size:10px;font-weight:600;'
+            f'color:#9f8e79;letter-spacing:0.15em;text-transform:uppercase;">{label}</div>'
             f'</div>'
         )
 
     scores_html = (
         f'<div style="display:flex;gap:52px;align-items:center;margin:20px 0 16px 0;flex-wrap:wrap;">'
-        + score_card(ring_svg(ai_pct,   ai_display, C["primary_container"], "rgba(181,68,14,0.5)",  C["outline_var"], "ai"),   "AI Verdict")
-        + score_card(ring_svg(imdb_pct, raw_imdb,   "#b07800",              "rgba(176,120,0,0.4)",  C["outline_var"],  "imdb"), "IMDb")
-        + score_card(ring_svg(rt_pct,   raw_rt,     "#c04020",              "rgba(192,64,32,0.4)",  C["outline_var"],  "rt"),   "Rotten Tomatoes")
+        + score_card(ring_svg(ai_pct,   ai_display, C["primary_container"], "rgba(255,178,36,0.6)",  "rgba(255,178,36,0.12)", "ai"),   "AI Verdict")
+        + score_card(ring_svg(imdb_pct, raw_imdb,   "#f5c518",              "rgba(245,197,24,0.5)",  "rgba(245,197,24,0.1)",  "imdb"), "IMDb")
+        + score_card(ring_svg(rt_pct,   raw_rt,     "#ff6b35",              "rgba(255,107,53,0.5)",  "rgba(255,107,53,0.1)",  "rt"),   "Rotten Tomatoes")
         + '</div>'
     )
     st.markdown(scores_html, unsafe_allow_html=True)
@@ -947,8 +937,8 @@ elif movie and result:
     if debate:
         st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
         st.markdown(
-            f"<p style='font-family:DM Sans,sans-serif;font-size:12px;"
-            f"letter-spacing:0.07em;color:{C['text_muted']};margin-bottom:14px;text-transform:uppercase;'>"
+            f"<p style='font-family:Epilogue,sans-serif;font-size:12px;"
+            f"letter-spacing:0.06em;color:{C['text_muted']};margin-bottom:14px;text-transform:uppercase;'>"
             f"{MODEL_CRITIC} &nbsp;vs&nbsp; {MODEL_ADVOCATE} &nbsp;·&nbsp; 4 Rounds</p>",
             unsafe_allow_html=True,
         )
@@ -980,12 +970,12 @@ elif movie and result:
         st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
         with st.expander("⚖ View AI Scoring Basis & Methodology"):
             st.markdown(
-                f"<div style='padding:14px;font-family:DM Sans,sans-serif;"
+                f"<div style='padding:14px;font-family:Be Vietnam Pro,sans-serif;"
                 f"color:{C['on_surface_var']};line-height:1.75;font-size:14px;'>"
                 f"<b style='color:{C['on_surface']};'>Criteria for this Rating:</b><br><br>{basis}"
                 f"<br><br>"
-                f"<hr style='border:0;border-top:1px solid {C['outline_var']};margin:16px 0;'>"
-                f"<span style='font-size:12px;color:{C['text_muted']};font-family:DM Sans,sans-serif;"
+                f"<hr style='border:0;border-top:1px solid {C['outline_var']}40;margin:16px 0;'>"
+                f"<span style='font-size:12px;color:{C['text_muted']};font-family:Epilogue,sans-serif;"
                 f"letter-spacing:0.03em;'>"
                 f"This score is calculated using a neutral synthesis model that evaluates conflicting "
                 f"arguments from the debate, calibrated against a global 10-point scale of cinematic quality."
