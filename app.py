@@ -242,30 +242,31 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 }}
 
 /* ── CHAT INPUT ── */
+/* 1. Remove the background from the outer container */
 div[data-testid="stChatInput"] {{
     background: {C["bg_low"]} !important;
     border: 1px solid {C["outline"]} !important;
     border-radius: 9999px !important;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
-    padding-right: 8px !important; padding-left: 8px !important;
-    transition: border-color 0.3s, box-shadow 0.3s !important;
 }}
 /* This is the key part to remove that grey box */
 div[data-testid="stChatInput"] > div {{
     background-color: transparent !important;
+    border: none !important;
 }}
 
 textarea[data-testid="stChatInputTextArea"] {{
-    background: transparent !important; 
+    background-color: transparent !important;
+    background: transparent !important;
     border: none !important;
-    color: {C["on_surface"]} !important; 
+    color: {C["on_surface"]} !important;
     -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important; 
-    font-size: 16px !important; 
-    font-weight: 400 !important;
-    padding: 14px 20px !important; 
     box-shadow: none !important;
-    caret-color: {C["primary_container"]} !important;
+}}
+
+div[data-testid="stChatInput"] div:focus-within {{
+    border: none !important;
+    box-shadow: none !important;
 }}
 
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
