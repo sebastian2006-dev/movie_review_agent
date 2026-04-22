@@ -250,18 +250,24 @@ div[data-testid="stChatInput"] {{
     padding-right: 8px !important; padding-left: 8px !important;
     transition: border-color 0.3s, box-shadow 0.3s !important;
 }}
-div[data-testid="stChatInput"]:focus-within {{
-    border-color: {C["primary"]}70 !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 32px {C["glow_copper"]} !important;
+/* This is the key part to remove that grey box */
+div[data-testid="stChatInput"] > div {{
+    background-color: transparent !important;
 }}
-div[data-testid="stChatInput"] > div {{ background: transparent !important; border: none !important; border-radius: 9999px !important; }}
+
 textarea[data-testid="stChatInputTextArea"] {{
-    background: transparent !important; border: none !important;
-    color: {C["on_surface"]} !important; -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important; font-size: 16px !important; font-weight: 400 !important;
-    padding: 14px 20px !important; box-shadow: none !important;
+    background: transparent !important; 
+    border: none !important;
+    color: {C["on_surface"]} !important; 
+    -webkit-text-fill-color: {C["on_surface"]} !important;
+    font-family: 'Outfit', sans-serif !important; 
+    font-size: 16px !important; 
+    font-weight: 400 !important;
+    padding: 14px 20px !important; 
+    box-shadow: none !important;
     caret-color: {C["primary_container"]} !important;
 }}
+
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
     color: {C["text_muted"]} !important; -webkit-text-fill-color: {C["text_muted"]} !important;
 }}
