@@ -242,13 +242,24 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 }}
 
 /* ── CHAT INPUT ── */
-/* 1. Remove the background from the outer container */
 div[data-testid="stChatInput"] {{
     background: {C["bg_low"]} !important;
     border: 1px solid {C["outline"]} !important;
     border-radius: 9999px !important;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
+    padding: 4px 8px !important;
 }}
+
+/* This targets the inner container box specifically */
+div[data-testid="stChatInput"] > div,
+div[data-testid="stChatInput"] div[role="presentation"],
+div[data-testid="stChatInput"] textarea {{
+    background-color: transparent !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+
 /* This is the key part to remove that grey box */
 div[data-testid="stChatInput"] > div {{
     background-color: transparent !important;
@@ -256,30 +267,36 @@ div[data-testid="stChatInput"] > div {{
 }}
 
 textarea[data-testid="stChatInputTextArea"] {{
-    background-color: transparent !important;
-    background: transparent !important;
-    border: none !important;
-    color: {C["on_surface"]} !important;
+    color: {C["on_surface"]} !important; 
     -webkit-text-fill-color: {C["on_surface"]} !important;
-    box-shadow: none !important;
+    font-family: 'Outfit', sans-serif !important; 
+    font-size: 16px !important; 
+    font-weight: 400 !important;
+    padding: 10px 15px !important; 
+    caret-color: {C["primary_container"]} !important;
 }}
 
+/* Remove the blue/white focus border around the inner box */
 div[data-testid="stChatInput"] div:focus-within {{
-    border: none !important;
+    background-color: transparent !important;
+    outline: none !important;
     box-shadow: none !important;
 }}
 
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
-    color: {C["text_muted"]} !important; -webkit-text-fill-color: {C["text_muted"]} !important;
+    color: {C["text_muted"]} !important;
+    -webkit-text-fill-color: {C["text_muted"]} !important;
+    opacity: 1 !important;
 }}
+
 button[data-testid="stChatInputSubmitButton"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-    border: none !important; border-radius: 9999px !important;
-    width: 38px !important; height: 38px !important;
-    display: flex !important; align-items: center !important; justify-content: center !important;
+    border-radius: 9999px !important;
+    width: 38px !important; 
+    height: 38px !important;
     box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
-    transition: all 0.2s !important; flex-shrink: 0 !important; margin-top: 4px !important;
 }}
+
 button[data-testid="stChatInputSubmitButton"]:hover {{
     transform: scale(1.10) !important; box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
 }}
