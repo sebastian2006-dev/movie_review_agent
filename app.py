@@ -724,59 +724,106 @@ if search_results and not st.session_state.selected_imdb_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        # ── Card container ──
+        # Poster column: CSS background-image so Streamlit can't strip it
+        poster_css = (
+            f"background-image: url('{poster}'); background-size: cover; background-position: center top;"
+            if has_poster
+            else f"background: {C['bg_high']};"
+        )
+        placeholder_icon = "" if has_poster else "<div style='font-size:38px;opacity:0.25;'>🎬</div>"
+
+        # Render the entire card as one HTML block — no columns, no clipping
         st.markdown(f"""
-        <div class="result-card" id="card_{imdb_id}">
-        """, unsafe_allow_html=True)
+        <div style="
+            display: flex;
+            background: {C['bg_container']};
+            border: 1px solid rgba(74,48,32,0.35);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 6px;
+            min-height: 210px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            transition: all 0.30s ease;
+        ">
+            <!-- POSTER -->
+            <div style="
+                width: 140px;
+                min-width: 140px;
+                min-height: 210px;
+                flex-shrink: 0;
+                position: relative;
+                {poster_css}
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                {placeholder_icon}
+                <div style="
+                    position: absolute; inset: 0;
+                    background: linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
+                    pointer-events: none;
+                "></div>
+            </div>
 
-        # Use Streamlit columns inside the logical card flow
-        col_img, col_body = st.columns([1, 3.2], gap="small")
-
-        with col_img:
-            if has_poster:
-                st.markdown(f"""
-                <div style="border-radius:10px 0 0 10px;overflow:hidden;height:200px;width:100%;background:{C['bg_high']};">
-                    <img src="{poster}" alt="{title}"
-                         style="width:100%;height:200px;object-fit:cover;display:block;border-radius:10px 0 0 10px;" />
+            <!-- BODY -->
+            <div style="
+                flex: 1;
+                padding: 22px 26px 18px 20px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                min-width: 0;
+            ">
+                <div>
+                    <div style="
+                        font-family: 'Playfair Display', serif;
+                        font-size: 22px; font-weight: 700;
+                        color: {C['on_surface']}; line-height: 1.18; margin-bottom: 6px;
+                    ">{title}</div>
+                    <div style="
+                        font-family: 'Outfit', sans-serif; font-size: 12px;
+                        color: {C['on_surface_var']}; margin-bottom: 12px; letter-spacing: 0.04em;
+                    ">{year} &nbsp;·&nbsp; {itype}</div>
+                    <div style="
+                        font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
+                        color: rgba(201,176,152,0.60); line-height: 1.65; margin-bottom: 14px;
+                    ">
+                        A Critic and an Advocate will debate this title across four rounds
+                        and deliver a calibrated verdict.
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="height:200px;width:100%;background:{C['bg_high']};
-                            border-radius:10px 0 0 10px;display:flex;
-                            align-items:center;justify-content:center;font-size:40px;
-                            color:{C['text_dim']};">🎬</div>
-                """, unsafe_allow_html=True)
-
-        with col_body:
-            # Title rendered via st.markdown with Playfair Display
-            st.markdown(f"""
-            <div style="padding: 20px 20px 0 10px;">
-                <div class="result-title">{title}</div>
-                <div class="result-meta">{year} &nbsp;·&nbsp; {itype}</div>
-                <div class="result-cta">
-                    Click below to start the AI debate — a Critic and an Advocate
-                    will dissect this title across four rounds and deliver a calibrated verdict.
-                </div>
-                <div style="margin-bottom:12px;">
-                    <span class="result-badge type-badge">{itype}</span>
-                    <span class="result-badge">{year}</span>
+                <div>
+                    <span style="
+                        display: inline-block;
+                        font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
+                        letter-spacing: 0.14em; text-transform: uppercase;
+                        padding: 4px 12px; border-radius: 3px; margin-right: 6px;
+                        background: rgba(232,131,58,0.10); color: {C['primary']};
+                        border: 1px solid rgba(232,131,58,0.25);
+                    ">{itype}</span>
+                    <span style="
+                        display: inline-block;
+                        font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
+                        letter-spacing: 0.14em; text-transform: uppercase;
+                        padding: 4px 12px; border-radius: 3px;
+                        background: rgba(74,48,32,0.5); color: {C['tertiary']};
+                        border: 1px solid rgba(74,48,32,0.8);
+                    ">{year}</span>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
-            # ── Analyse button — styled via CSS ──
-            if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
-                st.session_state.selected_imdb_id = imdb_id
-                st.session_state.search_results   = []
-                st.session_state.cached_movie     = None
-                st.session_state.cached_result    = None
-                st.session_state.cached_trailer   = None
-                st.rerun()
+        # Analyse button sits just below each card, full width
+        if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
+            st.session_state.selected_imdb_id = imdb_id
+            st.session_state.search_results   = []
+            st.session_state.cached_movie     = None
+            st.session_state.cached_result    = None
+            st.session_state.cached_trailer   = None
+            st.rerun()
 
-        # Close the card container
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
