@@ -906,9 +906,7 @@ if st.session_state.active_id and st.session_state.active_id not in st.session_s
             st.session_state.cached_result = analyze_movie(raw_reviews)
 
     
-movie = st.session_state.cached_movie
-result = st.session_state.cached_result
-trailer = st.session_state.cached_trailer
+
 
 # ================================================================
 # ERROR STATE
