@@ -705,18 +705,17 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ================================================================
 # HANDLE SEARCH INPUT
 # ================================================================
-if user_input and user_input.strip():
-    if user_input != st.session_state.last_typed:
-        st.session_state.last_typed       = user_input
-        st.session_state.selected_imdb_id = None
-        st.session_state.cached_movie     = None
-        st.session_state.cached_result    = None
-        st.session_state.cached_trailer   = None
-        with st.spinner("Searching the archive…"):
-            results, err = search_movies(user_input, st.session_state.media_type)
-            st.session_state.search_results = results
-            st.session_state.search_error   = err
-        st.rerun()
+if user_input != st.session_state.last_typed:
+            st.session_state.last_typed = user_input
+            
+            # We use active_id now, and we don't need the "cached_" variables anymore
+            st.session_state.active_id = None 
+            
+            with st.spinner("Searching the archive..."):
+                results, err = search_movies(user_input, st.session_state.media_type)
+                st.session_state.search_results = results
+                st.session_state.search_error   = err
+            st.rerun()
 
 
 # ================================================================
@@ -886,7 +885,8 @@ if search_results and not st.session_state.selected_imdb_id:
 # ================================================================
 # RUN ANALYSIS
 # ================================================================
-if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
+# Change Line 889 to use the new variable name
+if st.session_state.active_id and st.session_state.active_id not in st.session_state.conversations:
     with st.spinner("Fetching film details…"):
         st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
         st.session_state.cached_query = st.session_state.selected_imdb_id
