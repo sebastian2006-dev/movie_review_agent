@@ -297,48 +297,7 @@ div[data-testid="stButton"] > button:focus {{
     box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
 }}
 
-/* Active state for type toggle via .active-type-btn class trick:
-   We use a separate CSS class injected via markdown for the active pill */
-.cinema-btn-active {{
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
-    padding: 10px 36px !important;
-    border-radius: 9999px !important;
-    border: 1px solid {C["primary"]} !important;
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-    color: {C["on_primary"]} !important;
-    box-shadow: 0 4px 22px {C["glow_copper_btn"]} !important;
-    cursor: default !important;
-    user-select: none !important;
-}}
-.cinema-btn-inactive {{
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
-    padding: 10px 36px !important;
-    border-radius: 9999px !important;
-    border: 1px solid {C["outline"]} !important;
-    background: {C["bg_container"]} !important;
-    color: {C["text_muted"]} !important;
-    cursor: pointer !important;
-    transition: all 0.22s ease !important;
-}}
-.cinema-btn-inactive:hover {{
-    border-color: {C["primary"]} !important;
-    color: {C["primary_container"]} !important;
-    background: rgba(232,131,58,0.08) !important;
-}}
+
 
 /* Analyse CTA button — copper gradient pill */
 div[data-testid="stButton"].analyse-btn > button,
@@ -677,17 +636,23 @@ show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.c
 active_type = st.session_state.media_type
 
 if show_search_ui:
-    # ── Type toggle rendered as styled HTML buttons + hidden Streamlit triggers ──
-    # We render the visual toggle in pure HTML/CSS, and place invisible Streamlit
-    # buttons beneath each half to capture the click.
+    # ── Type toggle: inject active style onto the correct button via CSS ──
+    # We give the toggle wrapper a unique id, then target nth-child to highlight
+    # whichever button matches the current active_type.
+    active_idx = 1 if active_type == "Movie" else 2
     st.markdown(f"""
-    <div style="display:flex;justify-content:center;margin-bottom:6px;gap:10px;">
-        <span class="{'cinema-btn-active' if active_type == 'Movie' else 'cinema-btn-inactive'}">🎬&nbsp; Movie</span>
-        <span class="{'cinema-btn-active' if active_type == 'Series' else 'cinema-btn-inactive'}">📺&nbsp; Series</span>
-    </div>
+    <style>
+    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-child({active_idx})
+        div[data-testid="stButton"] > button {{
+        background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
+        border-color: {C["primary"]} !important;
+        color: {C["on_primary"]} !important;
+        box-shadow: 0 4px 22px {C["glow_copper_btn"]} !important;
+    }}
+    </style>
+    <div style="height:4px;"></div>
     """, unsafe_allow_html=True)
 
-    # Invisible functional buttons below the visual display
     _, col_t1, col_t2, _ = st.columns([2, 1, 1, 2])
     with col_t1:
         if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
@@ -698,16 +663,14 @@ if show_search_ui:
             st.session_state.media_type = "Series"
             st.rerun()
 
-    # Active underline indicator
+    # Underline indicator
     st.markdown(f"""
-    <div style="display:flex;justify-content:center;margin:-6px 0 22px 0;">
+    <div style="display:flex;justify-content:center;margin:-4px 0 22px 0;">
         <div style="display:flex;width:280px;gap:10px;">
             <div style="flex:1;height:2px;border-radius:2px;
-                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};
-                transition:background 0.2s ease;"></div>
+                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};"></div>
             <div style="flex:1;height:2px;border-radius:2px;
-                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Series' else C['bg_highest']};
-                transition:background 0.2s ease;"></div>
+                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Series' else C['bg_highest']};"></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
