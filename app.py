@@ -724,97 +724,37 @@ if search_results and not st.session_state.selected_imdb_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        # Poster column: CSS background-image so Streamlit can't strip it
-        poster_css = (
-            f"background-image: url('{poster}'); background-size: cover; background-position: center top;"
-            if has_poster
-            else f"background: {C['bg_high']};"
-        )
-        placeholder_icon = "" if has_poster else "<div style='font-size:38px;opacity:0.25;'>🎬</div>"
+        card_id = f"rc_{i}_{imdb_id}"
 
-        # Render the entire card as one HTML block — no columns, no clipping
+        # Inject poster background via a <style> block — avoids inline multiline style issues
+        if has_poster:
+            poster_style_block = f"<style>#{card_id}-poster{{background-image:url('{poster}');background-size:cover;background-position:center top;background-repeat:no-repeat;}}</style>"
+        else:
+            poster_style_block = f"<style>#{card_id}-poster{{background:{C['bg_high']};}}</style>"
+
+        placeholder_icon = "" if has_poster else f"<div style='font-size:36px;opacity:0.20;position:relative;z-index:1;'>🎬</div>"
+
         st.markdown(f"""
-        <div style="
-            display: flex;
-            background: {C['bg_container']};
-            border: 1px solid rgba(74,48,32,0.35);
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 6px;
-            min-height: 210px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-            transition: all 0.30s ease;
-        ">
-            <!-- POSTER -->
-            <div style="
-                width: 140px;
-                min-width: 140px;
-                min-height: 210px;
-                flex-shrink: 0;
-                position: relative;
-                {poster_css}
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            ">
-                {placeholder_icon}
-                <div style="
-                    position: absolute; inset: 0;
-                    background: linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
-                    pointer-events: none;
-                "></div>
-            </div>
-
-            <!-- BODY -->
-            <div style="
-                flex: 1;
-                padding: 22px 26px 18px 20px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                min-width: 0;
-            ">
-                <div>
-                    <div style="
-                        font-family: 'Playfair Display', serif;
-                        font-size: 22px; font-weight: 700;
-                        color: {C['on_surface']}; line-height: 1.18; margin-bottom: 6px;
-                    ">{title}</div>
-                    <div style="
-                        font-family: 'Outfit', sans-serif; font-size: 12px;
-                        color: {C['on_surface_var']}; margin-bottom: 12px; letter-spacing: 0.04em;
-                    ">{year} &nbsp;·&nbsp; {itype}</div>
-                    <div style="
-                        font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
-                        color: rgba(201,176,152,0.60); line-height: 1.65; margin-bottom: 14px;
-                    ">
-                        A Critic and an Advocate will debate this title across four rounds
-                        and deliver a calibrated verdict.
-                    </div>
-                </div>
-                <div>
-                    <span style="
-                        display: inline-block;
-                        font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-                        letter-spacing: 0.14em; text-transform: uppercase;
-                        padding: 4px 12px; border-radius: 3px; margin-right: 6px;
-                        background: rgba(232,131,58,0.10); color: {C['primary']};
-                        border: 1px solid rgba(232,131,58,0.25);
-                    ">{itype}</span>
-                    <span style="
-                        display: inline-block;
-                        font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-                        letter-spacing: 0.14em; text-transform: uppercase;
-                        padding: 4px 12px; border-radius: 3px;
-                        background: rgba(74,48,32,0.5); color: {C['tertiary']};
-                        border: 1px solid rgba(74,48,32,0.8);
-                    ">{year}</span>
-                </div>
-            </div>
-        </div>
+{poster_style_block}
+<div style="display:flex;background:{C['bg_container']};border:1px solid rgba(74,48,32,0.35);border-radius:14px;overflow:hidden;margin-bottom:6px;min-height:210px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+  <div id="{card_id}-poster" style="width:140px;min-width:140px;min-height:210px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;">
+    {placeholder_icon}
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to right,transparent 55%,{C['bg_container']} 100%);pointer-events:none;"></div>
+  </div>
+  <div style="flex:1;padding:22px 26px 18px 20px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;">
+    <div>
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:{C['on_surface']};line-height:1.18;margin-bottom:6px;">{title}</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:12px;color:{C['on_surface_var']};margin-bottom:12px;letter-spacing:0.04em;">{year} &nbsp;·&nbsp; {itype}</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:300;color:rgba(201,176,152,0.60);line-height:1.65;margin-bottom:14px;">A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict.</div>
+    </div>
+    <div>
+      <span style="display:inline-block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:4px 12px;border-radius:3px;margin-right:6px;background:rgba(232,131,58,0.10);color:{C['primary']};border:1px solid rgba(232,131,58,0.25);">{itype}</span>
+      <span style="display:inline-block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:4px 12px;border-radius:3px;background:rgba(74,48,32,0.5);color:{C['tertiary']};border:1px solid rgba(74,48,32,0.8);">{year}</span>
+    </div>
+  </div>
+</div>
         """, unsafe_allow_html=True)
 
-        # Analyse button sits just below each card, full width
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             st.session_state.selected_imdb_id = imdb_id
             st.session_state.search_results   = []
