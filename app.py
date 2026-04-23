@@ -656,11 +656,11 @@ if show_search_ui:
 
     _, col_t1, col_t2, _ = st.columns([2, 1, 1, 2])
     with col_t1:
-        if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
+        if st.button("Movie", key="btn_type_movie", use_container_width=True):
             st.session_state.media_type = "Movie"
             st.rerun()
     with col_t2:
-        if st.button("📺  Series", key="btn_type_series", use_container_width=True):
+        if st.button("Series", key="btn_type_series", use_container_width=True):
             st.session_state.media_type = "Series"
             st.rerun()
 
