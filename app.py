@@ -148,25 +148,15 @@ st.set_page_config(
 )
 
 # ================================================================
-# SESSION STATE (CRITICAL FIX)
+# SESSION STATE (THE MASTER LIST)
 # ================================================================
-# These lines MUST exist to prevent the AttributeError you are seeing
-if "conversations" not in st.session_state:
-    st.session_state.conversations = {}
-if "active_id" not in st.session_state:
-    st.session_state.active_id = None
-if "search_history" not in st.session_state:
-    st.session_state.search_history = []
-
-# Your existing state variables
-if "media_type" not in st.session_state: 
-    st.session_state.media_type = "Movie"
-if "search_results" not in st.session_state:
-    st.session_state.search_results = []
-if "last_typed" not in st.session_state:
-    st.session_state.last_typed = None
-if "search_error" not in st.session_state:
-    st.session_state.search_error = None
+if "conversations"    not in st.session_state: st.session_state.conversations = {}
+if "active_id"        not in st.session_state: st.session_state.active_id = None
+if "search_history"   not in st.session_state: st.session_state.search_history = []
+if "search_results"   not in st.session_state: st.session_state.search_results = []
+if "last_typed"       not in st.session_state: st.session_state.last_typed = None
+if "search_error"     not in st.session_state: st.session_state.search_error = None
+if "media_type"       not in st.session_state: st.session_state.media_type = "Movie"
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
@@ -621,9 +611,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
-# ================================================================
-# SIDEBAR: DASHBOARD & HISTORY
-# ================================================================
+
 # ================================================================
 # SIDEBAR: DASHBOARD & HISTORY
 # ================================================================
@@ -658,7 +646,7 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 # ================================================================
 # SEARCH UI: Type Toggle → Search Bar
 # ================================================================
-show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
+show_search_ui = not st.session_state.active_id
 
 active_type = st.session_state.media_type
 
