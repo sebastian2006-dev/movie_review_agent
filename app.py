@@ -3,7 +3,8 @@ import requests
 import streamlit as st
 from agent.sentiment import analyze_movie, MODEL_CRITIC, MODEL_ADVOCATE
 
-API_KEY = st.secrets["OMDB_API_KEY"]
+API_KEY         = st.secrets["OMDB_API_KEY"]
+YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
 
 # ---------------- SEARCH MOVIES ----------------
@@ -105,6 +106,33 @@ def fetch_movie_by_id(imdb_id: str):
     }
 
 
+# ---------------- FETCH YOUTUBE TRAILER ----------------
+def fetch_trailer(title: str, year: str = "") -> str | None:
+    """Returns a YouTube video ID for the official trailer, or None if not found."""
+    if not YOUTUBE_API_KEY:
+        return None
+    query = f"{title} {year} official trailer".strip()
+    try:
+        resp = requests.get(
+            "https://www.googleapis.com/youtube/v3/search",
+            params={
+                "part":       "snippet",
+                "q":          query,
+                "type":       "video",
+                "maxResults": 1,
+                "key":        YOUTUBE_API_KEY,
+            },
+            timeout=10,
+        )
+        data = resp.json()
+        items = data.get("items", [])
+        if items:
+            return items[0]["id"]["videoId"]
+    except Exception:
+        pass
+    return None
+
+
 # ================================================================
 # PAGE CONFIG
 # ================================================================
@@ -120,6 +148,7 @@ st.set_page_config(
 if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
 if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
 if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
+if "cached_trailer"   not in st.session_state: st.session_state.cached_trailer   = None
 if "search_results"   not in st.session_state: st.session_state.search_results   = []
 if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
@@ -242,8 +271,6 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 }}
 
 /* ── CHAT INPUT ── */
-/* ── CHAT INPUT FIX ── */
-/* 1. Target the outer pill container */
 div[data-testid="stChatInput"] {{
     background: {C["bg_low"]} !important;
     border: 1px solid {C["outline"]} !important;
@@ -251,17 +278,13 @@ div[data-testid="stChatInput"] {{
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
     padding: 0 8px !important;
 }}
-
-/* 2. NUKE all background colors from nested Streamlit divs */
-div[data-testid="stChatInput"] > div, 
+div[data-testid="stChatInput"] > div,
 div[data-testid="stChatInput"] div[class*="st-"] {{
     background-color: transparent !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }}
-
-/* 3. Style the actual text area */
 textarea[data-testid="stChatInputTextArea"] {{
     background: transparent !important;
     background-color: transparent !important;
@@ -274,27 +297,21 @@ textarea[data-testid="stChatInputTextArea"] {{
     box-shadow: none !important;
     caret-color: {C["primary_container"]} !important;
 }}
-
-/* 4. Fix the placeholder and focus ring */
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
     color: {C["text_muted"]} !important;
     -webkit-text-fill-color: {C["text_muted"]} !important;
 }}
-
 div[data-testid="stChatInput"] div:focus-within {{
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
 }}
-
-/* 5. Keep the button styling clean */
 button[data-testid="stChatInputSubmitButton"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
     border-radius: 9999px !important;
     box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
     margin-top: 5px !important;
 }}
-
 button[data-testid="stChatInputSubmitButton"]:hover {{
     transform: scale(1.10) !important; box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
 }}
@@ -359,6 +376,49 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 .section-heading::after {{
     content: ''; flex: 1; height: 1px;
     background: linear-gradient(to right, {C["outline"]}80, transparent);
+}}
+
+/* ── TRAILER ── */
+.trailer-wrapper {{
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;   /* 16:9 ratio */
+    border-radius: 14px;
+    overflow: hidden;
+    background: {C["bg_lowest"]};
+    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75),
+                0 0 0 1px {C["outline"]},
+                0 0 60px -20px rgba(232,131,58,0.20);
+}}
+.trailer-wrapper iframe {{
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+    border-radius: 14px;
+}}
+.trailer-badge {{
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(232,131,58,0.10);
+    border: 1px solid rgba(232,131,58,0.25);
+    color: {C["primary_container"]};
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 9999px; margin-bottom: 14px;
+}}
+.trailer-badge::before {{
+    content: '▶';
+    font-size: 8px;
+    color: {C["primary"]};
+}}
+.trailer-no-result {{
+    display: flex; align-items: center; justify-content: center;
+    height: 120px;
+    background: {C["bg_container"]};
+    border: 1px dashed {C["outline"]};
+    border-radius: 14px;
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    color: {C["text_muted"]}; letter-spacing: 0.04em;
 }}
 
 /* ══════════════════════════════════════════════════
@@ -516,6 +576,7 @@ if user_input and user_input.strip():
         st.session_state.selected_imdb_id = None
         st.session_state.cached_movie     = None
         st.session_state.cached_result    = None
+        st.session_state.cached_trailer   = None
         with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input)
             st.session_state.search_results = results
@@ -562,6 +623,7 @@ if search_results and not st.session_state.selected_imdb_id:
                 st.session_state.search_results   = []
                 st.session_state.cached_movie     = None
                 st.session_state.cached_result    = None
+                st.session_state.cached_trailer   = None
                 st.rerun()
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
@@ -577,6 +639,11 @@ if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
 
     if st.session_state.cached_movie:
         m = st.session_state.cached_movie
+
+        # Fetch trailer in parallel with AI analysis
+        with st.spinner("Hunting down the trailer…"):
+            st.session_state.cached_trailer = fetch_trailer(m["title"], m.get("year", ""))
+
         raw_reviews = {
             "title":              m["title"],
             "critic_reviews":     m["plot"],
@@ -587,8 +654,9 @@ if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
             st.session_state.cached_result = analyze_movie(raw_reviews)
 
 
-movie  = st.session_state.cached_movie
-result = st.session_state.cached_result
+movie   = st.session_state.cached_movie
+result  = st.session_state.cached_result
+trailer = st.session_state.cached_trailer
 
 
 # ================================================================
@@ -659,6 +727,30 @@ elif movie and result:
         st.markdown(
             f"<p style='font-family:Outfit,sans-serif;font-size:15px;font-weight:300;"
             f"color:{C['on_surface_var']};line-height:1.85;margin-top:0;'>{movie['plot']}</p>",
+            unsafe_allow_html=True,
+        )
+
+    # ── TRAILER SECTION ──────────────────────────────────────────
+    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-heading'>Official Trailer</div>", unsafe_allow_html=True)
+    st.markdown("<div class='trailer-badge'>Watch Trailer</div>", unsafe_allow_html=True)
+
+    if trailer:
+        st.markdown(
+            f"""
+            <div class="trailer-wrapper">
+                <iframe
+                    src="https://www.youtube.com/embed/{trailer}?rel=0&modestbranding=1&color=white"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div class='trailer-no-result'>🎬 &nbsp; Trailer not available for this title</div>",
             unsafe_allow_html=True,
         )
 
