@@ -6,7 +6,7 @@
 
 ## Overview
 
-**CineGlow** is an AI-powered movie review agent built with Streamlit. Search any film or series, and two AI models (a Critic and an Advocate) engage in a structured 4-round debate — analysing craft, vision, pacing, and cultural legacy — before converging on a final score. Each result includes the official trailer, cast & crew info, IMDb and Rotten Tomatoes ratings, and a full debate transcript.
+An AI-powered movie review agent built with Streamlit. Search any film or series, and two AI models (a Critic and an Advocate) engage in a structured 4-round debate — analysing craft, vision, pacing, and cultural legacy — before converging on a final score. Each result includes the official trailer, cast & crew info, IMDb and Rotten Tomatoes ratings, and a full debate transcript.
 
 ---
 
@@ -38,7 +38,7 @@
 ## Project Structure
 
 ```
-cineglow/
+movie_review_agent/
 ├── app.py                  # Main Streamlit app (UI + API calls)
 ├── agent/
 │   └── sentiment.py        # Groq debate engine (Critic & Advocate models)
@@ -55,8 +55,8 @@ cineglow/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/cineglow.git
-cd cineglow
+git clone https://github.com/your-username/movie_review_agent.git
+cd movie_review_agent
 ```
 
 ### 2. Install dependencies
