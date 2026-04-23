@@ -705,17 +705,18 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ================================================================
 # HANDLE SEARCH INPUT
 # ================================================================
-if user_input != st.session_state.last_typed:
-            st.session_state.last_typed = user_input
-            
-            # We use active_id now, and we don't need the "cached_" variables anymore
-            st.session_state.active_id = None 
-            
-            with st.spinner("Searching the archive..."):
-                results, err = search_movies(user_input, st.session_state.media_type)
-                st.session_state.search_results = results
-                st.session_state.search_error   = err
-            st.rerun()
+if user_input and user_input.strip():
+    if user_input != st.session_state.last_typed:
+        st.session_state.last_typed = user_input
+        
+        # CRITICAL: This clears the dashboard view so search results can show up
+        st.session_state.active_id = None 
+        
+        with st.spinner("Searching the archive..."):
+            results, err = search_movies(user_input, st.session_state.media_type)
+            st.session_state.search_results = results
+            st.session_state.search_error   = err
+        st.rerun()
 
 
 # ================================================================
@@ -848,11 +849,9 @@ if search_results and not st.session_state.selected_imdb_id:
 
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             with st.spinner("Generating AI Debate..."):
-                # 1. Fetch movie data
+                # Fetch and Analyze
                 movie_data = fetch_movie_by_id(imdb_id)
                 trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
-                
-                # 2. Package for AI
                 raw_reviews = {
                     "title": movie_data["title"],
                     "critic_reviews": movie_data["plot"],
@@ -861,18 +860,14 @@ if search_results and not st.session_state.selected_imdb_id:
                 }
                 debate_result = analyze_movie(raw_reviews)
                 
-                # 3. SAVE TO DASHBOARD
+                # Save to the Dashboard Library
                 st.session_state.conversations[imdb_id] = {
                     "movie": movie_data,
                     "result": debate_result,
                     "trailer": trailer_id
                 }
                 
-                # 4. Add to history for suggestions
-                if title not in st.session_state.search_history:
-                    st.session_state.search_history.insert(0, title)
-                    
-                # 5. Set as active and clear search
+                # Set as active and CLEAR search results
                 st.session_state.active_id = imdb_id
                 st.session_state.search_results = []
                 st.rerun()
@@ -886,24 +881,15 @@ if search_results and not st.session_state.selected_imdb_id:
 # RUN ANALYSIS
 # ================================================================
 # Change Line 889 to use the new variable name
-if st.session_state.active_id and st.session_state.active_id not in st.session_state.conversations:
-    with st.spinner("Fetching film details…"):
-        st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
-        st.session_state.cached_query = st.session_state.selected_imdb_id
-
-    if st.session_state.cached_movie:
-        m = st.session_state.cached_movie
-        with st.spinner("Hunting down the trailer…"):
-            st.session_state.cached_trailer = fetch_trailer(m["title"], m.get("year", ""))
-
-        raw_reviews = {
-            "title":              m["title"],
-            "critic_reviews":     m["plot"],
-            "audience_reactions": m["actors"],
-            "discussion_points":  m["genre"],
-        }
-        with st.spinner("AI models are entering the debate hall…"):
-            st.session_state.cached_result = analyze_movie(raw_reviews)
+# --- REPLACEMENT FOR THE OLD ANALYSIS TRIGGER ---
+if st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
+    # Pull the already-analyzed data from our dashboard library
+    active_data = st.session_state.conversations[st.session_state.active_id]
+    movie   = active_data["movie"]
+    result  = active_data["result"]
+    trailer = active_data["trailer"]
+else:
+    movie, result, trailer = None, None, None
 
     
 
