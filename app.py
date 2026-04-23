@@ -833,13 +833,44 @@ if search_results and not st.session_state.selected_imdb_id:
 
         components.html(card_html, height=215, scrolling=False)
 
+        # Replacement for Lines 501–508 in your app.py
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
-            st.session_state.selected_imdb_id = imdb_id
-            st.session_state.search_results   = []
-            st.session_state.cached_movie     = None
-            st.session_state.cached_result    = None
-            st.session_state.cached_trailer   = None
-            st.rerun()
+            with st.spinner("Generating AI Debate..."):
+                # 1. Fetch all data immediately upon selection
+                movie_data = fetch_movie_by_id(imdb_id)
+                trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
+                
+                # Prepare data for the AI models
+                raw_reviews = {
+                    "title":              movie_data["title"],
+                    "critic_reviews":     movie_data["plot"],
+                    "audience_reactions": movie_data["actors"],
+                    "discussion_points":  movie_data["genre"],
+                }
+                
+                # Run the AI Analysis
+                debate_result = analyze_movie(raw_reviews)
+                
+                # 2. Save to global history (This enables your Sidebar Archive)
+                if "conversations" not in st.session_state:
+                    st.session_state.conversations = {}
+                
+                st.session_state.conversations[imdb_id] = {
+                    "movie":   movie_data,
+                    "result":  debate_result,
+                    "trailer": trailer_id
+                }
+                
+                # 3. Add to search history for the suggestions feature
+                if "search_history" not in st.session_state:
+                    st.session_state.search_history = []
+                if title not in st.session_state.search_history:
+                    st.session_state.search_history.insert(0, title)
+                    
+                # 4. Set as active view and clear current search results
+                st.session_state.active_id = imdb_id
+                st.session_state.search_results = []
+                st.rerun()
 
         st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
 
@@ -868,11 +899,10 @@ if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
         with st.spinner("AI models are entering the debate hall…"):
             st.session_state.cached_result = analyze_movie(raw_reviews)
 
-
-movie   = st.session_state.cached_movie
-result  = st.session_state.cached_result
+    
+movie = st.session_state.cached_movie
+result = st.session_state.cached_result
 trailer = st.session_state.cached_trailer
-
 
 # ================================================================
 # ERROR STATE
@@ -886,12 +916,14 @@ if (
     err_msg = st.session_state.get("search_error") or "No results found. Try a different title or spelling."
     st.markdown(f"<div class='err-box'>⚠ &nbsp; {err_msg}</div>", unsafe_allow_html=True)
 
-
 # ================================================================
 # RENDER ANALYSIS
 # ================================================================
-elif movie and result:
-
+elif st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
+    active_data = st.session_state.conversations[st.session_state.active_id]
+    movie   = active_data["movie"]
+    result  = active_data["result"]
+    trailer = active_data["trailer"]
     # ── MOVIE HEADER ─────────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.8], gap="large")
 
