@@ -144,7 +144,7 @@ def fetch_trailer(title: str, year: str = "") -> str | None:
 st.set_page_config(
     page_title="Movie Review Agent",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ================================================================
@@ -218,26 +218,28 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 
 @keyframes ambientGlow {{
-    0%   {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; opacity: 0.8; }}
-    33%  {{ background-position: 10% 5%, 90% 95%, 45% 55%, 50% 98%;   opacity: 1.0; }}
-    66%  {{ background-position: -5% 10%, 105% 90%, 55% 45%, 50% 102%; opacity: 0.9; }}
-    100% {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; opacity: 0.8; }}
+    0%   {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; }}
+    25%  {{ background-position: 15% 10%, 85% 90%, 40% 60%, 50% 95%; }}
+    50%  {{ background-position: -10% 15%, 110% 85%, 60% 40%, 50% 105%; }}
+    75%  {{ background-position: 20% -5%, 80% 105%, 35% 45%, 50% 90%; }}
+    100% {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; }}
 }}
 
 .stApp::before {{
     content: '';
     position: fixed;
-    inset: -50px;
+    inset: -100px;
     z-index: -1;
     background:
-        radial-gradient(ellipse 65% 50% at 8% 0%,    rgba(232,131,58,0.15)  0%, transparent 60%),
-        radial-gradient(ellipse 45% 40% at 92% 95%,  rgba(200,96,58,0.12)   0%, transparent 55%),
-        radial-gradient(ellipse 30% 30% at 50% 55%,  rgba(240,144,80,0.06)  0%, transparent 65%),
-        radial-gradient(ellipse 80% 20% at 50% 100%, rgba(42,29,21,0.85)    0%, transparent 80%);
-    background-size: 120% 120%;
-    animation: ambientGlow 18s ease-in-out infinite;
+        radial-gradient(ellipse 60% 50% at 8% 0%,    rgba(232,131,58,0.22)  0%, transparent 70%),
+        radial-gradient(ellipse 50% 45% at 92% 95%,  rgba(200,96,58,0.18)   0%, transparent 65%),
+        radial-gradient(ellipse 35% 35% at 50% 55%,  rgba(240,144,80,0.10)  0%, transparent 75%),
+        radial-gradient(ellipse 85% 25% at 50% 100%, rgba(42,29,21,0.90)    0%, transparent 80%);
+    background-size: 200% 200%;
+    animation: ambientGlow 22s ease-in-out infinite;
     pointer-events: none;
-    filter: blur(20px);
+    filter: blur(40px);
+    opacity: 0.95;
 }}
 
 ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
