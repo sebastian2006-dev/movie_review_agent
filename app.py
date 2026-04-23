@@ -35,7 +35,6 @@ def search_movies(query: str, media_type: str = "movie"):
         r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
         d = r.json()
         if d.get("Response") == "True":
-            # Only include items that have at least a title and ID
             fuzzy = [
                 item for item in d.get("Search", [])
                 if item.get("Title") and item.get("imdbID")
@@ -266,25 +265,97 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 24px;
 }}
 
-/* ── TYPE TOGGLE ── */
+/* ── TYPE TOGGLE — fully themed pill buttons ── */
 .type-toggle-wrap {{
     display: flex; justify-content: center; gap: 0;
     margin-bottom: 18px;
 }}
-.type-toggle-btn {{
-    font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    padding: 9px 32px; cursor: pointer;
-    border: 1px solid {C["outline"]}; background: transparent;
-    color: {C["text_muted"]}; transition: all 0.22s ease;
+
+/* Override ALL default Streamlit button styles for type-toggle and analyse buttons */
+div[data-testid="stButton"] > button {{
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    transition: all 0.22s ease !important;
+    border: 1px solid {C["outline"]} !important;
+    background: {C["bg_container"]} !important;
+    color: {C["text_muted"]} !important;
+    border-radius: 9999px !important;
+    padding: 10px 30px !important;
+    box-shadow: none !important;
 }}
-.type-toggle-btn:first-child {{ border-radius: 9999px 0 0 9999px; border-right: none; }}
-.type-toggle-btn:last-child  {{ border-radius: 0 9999px 9999px 0; border-left: none; }}
-.type-toggle-btn.active {{
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]});
-    border-color: {C["primary"]};
-    color: {C["on_primary"]};
-    box-shadow: 0 4px 20px {C["glow_copper_btn"]};
+div[data-testid="stButton"] > button:hover {{
+    border-color: {C["primary"]} !important;
+    color: {C["primary_container"]} !important;
+    background: rgba(232,131,58,0.08) !important;
+    box-shadow: 0 4px 20px {C["glow_copper"]} !important;
+}}
+div[data-testid="stButton"] > button:focus {{
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
+}}
+
+/* Active state for type toggle via .active-type-btn class trick:
+   We use a separate CSS class injected via markdown for the active pill */
+.cinema-btn-active {{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    padding: 10px 36px !important;
+    border-radius: 9999px !important;
+    border: 1px solid {C["primary"]} !important;
+    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
+    color: {C["on_primary"]} !important;
+    box-shadow: 0 4px 22px {C["glow_copper_btn"]} !important;
+    cursor: default !important;
+    user-select: none !important;
+}}
+.cinema-btn-inactive {{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    padding: 10px 36px !important;
+    border-radius: 9999px !important;
+    border: 1px solid {C["outline"]} !important;
+    background: {C["bg_container"]} !important;
+    color: {C["text_muted"]} !important;
+    cursor: pointer !important;
+    transition: all 0.22s ease !important;
+}}
+.cinema-btn-inactive:hover {{
+    border-color: {C["primary"]} !important;
+    color: {C["primary_container"]} !important;
+    background: rgba(232,131,58,0.08) !important;
+}}
+
+/* Analyse CTA button — copper gradient pill */
+div[data-testid="stButton"].analyse-btn > button,
+div[data-testid="stButton"] > button[kind="primary"] {{
+    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
+    border-color: {C["primary"]} !important;
+    color: {C["on_primary"]} !important;
+    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
+    font-size: 11px !important;
+    letter-spacing: 0.20em !important;
+    padding: 10px 28px !important;
+}}
+div[data-testid="stButton"].analyse-btn > button:hover,
+div[data-testid="stButton"] > button[kind="primary"]:hover {{
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 32px {C["glow_copper_md"]} !important;
+    background: linear-gradient(135deg, {C["primary_container"]}, {C["primary"]}) !important;
 }}
 
 /* ── CHAT INPUT ── */
@@ -336,16 +407,6 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     width: 16px !important; height: 16px !important;
 }}
 
-/* ── STREAMLIT BUTTON (type/genre toggles) ── */
-div[data-testid="stButton"] > button {{
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 11px !important; font-weight: 600 !important;
-    letter-spacing: 0.16em !important; text-transform: uppercase !important;
-    border-radius: 9999px !important;
-    padding: 6px 20px !important;
-    transition: all 0.22s ease !important;
-}}
-
 /* ── SEARCH LABEL ── */
 .search-label {{
     font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
@@ -355,55 +416,65 @@ div[data-testid="stButton"] > button {{
 
 /* ── RESULT CARDS ── */
 .result-card {{
-    display: flex;
     background: {C["bg_container"]};
-    border: 1px solid rgba(74,48,32,0.25);
-    border-radius: 12px; overflow: hidden;
-    margin-bottom: 20px;
-    transition: all 0.35s ease;
+    border: 1px solid rgba(74,48,32,0.35);
+    border-radius: 14px; overflow: hidden;
+    margin-bottom: 4px;
+    transition: all 0.30s ease;
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: row;
 }}
 .result-card:hover {{
     background: {C["bg_high"]};
-    border-color: rgba(232,131,58,0.22);
+    border-color: rgba(232,131,58,0.28);
     box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6),
-                0 0 0 1px rgba(232,131,58,0.12);
+                0 0 0 1px rgba(232,131,58,0.14);
     transform: translateY(-2px);
 }}
-.result-poster {{
-    width: 140px; min-height: 210px; flex-shrink: 0;
-    background: {C["bg_high"]}; position: relative; overflow: hidden;
+.result-poster-col {{
+    width: 130px;
+    min-width: 130px;
+    min-height: 200px;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    background: {C["bg_high"]};
 }}
-.result-poster img {{
-    width: 100%; height: 100%; object-fit: cover;
+.result-poster-col img {{
+    width: 130px;
+    height: 200px;
+    object-fit: cover;
+    display: block;
 }}
 .result-poster-fade {{
-    position: absolute; inset: 0;
-    background: linear-gradient(to right, transparent 70%, {C["bg_container"]} 100%);
+    position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
+    background: linear-gradient(to right, transparent, {C["bg_container"]});
     pointer-events: none;
 }}
 .result-no-poster {{
-    width: 100%; height: 210px;
+    width: 130px; height: 200px;
     display: flex; align-items: center; justify-content: center;
     font-size: 36px; color: {C["text_dim"]};
+    background: {C["bg_high"]};
 }}
 .result-body {{
-    flex: 1; padding: 24px 28px 20px 28px;
+    flex: 1; padding: 22px 26px 18px 22px;
     display: flex; flex-direction: column; justify-content: space-between;
 }}
 .result-title {{
     font-family: 'Playfair Display', serif;
     font-size: 22px; font-weight: 700;
-    color: {C["on_surface"]}; line-height: 1.15; margin-bottom: 6px;
+    color: {C["on_surface"]}; line-height: 1.18; margin-bottom: 6px;
 }}
 .result-meta {{
     font-family: 'Outfit', sans-serif; font-size: 12px;
-    color: {C["on_surface_var"]}; margin-bottom: 14px;
+    color: {C["on_surface_var"]}; margin-bottom: 12px;
     letter-spacing: 0.04em;
 }}
 .result-cta {{
     font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
-    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 16px;
+    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 14px;
 }}
 .result-badge {{
     display: inline-block;
@@ -416,13 +487,6 @@ div[data-testid="stButton"] > button {{
 .result-badge.type-badge {{
     background: rgba(232,131,58,0.10); color: {C["primary"]};
     border: 1px solid rgba(232,131,58,0.25);
-}}
-
-/* ── INVISIBLE CLICK BUTTON OVER CARD ── */
-div[data-testid="stButton"] > button.card-overlay-btn {{
-    position: absolute; inset: 0;
-    background: transparent !important;
-    border: none !important; color: transparent !important;
 }}
 
 /* ── MOVIE TITLE / META ── */
@@ -587,8 +651,6 @@ div[data-testid="stButton"] > button.card-overlay-btn {{
     color: {C["primary_container"]} !important;
 }}
 
-
-
 p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
@@ -608,29 +670,38 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# SEARCH UI: Type Toggle → Search Bar → Genre Pills
+# SEARCH UI: Type Toggle → Search Bar
 # ================================================================
 show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
 
+active_type = st.session_state.media_type
+
 if show_search_ui:
-    # ── 1. Type toggle (Movie / Series) ──────────────────────────
-    _, col_toggle, _ = st.columns([1, 2, 1])
-    with col_toggle:
-        t_col1, t_col2 = st.columns(2, gap="small")
-        with t_col1:
-            if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
-                st.session_state.media_type = "Movie"
-                st.rerun()
-        with t_col2:
-            if st.button("📺  Series", key="btn_type_series", use_container_width=True):
-                st.session_state.media_type = "Series"
-                st.rerun()
+    # ── Type toggle rendered as styled HTML buttons + hidden Streamlit triggers ──
+    # We render the visual toggle in pure HTML/CSS, and place invisible Streamlit
+    # buttons beneath each half to capture the click.
+    st.markdown(f"""
+    <div style="display:flex;justify-content:center;margin-bottom:6px;gap:10px;">
+        <span class="{'cinema-btn-active' if active_type == 'Movie' else 'cinema-btn-inactive'}">🎬&nbsp; Movie</span>
+        <span class="{'cinema-btn-active' if active_type == 'Series' else 'cinema-btn-inactive'}">📺&nbsp; Series</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Invisible functional buttons below the visual display
+    _, col_t1, col_t2, _ = st.columns([2, 1, 1, 2])
+    with col_t1:
+        if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
+            st.session_state.media_type = "Movie"
+            st.rerun()
+    with col_t2:
+        if st.button("📺  Series", key="btn_type_series", use_container_width=True):
+            st.session_state.media_type = "Series"
+            st.rerun()
 
     # Active underline indicator
-    active_type = st.session_state.media_type
     st.markdown(f"""
-    <div style="display:flex;justify-content:center;margin:-10px 0 20px 0;">
-        <div style="display:flex;width:320px;">
+    <div style="display:flex;justify-content:center;margin:-6px 0 22px 0;">
+        <div style="display:flex;width:280px;gap:10px;">
             <div style="flex:1;height:2px;border-radius:2px;
                 background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};
                 transition:background 0.2s ease;"></div>
@@ -641,7 +712,7 @@ if show_search_ui:
     </div>
     """, unsafe_allow_html=True)
 
-# ── 2. Search bar (always rendered, centered) ─────────────────
+# ── Search bar (always rendered, centered) ─────────────────
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
     if show_search_ui:
@@ -671,7 +742,7 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# RESULTS — FULL WIDTH CARDS (no sidebar)
+# RESULTS — CARDS WITH NATIVE st.image FOR POSTER
 # ================================================================
 search_results = st.session_state.search_results
 
@@ -690,44 +761,59 @@ if search_results and not st.session_state.selected_imdb_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        poster_html = (
-            f'<img src="{poster}" alt="{title}" style="width:100%;height:100%;object-fit:cover;"/>'
-            if has_poster
-            else f'<div class="result-no-poster" style="background:{C["bg_high"]};">'
-                 f'<span style="font-size:40px;opacity:0.3;">🎬</span></div>'
-        )
-        fade_html = '<div class="result-poster-fade"></div>' if has_poster else ""
-
+        # ── Card container ──
         st.markdown(f"""
-        <div class="result-card">
-            <div class="result-poster">
-                {poster_html}
-                {fade_html}
-            </div>
-            <div class="result-body">
-                <div>
-                    <div class="result-title">{title}</div>
-                    <div class="result-meta">{year} · {itype}</div>
-                    <div class="result-cta">
-                        Click below to start the AI debate — a Critic and an Advocate will
-                        dissect this title across four rounds and deliver a calibrated verdict.
-                    </div>
+        <div class="result-card" id="card_{imdb_id}">
+        """, unsafe_allow_html=True)
+
+        # Use Streamlit columns inside the logical card flow
+        col_img, col_body = st.columns([1, 3.2], gap="small")
+
+        with col_img:
+            if has_poster:
+                st.markdown(f"""
+                <div style="border-radius:10px 0 0 10px;overflow:hidden;height:200px;width:100%;background:{C['bg_high']};">
+                    <img src="{poster}" alt="{title}"
+                         style="width:100%;height:200px;object-fit:cover;display:block;border-radius:10px 0 0 10px;" />
                 </div>
-                <div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="height:200px;width:100%;background:{C['bg_high']};
+                            border-radius:10px 0 0 10px;display:flex;
+                            align-items:center;justify-content:center;font-size:40px;
+                            color:{C['text_dim']};">🎬</div>
+                """, unsafe_allow_html=True)
+
+        with col_body:
+            # Title rendered via st.markdown with Playfair Display
+            st.markdown(f"""
+            <div style="padding: 20px 20px 0 10px;">
+                <div class="result-title">{title}</div>
+                <div class="result-meta">{year} &nbsp;·&nbsp; {itype}</div>
+                <div class="result-cta">
+                    Click below to start the AI debate — a Critic and an Advocate
+                    will dissect this title across four rounds and deliver a calibrated verdict.
+                </div>
+                <div style="margin-bottom:12px;">
                     <span class="result-badge type-badge">{itype}</span>
                     <span class="result-badge">{year}</span>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True):
-            st.session_state.selected_imdb_id = imdb_id
-            st.session_state.search_results   = []
-            st.session_state.cached_movie     = None
-            st.session_state.cached_result    = None
-            st.session_state.cached_trailer   = None
-            st.rerun()
+            # ── Analyse button — styled via CSS ──
+            if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
+                st.session_state.selected_imdb_id = imdb_id
+                st.session_state.search_results   = []
+                st.session_state.cached_movie     = None
+                st.session_state.cached_result    = None
+                st.session_state.cached_trailer   = None
+                st.rerun()
+
+        # Close the card container
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
