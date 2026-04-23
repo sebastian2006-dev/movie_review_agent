@@ -290,28 +290,31 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     box-shadow: 0 4px 20px {C["glow_copper_btn"]};
 }}
 
-/* ── GENRE PILLS ── */
-.genre-row {{
-    display: flex; flex-wrap: wrap; justify-content: center;
-    gap: 8px; margin-bottom: 22px; max-width: 780px; margin-left: auto; margin-right: auto;
+/* ── GENRE LABEL ── */
+.genre-label-row {{
+    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase;
+    color: {C["text_muted"]}; text-align: center;
+    margin-bottom: 12px; opacity: 0.8;
 }}
-.genre-pill {{
-    font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 500;
-    letter-spacing: 0.10em; text-transform: uppercase;
-    padding: 6px 16px; border-radius: 9999px; cursor: pointer;
-    border: 1px solid {C["outline"]}; background: transparent;
-    color: {C["on_surface_var"]}; transition: all 0.2s ease;
+
+/* ── GENRE PILL BUTTONS ── */
+div[data-testid="stButton"] > button {{
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 11px !important; font-weight: 500 !important;
+    letter-spacing: 0.10em !important; text-transform: uppercase !important;
+    border-radius: 9999px !important;
+    padding: 5px 4px !important;
+    border: 1px solid {C["outline"]} !important;
+    background: transparent !important;
+    color: {C["on_surface_var"]} !important;
+    transition: all 0.2s ease !important;
+    line-height: 1.4 !important;
 }}
-.genre-pill:hover {{
-    border-color: rgba(232,131,58,0.40);
-    color: {C["tertiary"]};
-    background: rgba(232,131,58,0.07);
-}}
-.genre-pill.active {{
-    background: rgba(232,131,58,0.12);
-    border-color: {C["primary"]};
-    color: {C["primary_container"]};
-    box-shadow: 0 0 12px rgba(232,131,58,0.18);
+div[data-testid="stButton"] > button:hover {{
+    border-color: rgba(232,131,58,0.40) !important;
+    color: {C["tertiary"]} !important;
+    background: rgba(232,131,58,0.07) !important;
 }}
 
 /* ── CHAT INPUT ── */
@@ -614,25 +617,7 @@ div[data-testid="stButton"] > button.card-overlay-btn {{
     color: {C["primary_container"]} !important;
 }}
 
-/* Hide Streamlit default button styling for toggle buttons */
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button {{
-    border-radius: 0 !important;
-    padding: 8px 24px !important;
-    font-size: 11px !important;
-    letter-spacing: 0.16em !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    border: 1px solid {C["outline"]} !important;
-    background: transparent !important;
-    color: {C["text_muted"]} !important;
-    transition: all 0.22s ease !important;
-    min-width: 0 !important;
-    width: 100% !important;
-}}
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] > button:hover {{
-    color: {C["on_surface_var"]} !important;
-    background: rgba(232,131,58,0.06) !important;
-}}
+
 
 p, li, div {{ font-size: 15px; }}
 </style>
@@ -653,85 +638,92 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# SEARCH FILTERS: Type Toggle + Genre Pills
+# SEARCH UI: Type Toggle → Search Bar → Genre Pills
 # ================================================================
-# Only show search UI when not viewing an analysis
 show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
 
 if show_search_ui:
-    # ── Type toggle (Movie / Series) ──────────────────────────────
+    # ── 1. Type toggle (Movie / Series) ──────────────────────────
     _, col_toggle, _ = st.columns([1, 2, 1])
     with col_toggle:
         t_col1, t_col2 = st.columns(2, gap="small")
         with t_col1:
-            movie_active  = st.session_state.media_type == "Movie"
-            movie_style   = f"background: linear-gradient(135deg,{C['primary']},{C['secondary']}) !important; color:{C['on_primary']} !important; border-color:{C['primary']} !important;" if movie_active else ""
             if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
                 st.session_state.media_type = "Movie"
                 st.rerun()
         with t_col2:
-            series_active = st.session_state.media_type == "Series"
             if st.button("📺  Series", key="btn_type_series", use_container_width=True):
                 st.session_state.media_type = "Series"
                 st.rerun()
 
-    # Visual indicator for active type
+    # Active underline indicator
     active_type = st.session_state.media_type
     st.markdown(f"""
-    <div style="display:flex;justify-content:center;margin:-8px 0 16px 0;gap:0;">
-        <div style="width:calc(50% - 160px);"></div>
-        <div style="width:160px;height:2px;border-radius:2px;
-            background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};
-            transition:background 0.2s ease;"></div>
-        <div style="width:160px;height:2px;border-radius:2px;
-            background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Series' else C['bg_highest']};
-            transition:background 0.2s ease;"></div>
-        <div style="width:calc(50% - 160px);"></div>
+    <div style="display:flex;justify-content:center;margin:-10px 0 20px 0;">
+        <div style="display:flex;width:320px;">
+            <div style="flex:1;height:2px;border-radius:2px;
+                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};
+                transition:background 0.2s ease;"></div>
+            <div style="flex:1;height:2px;border-radius:2px;
+                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Series' else C['bg_highest']};
+                transition:background 0.2s ease;"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Genre Pills ───────────────────────────────────────────────
-    st.markdown("<div style='margin-bottom:6px;'></div>", unsafe_allow_html=True)
-
-    # Render genre pills as HTML with selected state
-    selected_genre = st.session_state.selected_genre
-    pills_html = "<div class='genre-row'>"
-    for g in GENRES:
-        is_active = "active" if g == selected_genre else ""
-        pills_html += f"<span class='genre-pill {is_active}' id='genre_{g}'>{g}</span>"
-    pills_html += "</div>"
-    st.markdown(pills_html, unsafe_allow_html=True)
-
-    # Genre selector via selectbox (hidden label, compact)
-    _, col_genre, _ = st.columns([1, 2, 1])
-    with col_genre:
-        chosen = st.selectbox(
-            "Genre",
-            GENRES,
-            index=GENRES.index(st.session_state.selected_genre),
-            label_visibility="collapsed",
-            key="genre_selectbox",
-        )
-        if chosen != st.session_state.selected_genre:
-            st.session_state.selected_genre = chosen
-            st.rerun()
-
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-
-
-# ================================================================
-# SEARCH INPUT
-# ================================================================
-if show_search_ui:
-    c1, c2, c3 = st.columns([1, 2.6, 1])
-    with c2:
+# ── 2. Search bar (always rendered, centered) ─────────────────
+c1, c2, c3 = st.columns([1, 2.6, 1])
+with c2:
+    if show_search_ui:
         placeholder = f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
-        user_input = st.chat_input(placeholder)
-else:
-    user_input = None
-    c1, c2, c3 = st.columns([1, 2.6, 1])
-    with c2:
-        user_input = st.chat_input("Search another title…")
+    else:
+        placeholder = "Search another title…"
+    user_input = st.chat_input(placeholder)
+
+st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+if show_search_ui:
+    # ── 3. Genre Pills (clickable Streamlit buttons) ──────────────
+    selected_genre = st.session_state.selected_genre
+
+    # Build rows of pills — using st.columns for interactivity
+    # Render all genres as a wrapped flex row via HTML + hidden st.buttons
+    st.markdown("<div class='genre-label-row'>Filter by Genre</div>", unsafe_allow_html=True)
+
+    # Split genres into rows of 8
+    chunk_size = 8
+    genre_chunks = [GENRES[i:i+chunk_size] for i in range(0, len(GENRES), chunk_size)]
+
+    # Find which overall index the active genre is at
+    active_idx = GENRES.index(selected_genre)  # 0-based global index
+
+    # Build one CSS rule per genre button to highlight the active one.
+    # Streamlit renders buttons in DOM order — we inject a style block
+    # that uses the :nth-of-type selector on the stButton wrappers.
+    # Each genre button gets a unique key, so we can target its sibling
+    # container by counting. Simplest reliable approach: wrap active in a div.
+
+    for chunk in genre_chunks:
+        cols = st.columns(len(chunk), gap="small")
+        for col, g in zip(cols, chunk):
+            is_active = g == selected_genre
+            with col:
+                if is_active:
+                    st.markdown(
+                        f"<div style='"
+                        f"border-radius:9999px;"
+                        f"outline:1px solid {C['primary']};"
+                        f"background:rgba(232,131,58,0.13);"
+                        f"overflow:hidden;margin:-1px;'>",
+                        unsafe_allow_html=True,
+                    )
+                if st.button(g, key=f"genre_btn_{g}", use_container_width=True):
+                    st.session_state.selected_genre = g
+                    st.rerun()
+                if is_active:
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
