@@ -1,6 +1,7 @@
 import re
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from agent.sentiment import analyze_movie, MODEL_CRITIC, MODEL_ADVOCATE
 
 API_KEY         = st.secrets["OMDB_API_KEY"]
@@ -724,36 +725,113 @@ if search_results and not st.session_state.selected_imdb_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        card_id = f"rc_{i}_{imdb_id}"
+        poster_bg = f"url('{poster}')" if has_poster else "none"
+        placeholder = "" if has_poster else "<div style=\"font-size:34px;opacity:0.18;\">🎬</div>"
 
-        # Inject poster background via a <style> block — avoids inline multiline style issues
-        if has_poster:
-            poster_style_block = f"<style>#{card_id}-poster{{background-image:url('{poster}');background-size:cover;background-position:center top;background-repeat:no-repeat;}}</style>"
-        else:
-            poster_style_block = f"<style>#{card_id}-poster{{background:{C['bg_high']};}}</style>"
-
-        placeholder_icon = "" if has_poster else f"<div style='font-size:36px;opacity:0.20;position:relative;z-index:1;'>🎬</div>"
-
-        st.markdown(f"""
-{poster_style_block}
-<div style="display:flex;background:{C['bg_container']};border:1px solid rgba(74,48,32,0.35);border-radius:14px;overflow:hidden;margin-bottom:6px;min-height:210px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
-  <div id="{card_id}-poster" style="width:140px;min-width:140px;min-height:210px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;">
-    {placeholder_icon}
-    <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to right,transparent 55%,{C['bg_container']} 100%);pointer-events:none;"></div>
+        # Use components.html — renders in a sandboxed iframe, bypasses Streamlit's
+        # HTML sanitizer entirely so background-image, gradients, custom fonts all work.
+        card_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{ background:transparent; font-family:'Outfit',sans-serif; }}
+  .card {{
+    display:flex;
+    background:{C['bg_container']};
+    border:1px solid rgba(74,48,32,0.40);
+    border-radius:14px;
+    overflow:hidden;
+    min-height:200px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.5);
+  }}
+  .poster {{
+    width:140px;
+    min-width:140px;
+    min-height:200px;
+    flex-shrink:0;
+    position:relative;
+    background-image:{poster_bg};
+    background-size:cover;
+    background-position:center top;
+    background-repeat:no-repeat;
+    background-color:{C['bg_high']};
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }}
+  .poster-fade {{
+    position:absolute;
+    top:0; left:0; right:0; bottom:0;
+    background:linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
+  }}
+  .body {{
+    flex:1;
+    padding:20px 24px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    min-width:0;
+  }}
+  .title {{
+    font-family:'Playfair Display',serif;
+    font-size:21px;
+    font-weight:700;
+    color:{C['on_surface']};
+    line-height:1.2;
+    margin-bottom:6px;
+  }}
+  .meta {{
+    font-size:12px;
+    color:{C['on_surface_var']};
+    margin-bottom:10px;
+    letter-spacing:0.04em;
+  }}
+  .desc {{
+    font-size:13px;
+    font-weight:300;
+    color:rgba(201,176,152,0.60);
+    line-height:1.65;
+    margin-bottom:12px;
+  }}
+  .badge {{
+    display:inline-block;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    padding:4px 11px;
+    border-radius:3px;
+    margin-right:5px;
+  }}
+  .badge-type {{ background:rgba(232,131,58,0.12); color:{C['primary']}; border:1px solid rgba(232,131,58,0.28); }}
+  .badge-year {{ background:rgba(74,48,32,0.5); color:{C['tertiary']}; border:1px solid rgba(74,48,32,0.8); }}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="poster">
+    {placeholder}
+    <div class="poster-fade"></div>
   </div>
-  <div style="flex:1;padding:22px 26px 18px 20px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;">
+  <div class="body">
     <div>
-      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:{C['on_surface']};line-height:1.18;margin-bottom:6px;">{title}</div>
-      <div style="font-family:'Outfit',sans-serif;font-size:12px;color:{C['on_surface_var']};margin-bottom:12px;letter-spacing:0.04em;">{year} &nbsp;·&nbsp; {itype}</div>
-      <div style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:300;color:rgba(201,176,152,0.60);line-height:1.65;margin-bottom:14px;">A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict.</div>
+      <div class="title">{title}</div>
+      <div class="meta">{year} · {itype}</div>
+      <div class="desc">A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict.</div>
     </div>
     <div>
-      <span style="display:inline-block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:4px 12px;border-radius:3px;margin-right:6px;background:rgba(232,131,58,0.10);color:{C['primary']};border:1px solid rgba(232,131,58,0.25);">{itype}</span>
-      <span style="display:inline-block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;padding:4px 12px;border-radius:3px;background:rgba(74,48,32,0.5);color:{C['tertiary']};border:1px solid rgba(74,48,32,0.8);">{year}</span>
+      <span class="badge badge-type">{itype}</span>
+      <span class="badge badge-year">{year}</span>
     </div>
   </div>
 </div>
-        """, unsafe_allow_html=True)
+</body>
+</html>"""
+
+        components.html(card_html, height=215, scrolling=False)
 
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             st.session_state.selected_imdb_id = imdb_id
@@ -763,7 +841,7 @@ if search_results and not st.session_state.selected_imdb_id:
             st.session_state.cached_trailer   = None
             st.rerun()
 
-        st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
