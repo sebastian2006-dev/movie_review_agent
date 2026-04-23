@@ -48,12 +48,26 @@ def search_movies(query: str, media_type: str = "movie"):
     error_msg = None
 
     if exact:
+        # Fetch the short plot for the exact match
+        try:
+            r_plot = requests.get(url, params={"i": exact["imdbID"], "apikey": API_KEY, "plot": "short"}, timeout=5)
+            d_plot = r_plot.json()
+            exact["Plot"] = d_plot.get("Plot", "")
+        except:
+            exact["Plot"] = ""
         merged.append(exact)
         seen.add(exact["imdbID"])
 
-    for item in fuzzy:
+    # For fuzzy results, we'll fetch short plots for the top few to show snippets
+    for item in fuzzy[:6]:
         iid = item.get("imdbID")
         if iid and iid not in seen:
+            try:
+                r_p = requests.get(url, params={"i": iid, "apikey": API_KEY, "plot": "short"}, timeout=5)
+                d_p = r_p.json()
+                item["Plot"] = d_p.get("Plot", "")
+            except:
+                item["Plot"] = ""
             merged.append(item)
             seen.add(iid)
 
@@ -792,6 +806,10 @@ if search_results and not st.session_state.active_id:
         poster_bg = f"url('{poster}')" if has_poster else "none"
         placeholder = "" if has_poster else "<div style=\"font-size:34px;opacity:0.18;\">🎬</div>"
 
+        desc_text = item.get("Plot") or "A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict."
+        if len(desc_text) > 135:
+            desc_text = desc_text[:132] + "..."
+
         # Use components.html — renders in a sandboxed iframe, bypasses Streamlit's
         # HTML sanitizer entirely so background-image, gradients, custom fonts all work.
         card_html = f"""
@@ -845,13 +863,7 @@ if search_results and not st.session_state.active_id:
     font-weight:700;
     color:{C['on_surface']};
     line-height:1.2;
-    margin-bottom:6px;
-  }}
-  .meta {{
-    font-size:12px;
-    color:{C['on_surface_var']};
-    margin-bottom:10px;
-    letter-spacing:0.04em;
+    margin-bottom:8px;
   }}
   .desc {{
     font-size:13px;
@@ -883,8 +895,7 @@ if search_results and not st.session_state.active_id:
   <div class="body">
     <div>
       <div class="title">{title}</div>
-      <div class="meta">{year} · {itype}</div>
-      <div class="desc">A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict.</div>
+      <div class="desc">{desc_text}</div>
     </div>
     <div>
       <span class="badge badge-type">{itype}</span>
