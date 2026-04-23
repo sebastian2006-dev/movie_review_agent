@@ -148,15 +148,25 @@ st.set_page_config(
 )
 
 # ================================================================
-# SESSION STATE
+# SESSION STATE (CRITICAL FIX)
 # ================================================================
-if "conversations"    not in st.session_state: st.session_state.conversations    = {}
-if "active_id"        not in st.session_state: st.session_state.active_id        = None
-if "search_history"   not in st.session_state: st.session_state.search_history   = []
-if "search_results"   not in st.session_state: st.session_state.search_results   = []
-if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
-if "search_error"     not in st.session_state: st.session_state.search_error     = None
-if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
+# These lines MUST exist to prevent the AttributeError you are seeing
+if "conversations" not in st.session_state:
+    st.session_state.conversations = {}
+if "active_id" not in st.session_state:
+    st.session_state.active_id = None
+if "search_history" not in st.session_state:
+    st.session_state.search_history = []
+
+# Your existing state variables
+if "media_type" not in st.session_state: 
+    st.session_state.media_type = "Movie"
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
+if "last_typed" not in st.session_state:
+    st.session_state.last_typed = None
+if "search_error" not in st.session_state:
+    st.session_state.search_error = None
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
@@ -614,13 +624,17 @@ p, li, div {{ font-size: 15px; }}
 # ================================================================
 # SIDEBAR: DASHBOARD & HISTORY
 # ================================================================
+# ================================================================
+# SIDEBAR: DASHBOARD & HISTORY
+# ================================================================
 with st.sidebar:
     st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
     st.markdown(f"<h3 style='color:{C['on_surface']}; margin-top:0;'>Your Archive</h3>", unsafe_allow_html=True)
-
+    
     if not st.session_state.conversations:
         st.markdown(f"<div style='color:{C['text_muted']}; font-size:13px;'>Analyzed movies will appear here.</div>", unsafe_allow_html=True)
-
+    
+    # This loop builds the list of movies you can compare
     for imdb_id, data in st.session_state.conversations.items():
         if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
             st.session_state.active_id = imdb_id
