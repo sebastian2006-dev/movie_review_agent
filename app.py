@@ -1,7 +1,6 @@
 import re
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 from agent.sentiment import analyze_movie, MODEL_CRITIC, MODEL_ADVOCATE
 
 API_KEY         = st.secrets["OMDB_API_KEY"]
@@ -20,13 +19,13 @@ def search_movies(query: str, media_type: str = "movie"):
     try:
         r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
         d = r.json()
-        if d.get("Response") == "True" and d.get("imdbID") and d.get("Title"):
+        if d.get("Response") == "True" and d.get("imdbID"):
             exact = {
-                "Title":  d["Title"],
-                "Year":   d.get("Year", "—"),
-                "imdbID": d["imdbID"],
+                "Title":  d.get("Title", query),
+                "Year":   d.get("Year", ""),
+                "imdbID": d.get("imdbID", ""),
                 "Poster": d.get("Poster", "N/A"),
-                "Type":   d.get("Type", type_param),
+                "Type":   d.get("Type", ""),
             }
     except Exception:
         pass
@@ -36,10 +35,7 @@ def search_movies(query: str, media_type: str = "movie"):
         r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
         d = r.json()
         if d.get("Response") == "True":
-            fuzzy = [
-                item for item in d.get("Search", [])
-                if item.get("Title") and item.get("imdbID")
-            ]
+            fuzzy = d.get("Search", [])
     except Exception:
         pass
 
@@ -52,8 +48,8 @@ def search_movies(query: str, media_type: str = "movie"):
         seen.add(exact["imdbID"])
 
     for item in fuzzy:
-        iid = item.get("imdbID")
-        if iid and iid not in seen:
+        iid = item.get("imdbID", "")
+        if iid not in seen:
             merged.append(item)
             seen.add(iid)
 
@@ -148,15 +144,18 @@ st.set_page_config(
 )
 
 # ================================================================
-# SESSION STATE (THE MASTER LIST)
+# SESSION STATE
 # ================================================================
-if "conversations"    not in st.session_state: st.session_state.conversations = {}
-if "active_id"        not in st.session_state: st.session_state.active_id = None
-if "search_history"   not in st.session_state: st.session_state.search_history = []
-if "search_results"   not in st.session_state: st.session_state.search_results = []
-if "last_typed"       not in st.session_state: st.session_state.last_typed = None
-if "search_error"     not in st.session_state: st.session_state.search_error = None
-if "media_type"       not in st.session_state: st.session_state.media_type = "Movie"
+if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
+if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
+if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
+if "cached_trailer"   not in st.session_state: st.session_state.cached_trailer   = None
+if "search_results"   not in st.session_state: st.session_state.search_results   = []
+if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
+if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
+if "search_error"     not in st.session_state: st.session_state.search_error     = None
+if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
+
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
@@ -263,105 +262,25 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 24px;
 }}
 
-/* ── TYPE TOGGLE — fully themed pill buttons ── */
+/* ── TYPE TOGGLE ── */
 .type-toggle-wrap {{
     display: flex; justify-content: center; gap: 0;
     margin-bottom: 18px;
 }}
-
-/* Override ALL default Streamlit button styles for type-toggle and analyse buttons */
-div[data-testid="stButton"] > button {{
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
-    transition: all 0.22s ease !important;
-    border: 1px solid {C["outline"]} !important;
-    background: {C["bg_container"]} !important;
-    color: {C["text_muted"]} !important;
-    border-radius: 9999px !important;
-    padding: 10px 30px !important;
-    box-shadow: none !important;
+.type-toggle-btn {{
+    font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 9px 32px; cursor: pointer;
+    border: 1px solid {C["outline"]}; background: transparent;
+    color: {C["text_muted"]}; transition: all 0.22s ease;
 }}
-div[data-testid="stButton"] > button:hover {{
-    border-color: {C["primary"]} !important;
-    color: {C["primary_container"]} !important;
-    background: rgba(232,131,58,0.08) !important;
-    box-shadow: 0 4px 20px {C["glow_copper"]} !important;
-}}
-div[data-testid="stButton"] > button:focus {{
-    outline: none !important;
-    box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
-}}
-
-
-
-/* Analyse CTA button — copper gradient pill */
-div[data-testid="stButton"].analyse-btn > button,
-div[data-testid="stButton"] > button[kind="primary"] {{
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-    border-color: {C["primary"]} !important;
-    color: {C["on_primary"]} !important;
-    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
-    font-size: 11px !important;
-    letter-spacing: 0.20em !important;
-    padding: 10px 28px !important;
-}}
-div[data-testid="stButton"].analyse-btn > button:hover,
-div[data-testid="stButton"] > button[kind="primary"]:hover {{
-    transform: translateY(-1px) !important;
-    box-shadow: 0 8px 32px {C["glow_copper_md"]} !important;
-    background: linear-gradient(135deg, {C["primary_container"]}, {C["primary"]}) !important;
-}}
-
-/* ── CHAT INPUT ── */
-div[data-testid="stChatInput"] {{
-    background: {C["bg_low"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    border-radius: 9999px !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
-    padding: 0 8px !important;
-}}
-div[data-testid="stChatInput"] > div,
-div[data-testid="stChatInput"] div[class*="st-"] {{
-    background-color: transparent !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
-textarea[data-testid="stChatInputTextArea"] {{
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    color: {C["on_surface"]} !important;
-    -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 16px !important;
-    padding: 14px 20px !important;
-    box-shadow: none !important;
-    caret-color: {C["primary_container"]} !important;
-}}
-textarea[data-testid="stChatInputTextArea"]::placeholder {{
-    color: {C["text_muted"]} !important;
-    -webkit-text-fill-color: {C["text_muted"]} !important;
-}}
-div[data-testid="stChatInput"] div:focus-within {{
-    border: none !important; outline: none !important; box-shadow: none !important;
-}}
-button[data-testid="stChatInputSubmitButton"] {{
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-    border-radius: 9999px !important;
-    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
-    margin-top: 5px !important;
-}}
-button[data-testid="stChatInputSubmitButton"]:hover {{
-    transform: scale(1.10) !important;
-    box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
-}}
-button[data-testid="stChatInputSubmitButton"] svg {{
-    stroke: {C["on_primary"]} !important; fill: none !important;
-    width: 16px !important; height: 16px !important;
+.type-toggle-btn:first-child {{ border-radius: 9999px 0 0 9999px; border-right: none; }}
+.type-toggle-btn:last-child  {{ border-radius: 0 9999px 9999px 0; border-left: none; }}
+.type-toggle-btn.active {{
+    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]});
+    border-color: {C["primary"]};
+    color: {C["on_primary"]};
+    box-shadow: 0 4px 20px {C["glow_copper_btn"]};
 }}
 
 /* ── SEARCH LABEL ── */
@@ -373,65 +292,55 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 
 /* ── RESULT CARDS ── */
 .result-card {{
-    background: {C["bg_container"]};
-    border: 1px solid rgba(74,48,32,0.35);
-    border-radius: 14px; overflow: hidden;
-    margin-bottom: 4px;
-    transition: all 0.30s ease;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
     display: flex;
-    flex-direction: row;
+    background: {C["bg_container"]};
+    border: 1px solid rgba(74,48,32,0.25);
+    border-radius: 12px; overflow: hidden;
+    margin-bottom: 20px;
+    transition: all 0.35s ease;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
 }}
 .result-card:hover {{
     background: {C["bg_high"]};
-    border-color: rgba(232,131,58,0.28);
+    border-color: rgba(232,131,58,0.22);
     box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6),
-                0 0 0 1px rgba(232,131,58,0.14);
+                0 0 0 1px rgba(232,131,58,0.12);
     transform: translateY(-2px);
 }}
-.result-poster-col {{
-    width: 130px;
-    min-width: 130px;
-    min-height: 200px;
-    flex-shrink: 0;
-    overflow: hidden;
-    position: relative;
-    background: {C["bg_high"]};
+.result-poster {{
+    width: 140px; min-height: 210px; flex-shrink: 0;
+    background: {C["bg_high"]}; position: relative; overflow: hidden;
 }}
-.result-poster-col img {{
-    width: 130px;
-    height: 200px;
-    object-fit: cover;
-    display: block;
+.result-poster img {{
+    width: 100%; height: 100%; object-fit: cover;
 }}
 .result-poster-fade {{
-    position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
-    background: linear-gradient(to right, transparent, {C["bg_container"]});
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent 70%, {C["bg_container"]} 100%);
     pointer-events: none;
 }}
 .result-no-poster {{
-    width: 130px; height: 200px;
+    width: 100%; height: 210px;
     display: flex; align-items: center; justify-content: center;
     font-size: 36px; color: {C["text_dim"]};
-    background: {C["bg_high"]};
 }}
 .result-body {{
-    flex: 1; padding: 22px 26px 18px 22px;
+    flex: 1; padding: 24px 28px 20px 28px;
     display: flex; flex-direction: column; justify-content: space-between;
 }}
 .result-title {{
     font-family: 'Playfair Display', serif;
     font-size: 22px; font-weight: 700;
-    color: {C["on_surface"]}; line-height: 1.18; margin-bottom: 6px;
+    color: {C["on_surface"]}; line-height: 1.15; margin-bottom: 6px;
 }}
 .result-meta {{
     font-family: 'Outfit', sans-serif; font-size: 12px;
-    color: {C["on_surface_var"]}; margin-bottom: 12px;
+    color: {C["on_surface_var"]}; margin-bottom: 14px;
     letter-spacing: 0.04em;
 }}
 .result-cta {{
     font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
-    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 14px;
+    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 16px;
 }}
 .result-badge {{
     display: inline-block;
@@ -444,6 +353,13 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .result-badge.type-badge {{
     background: rgba(232,131,58,0.10); color: {C["primary"]};
     border: 1px solid rgba(232,131,58,0.25);
+}}
+
+/* ── INVISIBLE CLICK BUTTON OVER CARD ── */
+div[data-testid="stButton"] > button.card-overlay-btn {{
+    position: absolute; inset: 0;
+    background: transparent !important;
+    border: none !important; color: transparent !important;
 }}
 
 /* ── MOVIE TITLE / META ── */
@@ -608,26 +524,11 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["primary_container"]} !important;
 }}
 
+
+
 p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
-
-# ================================================================
-# SIDEBAR: DASHBOARD & HISTORY
-# ================================================================
-with st.sidebar:
-    st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
-    st.markdown(f"<h3 style='color:{C['on_surface']}; margin-top:0;'>Your Archive</h3>", unsafe_allow_html=True)
-    
-    if not st.session_state.conversations:
-        st.markdown(f"<div style='color:{C['text_muted']}; font-size:13px;'>Analyzed movies will appear here.</div>", unsafe_allow_html=True)
-    
-    # This loop builds the list of movies you can compare
-    for imdb_id, data in st.session_state.conversations.items():
-        if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
-            st.session_state.active_id = imdb_id
-            st.session_state.search_results = [] 
-            st.rerun()
 
 
 # ================================================================
@@ -644,59 +545,43 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# SEARCH UI: Type Toggle → Search Bar
+# SEARCH UI: Type Toggle + Search Bar
 # ================================================================
-show_search_ui = not st.session_state.active_id
-
-active_type = st.session_state.media_type
+show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
 
 if show_search_ui:
-    # ── Type toggle: inject active style onto the correct button via CSS ──
-    # We give the toggle wrapper a unique id, then target nth-child to highlight
-    # whichever button matches the current active_type.
-    active_idx = 1 if active_type == "Movie" else 2
-    st.markdown(f"""
-    <style>
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-child({active_idx})
-        div[data-testid="stButton"] > button {{
-        background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-        border-color: {C["primary"]} !important;
-        color: {C["on_primary"]} !important;
-        box-shadow: 0 4px 22px {C["glow_copper_btn"]} !important;
-    }}
-    </style>
-    <div style="height:4px;"></div>
-    """, unsafe_allow_html=True)
+    # ── Type toggle (Movie / Series) ─────────────────────────────
+    _, col_toggle, _ = st.columns([1, 2, 1])
+    with col_toggle:
+        t_col1, t_col2 = st.columns(2, gap="small")
+        with t_col1:
+            if st.button("🎬  Movie", key="btn_type_movie", use_container_width=True):
+                st.session_state.media_type = "Movie"
+                st.rerun()
+        with t_col2:
+            if st.button("📺  Series", key="btn_type_series", use_container_width=True):
+                st.session_state.media_type = "Series"
+                st.rerun()
 
-    _, col_t1, col_t2, _ = st.columns([2, 1, 1, 2])
-    with col_t1:
-        if st.button("Movie", key="btn_type_movie", use_container_width=True):
-            st.session_state.media_type = "Movie"
-            st.rerun()
-    with col_t2:
-        if st.button("Series", key="btn_type_series", use_container_width=True):
-            st.session_state.media_type = "Series"
-            st.rerun()
-
-    # Underline indicator
+    active_type = st.session_state.media_type
+    movie_bar  = "linear-gradient(90deg," + C["primary"] + "," + C["secondary"] + ")" if active_type == "Movie"  else C["bg_highest"]
+    series_bar = "linear-gradient(90deg," + C["primary"] + "," + C["secondary"] + ")" if active_type == "Series" else C["bg_highest"]
     st.markdown(f"""
-    <div style="display:flex;justify-content:center;margin:-4px 0 22px 0;">
-        <div style="display:flex;width:280px;gap:10px;">
-            <div style="flex:1;height:2px;border-radius:2px;
-                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Movie' else C['bg_highest']};"></div>
-            <div style="flex:1;height:2px;border-radius:2px;
-                background:{'linear-gradient(90deg,' + C['primary'] + ',' + C['secondary'] + ')' if active_type=='Series' else C['bg_highest']};"></div>
+    <div style="display:flex;justify-content:center;margin:-10px 0 24px 0;">
+        <div style="display:flex;width:320px;">
+            <div style="flex:1;height:2px;border-radius:2px;background:{movie_bar};transition:background 0.3s ease;"></div>
+            <div style="flex:1;height:2px;border-radius:2px;background:{series_bar};transition:background 0.3s ease;"></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# ── Search bar (always rendered, centered) ─────────────────
+# ── Search bar ────────────────────────────────────────────────
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
-    if show_search_ui:
-        placeholder = f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
-    else:
-        placeholder = "Search another title…"
+    placeholder = (
+        f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
+        if show_search_ui else "Search another title…"
+    )
     user_input = st.chat_input(placeholder)
 
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
@@ -707,12 +592,12 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ================================================================
 if user_input and user_input.strip():
     if user_input != st.session_state.last_typed:
-        st.session_state.last_typed = user_input
-        
-        # CRITICAL: This clears the dashboard view so search results can show up
-        st.session_state.active_id = None 
-        
-        with st.spinner("Searching the archive..."):
+        st.session_state.last_typed       = user_input
+        st.session_state.selected_imdb_id = None
+        st.session_state.cached_movie     = None
+        st.session_state.cached_result    = None
+        st.session_state.cached_trailer   = None
+        with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input, st.session_state.media_type)
             st.session_state.search_results = results
             st.session_state.search_error   = err
@@ -720,7 +605,7 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# RESULTS — CARDS WITH NATIVE st.image FOR POSTER
+# RESULTS — FULL WIDTH CARDS (no sidebar)
 # ================================================================
 search_results = st.session_state.search_results
 
@@ -737,142 +622,45 @@ if search_results and not st.session_state.selected_imdb_id:
         year    = item.get("Year", "")
         imdb_id = item.get("imdbID", "")
         itype   = item.get("Type", "movie").title()
-        has_poster = poster and poster != "N/A" and poster.startswith("http")
+        has_poster = poster and poster != "N/A"
 
-        poster_bg = f"url('{poster}')" if has_poster else "none"
-        placeholder = "" if has_poster else "<div style=\"font-size:34px;opacity:0.18;\">🎬</div>"
+        poster_html = (
+            f'<img src="{poster}" alt="{title}" style="width:100%;height:100%;object-fit:cover;"/>'
+            if has_poster
+            else '<div class="result-no-poster">🎬</div>'
+        )
+        fade_html = '<div class="result-poster-fade"></div>' if has_poster else ""
 
-        # Use components.html — renders in a sandboxed iframe, bypasses Streamlit's
-        # HTML sanitizer entirely so background-image, gradients, custom fonts all work.
-        card_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
-  body {{ background:transparent; font-family:'Outfit',sans-serif; }}
-  .card {{
-    display:flex;
-    background:{C['bg_container']};
-    border:1px solid rgba(74,48,32,0.40);
-    border-radius:14px;
-    overflow:hidden;
-    min-height:200px;
-    box-shadow:0 4px 24px rgba(0,0,0,0.5);
-  }}
-  .poster {{
-    width:140px;
-    min-width:140px;
-    min-height:200px;
-    flex-shrink:0;
-    position:relative;
-    background-image:{poster_bg};
-    background-size:cover;
-    background-position:center top;
-    background-repeat:no-repeat;
-    background-color:{C['bg_high']};
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }}
-  .poster-fade {{
-    position:absolute;
-    top:0; left:0; right:0; bottom:0;
-    background:linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
-  }}
-  .body {{
-    flex:1;
-    padding:20px 24px 18px 18px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    min-width:0;
-  }}
-  .title {{
-    font-family:'Playfair Display',serif;
-    font-size:21px;
-    font-weight:700;
-    color:{C['on_surface']};
-    line-height:1.2;
-    margin-bottom:6px;
-  }}
-  .meta {{
-    font-size:12px;
-    color:{C['on_surface_var']};
-    margin-bottom:10px;
-    letter-spacing:0.04em;
-  }}
-  .desc {{
-    font-size:13px;
-    font-weight:300;
-    color:rgba(201,176,152,0.60);
-    line-height:1.65;
-    margin-bottom:12px;
-  }}
-  .badge {{
-    display:inline-block;
-    font-size:9px;
-    font-weight:600;
-    letter-spacing:0.14em;
-    text-transform:uppercase;
-    padding:4px 11px;
-    border-radius:3px;
-    margin-right:5px;
-  }}
-  .badge-type {{ background:rgba(232,131,58,0.12); color:{C['primary']}; border:1px solid rgba(232,131,58,0.28); }}
-  .badge-year {{ background:rgba(74,48,32,0.5); color:{C['tertiary']}; border:1px solid rgba(74,48,32,0.8); }}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="poster">
-    {placeholder}
-    <div class="poster-fade"></div>
-  </div>
-  <div class="body">
-    <div>
-      <div class="title">{title}</div>
-      <div class="meta">{year} · {itype}</div>
-      <div class="desc">A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict.</div>
-    </div>
-    <div>
-      <span class="badge badge-type">{itype}</span>
-      <span class="badge badge-year">{year}</span>
-    </div>
-  </div>
-</div>
-</body>
-</html>"""
+        st.markdown(f"""
+        <div class="result-card">
+            <div class="result-poster">
+                {poster_html}
+                {fade_html}
+            </div>
+            <div class="result-body">
+                <div>
+                    <div class="result-title">{title}</div>
+                    <div class="result-meta">{year} · {itype}</div>
+                    <div class="result-cta">
+                        Click below to start the AI debate — a Critic and an Advocate will
+                        dissect this title across four rounds and deliver a calibrated verdict.
+                    </div>
+                </div>
+                <div>
+                    <span class="result-badge type-badge">{itype}</span>
+                    <span class="result-badge">{year}</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        components.html(card_html, height=215, scrolling=False)
-
-        if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
-            with st.spinner("Generating AI Debate..."):
-                # Fetch and Analyze
-                movie_data = fetch_movie_by_id(imdb_id)
-                trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
-                raw_reviews = {
-                    "title": movie_data["title"],
-                    "critic_reviews": movie_data["plot"],
-                    "audience_reactions": movie_data["actors"],
-                    "discussion_points": movie_data["genre"],
-                }
-                debate_result = analyze_movie(raw_reviews)
-                
-                # Save to the Dashboard Library
-                st.session_state.conversations[imdb_id] = {
-                    "movie": movie_data,
-                    "result": debate_result,
-                    "trailer": trailer_id
-                }
-                
-                # Set as active and CLEAR search results
-                st.session_state.active_id = imdb_id
-                st.session_state.search_results = []
-                st.rerun()
-
-        st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+        if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True):
+            st.session_state.selected_imdb_id = imdb_id
+            st.session_state.search_results   = []
+            st.session_state.cached_movie     = None
+            st.session_state.cached_result    = None
+            st.session_state.cached_trailer   = None
+            st.rerun()
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
@@ -880,18 +668,29 @@ if search_results and not st.session_state.selected_imdb_id:
 # ================================================================
 # RUN ANALYSIS
 # ================================================================
-# Change Line 889 to use the new variable name
-# --- REPLACEMENT FOR THE OLD ANALYSIS TRIGGER ---
-if st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
-    # Pull the already-analyzed data from our dashboard library
-    active_data = st.session_state.conversations[st.session_state.active_id]
-    movie   = active_data["movie"]
-    result  = active_data["result"]
-    trailer = active_data["trailer"]
-else:
-    movie, result, trailer = None, None, None
+if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
+    with st.spinner("Fetching film details…"):
+        st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
+        st.session_state.cached_query = st.session_state.selected_imdb_id
 
-    
+    if st.session_state.cached_movie:
+        m = st.session_state.cached_movie
+        with st.spinner("Hunting down the trailer…"):
+            st.session_state.cached_trailer = fetch_trailer(m["title"], m.get("year", ""))
+
+        raw_reviews = {
+            "title":              m["title"],
+            "critic_reviews":     m["plot"],
+            "audience_reactions": m["actors"],
+            "discussion_points":  m["genre"],
+        }
+        with st.spinner("AI models are entering the debate hall…"):
+            st.session_state.cached_result = analyze_movie(raw_reviews)
+
+
+movie   = st.session_state.cached_movie
+result  = st.session_state.cached_result
+trailer = st.session_state.cached_trailer
 
 
 # ================================================================
@@ -906,15 +705,13 @@ if (
     err_msg = st.session_state.get("search_error") or "No results found. Try a different title or spelling."
     st.markdown(f"<div class='err-box'>⚠ &nbsp; {err_msg}</div>", unsafe_allow_html=True)
 
+
 # ================================================================
 # RENDER ANALYSIS
 # ================================================================
-elif st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
-    active_data = st.session_state.conversations[st.session_state.active_id]
-    movie   = active_data["movie"]
-    result  = active_data["result"]
-    trailer = active_data["trailer"]
-    # ── MOVIE HEADER ───────────────────────────────────────────── 
+elif movie and result:
+
+    # ── MOVIE HEADER ─────────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.8], gap="large")
 
     with col_poster:
