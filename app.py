@@ -108,7 +108,6 @@ def fetch_movie_by_id(imdb_id: str):
 
 # ---------------- FETCH YOUTUBE TRAILER ----------------
 def fetch_trailer(title: str, year: str = "") -> str | None:
-    """Returns a YouTube video ID for the official trailer, or None if not found."""
     if not YOUTUBE_API_KEY:
         return None
     query = f"{title} {year} official trailer".strip()
@@ -145,20 +144,21 @@ st.set_page_config(
 # ================================================================
 # SESSION STATE
 # ================================================================
-if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
-if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
-if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
-if "cached_trailer"   not in st.session_state: st.session_state.cached_trailer   = None
-if "search_results"   not in st.session_state: st.session_state.search_results   = []
-if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
-if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
-if "search_error"     not in st.session_state: st.session_state.search_error     = None
+if "cached_query"       not in st.session_state: st.session_state.cached_query     = None
+if "cached_movie"       not in st.session_state: st.session_state.cached_movie     = None
+if "cached_result"      not in st.session_state: st.session_state.cached_result    = None
+if "cached_trailer"     not in st.session_state: st.session_state.cached_trailer   = None
+if "search_results"     not in st.session_state: st.session_state.search_results   = []
+if "selected_imdb_id"   not in st.session_state: st.session_state.selected_imdb_id = None
+if "last_typed"         not in st.session_state: st.session_state.last_typed       = None
+if "search_error"       not in st.session_state: st.session_state.search_error     = None
+if "filter_genre"       not in st.session_state: st.session_state.filter_genre     = []
+if "filter_polar"       not in st.session_state: st.session_state.filter_polar     = []
 
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
 C = {
-    # Surfaces — deep mahogany-black
     "bg":               "#120c09",
     "bg_lowest":        "#0d0806",
     "bg_low":           "#1a120d",
@@ -166,15 +166,11 @@ C = {
     "bg_high":          "#2a1d15",
     "bg_highest":       "#36261c",
     "bg_bright":        "#423024",
-
-    # Text
     "on_surface":       "#f0e4d4",
     "on_surface_var":   "#c9b098",
     "on_primary":       "#1a0a00",
     "text_muted":       "#7a5c42",
     "text_dim":         "#3d2415",
-
-    # Accents — molten copper / ember orange
     "primary":          "#e8833a",
     "primary_dim":      "#d4692a",
     "primary_container":"#f09050",
@@ -182,14 +178,10 @@ C = {
     "tertiary":         "#f0b87a",
     "outline":          "#4a3020",
     "outline_var":      "#2e1e12",
-
-    # Glow helpers
     "glow_copper":      "rgba(232,131,58,0.14)",
     "glow_copper_md":   "rgba(232,131,58,0.26)",
     "glow_copper_btn":  "rgba(232,131,58,0.30)",
     "glow_ember":       "rgba(200,96,58,0.12)",
-
-    # Debate personas
     "critic_color":     "#e8833a",
     "advocate_color":   "#c8a070",
     "critic_bg":        "rgba(232,131,58,0.07)",
@@ -199,11 +191,11 @@ C = {
 }
 
 # ================================================================
-# GLOBAL CSS — DARK VELVET CINEMA
+# GLOBAL CSS
 # ================================================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Outfit:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap');
 
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{ background: transparent !important; }}
@@ -215,14 +207,13 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     font-family: 'Outfit', sans-serif;
 }}
 .block-container {{
-    max-width: 1200px;
+    max-width: 1280px;
     padding-top: 0 !important;
     padding-bottom: 6rem;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
 }}
 
-/* Multi-layer ambient warm glow */
 .stApp::before {{
     content: '';
     position: fixed;
@@ -243,40 +234,70 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 
 h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 
-/* ── HERO ── */
-.hero-eyebrow {{
-    font-family: 'Outfit', sans-serif;
-    font-size: 10px; font-weight: 600; letter-spacing: 0.28em;
-    color: {C["primary"]}; text-transform: uppercase; text-align: center;
-    margin-bottom: 16px; opacity: 0.9;
+/* ── TOPNAV ── */
+.cineglow-nav {{
+    position: fixed; top: 0; left: 0; width: 100%; z-index: 999;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 3rem; height: 68px;
+    background: rgba(18,12,9,0.88);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(232,131,58,0.08);
+    box-shadow: 0 2px 30px rgba(0,0,0,0.5);
 }}
-.hero-title {{
+.cineglow-nav-logo {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: {C["on_surface"]};
+}}
+.cineglow-nav-links {{
+    display: flex; gap: 2rem; align-items: center;
+}}
+.cineglow-nav-links a {{
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    color: {C["text_muted"]}; text-decoration: none;
+    letter-spacing: 0.04em; transition: color 0.2s ease;
+}}
+.cineglow-nav-links a:hover {{ color: {C["on_surface_var"]}; }}
+
+/* ── HERO SEARCH SECTION ── */
+.search-hero {{
+    text-align: center;
+    padding: 6rem 0 3rem 0;
+}}
+.search-hero-title {{
     font-family: 'Playfair Display', serif;
-    font-size: clamp(38px, 5.5vw, 66px); font-weight: 800;
-    letter-spacing: -0.01em; line-height: 1.08;
-    text-align: center; color: {C["on_surface"]}; margin-bottom: 12px;
+    font-size: clamp(42px, 6vw, 72px);
+    font-weight: 800; letter-spacing: -0.02em; line-height: 1.08;
+    color: {C["on_surface"]}; margin-bottom: 14px;
 }}
-.hero-title em {{
-    font-style: italic; color: {C["primary_container"]};
-    text-shadow: 0 0 40px rgba(240,144,80,0.35);
-}}
-.hero-sub {{
-    font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
-    color: {C["on_surface_var"]}; text-align: center;
-    max-width: 500px; margin: 0 auto 12px auto; line-height: 1.65;
-}}
-.hero-ornament {{
-    text-align: center; font-size: 18px; color: {C["primary"]};
-    opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 32px;
+.search-hero-sub {{
+    font-family: 'Outfit', sans-serif; font-style: italic;
+    font-size: 17px; font-weight: 300;
+    color: {C["on_surface_var"]}; margin-bottom: 40px;
 }}
 
-/* ── CHAT INPUT ── */
+/* ── SEARCH BAR ── */
+.search-bar-wrap {{
+    position: relative; max-width: 820px; margin: 0 auto;
+}}
+.search-bar-glow {{
+    position: absolute; inset: -2px;
+    background: linear-gradient(135deg, rgba(232,131,58,0.18), rgba(200,96,58,0.10));
+    border-radius: 9999px; filter: blur(6px);
+    opacity: 0; transition: opacity 0.4s ease;
+}}
+.search-bar-glow.active {{ opacity: 1; }}
+
+/* Override Streamlit chat input to look like the archive search bar */
 div[data-testid="stChatInput"] {{
     background: {C["bg_low"]} !important;
-    border: 1px solid {C["outline"]} !important;
+    border: 1px solid rgba(74,48,32,0.6) !important;
     border-radius: 9999px !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
-    padding: 0 8px !important;
+    box-shadow: inset 0 2px 12px rgba(0,0,0,0.5), 0 4px 24px rgba(0,0,0,0.4) !important;
+    padding: 0 10px 0 20px !important;
+    max-width: 820px !important;
+    margin: 0 auto !important;
 }}
 div[data-testid="stChatInput"] > div,
 div[data-testid="stChatInput"] div[class*="st-"] {{
@@ -291,60 +312,276 @@ textarea[data-testid="stChatInputTextArea"] {{
     border: none !important;
     color: {C["on_surface"]} !important;
     -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 16px !important;
-    padding: 14px 20px !important;
+    font-family: 'Playfair Display', serif !important;
+    font-size: 22px !important;
+    font-weight: 600 !important;
+    padding: 18px 8px 18px 44px !important;
     box-shadow: none !important;
     caret-color: {C["primary_container"]} !important;
 }}
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
     color: {C["text_muted"]} !important;
     -webkit-text-fill-color: {C["text_muted"]} !important;
+    font-weight: 400 !important;
+    font-style: italic !important;
 }}
 div[data-testid="stChatInput"] div:focus-within {{
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
+    border: none !important; outline: none !important; box-shadow: none !important;
 }}
 button[data-testid="stChatInputSubmitButton"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
     border-radius: 9999px !important;
+    min-width: 90px; height: 42px;
     box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
-    margin-top: 5px !important;
+    margin: 8px !important;
+    padding: 0 20px !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 11px !important; font-weight: 700 !important;
+    letter-spacing: 0.18em !important;
+    color: {C["on_primary"]} !important;
+    transition: all 0.25s ease !important;
 }}
 button[data-testid="stChatInputSubmitButton"]:hover {{
-    transform: scale(1.10) !important; box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 6px 32px {C["glow_copper_md"]} !important;
 }}
 button[data-testid="stChatInputSubmitButton"] svg {{
-    stroke: {C["on_primary"]} !important; fill: none !important; width: 16px !important; height: 16px !important;
+    display: none !important;
 }}
 
-/* ── SEARCH LABEL ── */
-.search-label {{
-    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.24em; text-transform: uppercase;
-    color: {C["primary"]}; margin-bottom: 18px; margin-top: 6px; opacity: 0.8;
+/* ── SEARCH ICON PSEUDO-OVERLAY ── */
+.search-icon-overlay {{
+    position: absolute;
+    left: calc(50% - 390px + 20px);
+    top: 50%; transform: translateY(-50%);
+    color: {C["text_muted"]};
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 100;
 }}
 
-/* ── POSTER GRID ── */
-div[data-testid="column"] img {{
-    border-radius: 10px !important; display: block !important; cursor: pointer !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+/* ── RESULTS LAYOUT ── */
+.results-layout {{
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
+    margin-top: 48px;
+    align-items: start;
 }}
-div[data-testid="column"] img:hover {{
-    transform: scale(1.04) !important;
-    box-shadow: 0 18px 52px -8px rgba(0,0,0,0.7), 0 0 30px {C["glow_copper_md"]} !important;
+
+/* ── SIDEBAR FILTERS ── */
+.filter-sidebar {{
+    position: sticky; top: 88px;
 }}
-div[data-testid="column"] div[data-testid="stButton"] > button {{
-    background: transparent !important; border: none !important; border-radius: 0 !important;
-    color: transparent !important; -webkit-text-fill-color: transparent !important;
-    font-size: 1px !important; padding: 0 !important; margin-top: -300px !important;
-    height: 300px !important; width: 100% !important; cursor: pointer !important;
-    position: relative !important; z-index: 10 !important;
+.filter-section {{
+    margin-bottom: 36px;
 }}
-div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
-    background: rgba(232,131,58,0.06) !important;
+.filter-label {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: {C["text_muted"]}; margin-bottom: 16px;
+    display: block;
+}}
+.filter-checkbox-row {{
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px; cursor: pointer;
+}}
+.filter-checkbox {{
+    width: 18px; height: 18px;
+    border: 1px solid {C["outline"]};
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: border-color 0.2s ease;
+}}
+.filter-checkbox.checked {{
+    background: {C["secondary"]};
+    border-color: {C["secondary"]};
+}}
+.filter-checkbox-label {{
+    font-family: 'Outfit', sans-serif; font-size: 14px;
+    color: {C["on_surface_var"]};
+}}
+.genre-pills {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+.genre-pill {{
+    padding: 6px 14px;
+    border: 1px solid {C["outline"]};
+    border-radius: 9999px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: {C["on_surface_var"]}; cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+}}
+.genre-pill.active {{
+    border-color: {C["primary"]};
+    color: {C["primary_container"]};
+    background: rgba(232,131,58,0.10);
+}}
+.recent-item {{
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 8px;
+    background: {C["bg_container"]};
+    border: 1px solid transparent;
+    margin-bottom: 8px; cursor: pointer;
+    transition: all 0.2s ease;
+}}
+.recent-item:hover {{ border-color: rgba(74,48,32,0.5); background: {C["bg_high"]}; }}
+.recent-icon {{
+    color: {C["secondary"]}; font-size: 16px; flex-shrink: 0;
+}}
+.recent-title {{
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+    color: {C["on_surface_var"]}; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis;
+}}
+.recent-score {{
+    font-family: 'Space Grotesk', sans-serif; font-size: 9px;
+    letter-spacing: 0.14em; color: {C["text_muted"]};
+    text-transform: uppercase;
+}}
+
+/* ── RESULTS PANEL ── */
+.results-header {{
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(74,48,32,0.3);
+    padding-bottom: 16px; margin-bottom: 24px;
+}}
+.results-header-title {{
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700;
+    color: {C["on_surface"]};
+}}
+.results-count {{
+    font-family: 'Space Grotesk', sans-serif; font-size: 10px;
+    font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: {C["text_muted"]};
+}}
+
+/* ── RESULT CARD ── */
+.result-card {{
+    display: flex; position: relative;
+    background: {C["bg_container"]};
+    border: 1px solid rgba(74,48,32,0.25);
+    border-radius: 12px; overflow: hidden;
+    margin-bottom: 20px;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}}
+.result-card:hover {{
+    background: {C["bg_high"]};
+    border-color: rgba(232,131,58,0.22);
+    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(232,131,58,0.12);
+    transform: translateY(-2px);
+}}
+.result-poster {{
+    width: 160px; min-height: 240px; flex-shrink: 0;
+    position: relative; overflow: hidden;
+    background: {C["bg_high"]};
+}}
+.result-poster img {{
+    width: 100%; height: 100%; object-fit: cover;
+    filter: grayscale(0.3);
+    transition: filter 0.6s ease;
+}}
+.result-card:hover .result-poster img {{ filter: grayscale(0); }}
+.result-poster-fade {{
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent 70%, {C["bg_container"]} 100%);
+    pointer-events: none;
+}}
+.result-no-poster {{
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; color: {C["text_dim"]};
+}}
+.result-body {{
+    flex: 1; padding: 28px 28px 24px 28px;
+    display: flex; flex-direction: column; justify-content: space-between;
+}}
+.result-title-row {{
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 8px; gap: 16px;
+}}
+.result-title {{
+    font-family: 'Playfair Display', serif;
+    font-size: 24px; font-weight: 700;
+    color: {C["on_surface"]}; line-height: 1.15;
+    transition: color 0.2s ease;
+}}
+.result-card:hover .result-title {{ color: {C["primary_container"]}; }}
+.result-meta {{
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    color: {C["on_surface_var"]}; margin-bottom: 16px;
+    letter-spacing: 0.02em;
+}}
+.result-excerpt {{
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 300;
+    color: rgba(201,176,152,0.7); line-height: 1.7;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 18px;
+}}
+.result-badges {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+.result-badge {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 3px;
+}}
+.badge-genre {{
+    background: rgba(74,48,32,0.5);
+    color: {C["tertiary"]};
+    border: 1px solid rgba(74,48,32,0.8);
+}}
+.badge-type {{
+    background: rgba(232,131,58,0.10);
+    color: {C["primary"]};
+    border: 1px solid rgba(232,131,58,0.25);
+}}
+
+/* Score ring */
+.score-ring-wrap {{
+    position: relative; width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}}
+.score-ring-wrap svg {{
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transform: rotate(-90deg);
+}}
+.score-ring-label {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px; font-weight: 600;
+    color: {C["on_surface"]}; z-index: 1; position: relative;
+}}
+
+/* ── RESULT CARD BUTTON INVISIBLE OVERLAY ── */
+div[data-testid="column"] div[data-testid="stButton"] > button.card-btn {{
+    position: absolute; inset: 0;
+    background: transparent !important;
+    border: none !important;
+    color: transparent !important;
+    border-radius: 12px !important;
+    z-index: 20;
+}}
+
+/* ── ERROR BOX ── */
+.err-box {{
+    background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
+    border-radius: 12px; padding: 20px 28px;
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
+    color: {C["primary"]}; text-align: center; letter-spacing: 0.02em;
+}}
+
+/* ── FANCY DIVIDER ── */
+.fancy-divider {{
+    height: 1px;
+    background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
+    margin: 32px 0;
 }}
 
 /* ── MOVIE TITLE / META ── */
@@ -380,22 +617,16 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
 
 /* ── TRAILER ── */
 .trailer-wrapper {{
-    position: relative;
-    width: 100%;
-    padding-top: 56.25%;   /* 16:9 ratio */
-    border-radius: 14px;
-    overflow: hidden;
+    position: relative; width: 100%; padding-top: 56.25%;
+    border-radius: 14px; overflow: hidden;
     background: {C["bg_lowest"]};
     box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75),
                 0 0 0 1px {C["outline"]},
                 0 0 60px -20px rgba(232,131,58,0.20);
 }}
 .trailer-wrapper iframe {{
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border: none;
-    border-radius: 14px;
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; border: none; border-radius: 14px;
 }}
 .trailer-badge {{
     display: inline-flex; align-items: center; gap: 6px;
@@ -406,51 +637,30 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     letter-spacing: 0.18em; text-transform: uppercase;
     padding: 4px 14px; border-radius: 9999px; margin-bottom: 14px;
 }}
-.trailer-badge::before {{
-    content: '▶';
-    font-size: 8px;
-    color: {C["primary"]};
-}}
+.trailer-badge::before {{ content: '▶'; font-size: 8px; color: {C["primary"]}; }}
 .trailer-no-result {{
     display: flex; align-items: center; justify-content: center;
-    height: 120px;
-    background: {C["bg_container"]};
-    border: 1px dashed {C["outline"]};
-    border-radius: 14px;
+    height: 120px; background: {C["bg_container"]};
+    border: 1px dashed {C["outline"]}; border-radius: 14px;
     font-family: 'Outfit', sans-serif; font-size: 13px;
     color: {C["text_muted"]}; letter-spacing: 0.04em;
 }}
 
-/* ══════════════════════════════════════════════════
-   DEBATE AGENDA — FULL-WIDTH HORIZONTAL STEP STRIP
-══════════════════════════════════════════════════ */
+/* ── AGENDA STRIP ── */
 .agenda-strip {{
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0;
-    background: {C["bg_container"]};
-    border: 1px solid {C["outline"]};
-    border-radius: 14px;
-    overflow: hidden;
-    margin-top: 14px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; background: {C["bg_container"]};
+    border: 1px solid {C["outline"]}; border-radius: 14px;
+    overflow: hidden; margin-top: 14px;
     box-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(232,131,58,0.08);
     width: 100%;
 }}
 .agenda-cell {{
-    padding: 26px 24px 26px 24px;
-    border-right: 1px solid {C["outline_var"]};
-    position: relative;
-    transition: background 0.25s ease;
+    padding: 26px 24px; border-right: 1px solid {C["outline_var"]};
+    position: relative; transition: background 0.25s ease;
 }}
 .agenda-cell:last-child {{ border-right: none; }}
 .agenda-cell:hover {{ background: rgba(232,131,58,0.05); }}
-.agenda-cell::before {{
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, {C["primary"]}00, {C["primary"]}55, {C["primary"]}00);
-    opacity: 0; transition: opacity 0.25s ease;
-}}
-.agenda-cell:hover::before {{ opacity: 1; }}
 .agenda-round {{
     font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
     letter-spacing: 0.22em; text-transform: uppercase;
@@ -483,9 +693,8 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     background: rgba(232,131,58,0.08); border: 1px solid rgba(232,131,58,0.22);
     color: {C["tertiary"]}; font-family: 'Outfit', sans-serif;
     font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
-    padding: 5px 14px; border-radius: 9999px; margin: 4px 3px; transition: all 0.2s ease;
+    padding: 5px 14px; border-radius: 9999px; margin: 4px 3px;
 }}
-.theme-tag:hover {{ background: rgba(232,131,58,0.14); border-color: rgba(232,131,58,0.40); }}
 
 /* ── DEBATE BUBBLES ── */
 .debate-wrap {{ display: flex; flex-direction: column; gap: 18px; margin-top: 10px; }}
@@ -510,28 +719,11 @@ div[data-testid="column"] div[data-testid="stButton"] > button:hover {{
     margin: 14px auto 6px auto; text-align: center;
 }}
 
-/* ── DIVIDER ── */
-.fancy-divider {{
-    height: 1px;
-    background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
-    margin: 32px 0;
-}}
-
-/* ── ERROR BOX ── */
-.err-box {{
-    background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
-    border-radius: 12px; padding: 20px 28px;
-    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
-    color: {C["primary"]}; text-align: center; letter-spacing: 0.02em;
-}}
-
-/* ── POSTER ── */
 [data-testid="stImage"] img {{
     border-radius: 12px !important;
     box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75), 0 0 50px -18px {C["glow_copper_md"]} !important;
 }}
 
-/* ── EXPANDERS ── */
 [data-testid="stExpander"] {{
     background: {C["bg_container"]} !important; border: 1px solid {C["outline"]} !important;
     border-radius: 12px !important; margin-top: 4px !important;
@@ -549,22 +741,55 @@ p, li, div {{ font-size: 15px; }}
 
 
 # ================================================================
-# HERO
+# TOP NAV
 # ================================================================
-st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
-st.markdown(
-    "<div class='hero-sub'>Search any film — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
-    unsafe_allow_html=True,
-)
-st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
+st.markdown(f"""
+<div class="cineglow-nav">
+    <div class="cineglow-nav-logo">✦ CineGlow</div>
+    <div class="cineglow-nav-links">
+        <a href="#">Archive</a>
+        <a href="#">Live Debates</a>
+        <a href="#">Agent Intel</a>
+        <a href="#">Collections</a>
+    </div>
+    <div style="width:28px;height:28px;border-radius:50%;border:1px solid {C['outline']};
+                display:flex;align-items:center;justify-content:center;color:{C['text_muted']};
+                font-size:16px;">⊙</div>
+</div>
+<div style="height:68px;"></div>
+""", unsafe_allow_html=True)
 
-c1, c2, c3 = st.columns([1, 2.6, 1])
-with c2:
-    user_input = st.chat_input("Search a film title, e.g. Oppenheimer…")
 
-st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+# ================================================================
+# SEARCH HERO + CHAT INPUT
+# ================================================================
+show_search = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
+
+if show_search:
+    st.markdown("""
+    <div class="search-hero">
+        <div class="search-hero-title">Search the Archive</div>
+        <div class="search-hero-sub">Interrogate the agentic consciousness on cinematic history.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Centered search input
+    _, col_search, _ = st.columns([1, 3, 1])
+    with col_search:
+        # Search icon overlay
+        st.markdown(f"""
+        <div style="position:relative;">
+            <div style="position:absolute;left:22px;top:50%;transform:translateY(-50%);
+                        color:{C['text_muted']};font-size:18px;z-index:100;pointer-events:none;
+                        line-height:1;">🔍</div>
+        </div>
+        """, unsafe_allow_html=True)
+        user_input = st.chat_input("Explore titles, directors, or thematic conflicts…")
+else:
+    user_input = None
+    _, col_search, _ = st.columns([1, 3, 1])
+    with col_search:
+        user_input = st.chat_input("Search another film…")
 
 
 # ================================================================
@@ -585,40 +810,153 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# POSTER GRID
+# HELPER: SCORE RING SVG (for result cards)
+# ================================================================
+def score_ring_html(score_str, size=56):
+    """Returns a score ring HTML element."""
+    try:
+        num = float(re.sub(r"[^\d.]", "", score_str.split("/")[0]))
+        pct = min(max((num / 10) * 100, 0), 100) if num <= 10 else min(max(num, 0), 100)
+    except Exception:
+        pct = 0
+    circ = 100.0
+    r = 45
+    dasharray = round((pct / 100) * (2 * 3.14159 * r / 2), 2)  # simplified
+    filled = round(pct, 2)
+    gap    = round(circ - filled, 2)
+    return f"""
+<div class="score-ring-wrap" style="width:{size}px;height:{size}px;">
+  <svg viewBox="0 0 36 36" style="width:{size}px;height:{size}px;transform:rotate(-90deg);">
+    <circle cx="18" cy="18" r="15.9" fill="none"
+      stroke="{C['bg_highest']}" stroke-width="2.8"/>
+    <circle cx="18" cy="18" r="15.9" fill="none"
+      stroke="{C['primary']}" stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-dasharray="{filled} {gap}"
+      style="filter:drop-shadow(0 0 5px rgba(232,131,58,0.55));"/>
+  </svg>
+  <span class="score-ring-label" style="font-size:{max(9, size//5)}px;">{score_str}</span>
+</div>"""
+
+
+# ================================================================
+# RESULTS GRID — NEW STITCH-STYLE LAYOUT
 # ================================================================
 search_results = st.session_state.search_results
+
 if search_results and not st.session_state.selected_imdb_id:
-    st.markdown("<div class='search-label'>▸ Select a film to begin the AI debate</div>", unsafe_allow_html=True)
+    n = len(search_results[:6])
 
-    display_results = search_results[:4]
-    cols = st.columns(len(display_results), gap="medium")
+    # Two-column layout: sidebar + results
+    col_sidebar, col_results = st.columns([1, 3.2], gap="large")
 
-    for i, item in enumerate(display_results):
-        poster  = item.get("Poster", "N/A")
-        title   = item.get("Title", "Unknown")
-        year    = item.get("Year", "")
-        imdb_id = item.get("imdbID", "")
-        has_poster = poster and poster != "N/A"
+    with col_sidebar:
+        st.markdown(f"""
+        <div class="filter-sidebar">
+            <div class="filter-section">
+                <span class="filter-label">Polarization Level</span>
+                <div class="filter-checkbox-row">
+                    <div class="filter-checkbox">
+                        <div style="width:10px;height:10px;background:{C['secondary']};border-radius:2px;opacity:0;"></div>
+                    </div>
+                    <span class="filter-checkbox-label">High Conflict</span>
+                </div>
+                <div class="filter-checkbox-row">
+                    <div class="filter-checkbox checked">
+                        <div style="width:10px;height:10px;background:{C['on_primary']};border-radius:2px;"></div>
+                    </div>
+                    <span class="filter-checkbox-label" style="color:{C['on_surface']};">Critical Consensus</span>
+                </div>
+                <div class="filter-checkbox-row">
+                    <div class="filter-checkbox">
+                        <div style="width:10px;height:10px;background:{C['secondary']};border-radius:2px;opacity:0;"></div>
+                    </div>
+                    <span class="filter-checkbox-label">Agentic Anomaly</span>
+                </div>
+            </div>
+            <div class="filter-section">
+                <span class="filter-label">Genre</span>
+                <div class="genre-pills">
+                    <span class="genre-pill active">Drama</span>
+                    <span class="genre-pill">Sci-Fi</span>
+                    <span class="genre-pill">Noir</span>
+                    <span class="genre-pill">Action</span>
+                    <span class="genre-pill">Horror</span>
+                    <span class="genre-pill">Comedy</span>
+                </div>
+            </div>
+            <div class="filter-section">
+                <span class="filter-label">Recent Intelligence</span>
+        """, unsafe_allow_html=True)
 
-        with cols[i]:
+        # Recent items (show first 2 results as "recent" placeholders)
+        for item in search_results[:2]:
+            t = item.get("Title", "Unknown")
+            y = item.get("Year", "")
+            st.markdown(f"""
+            <div class="recent-item">
+                <span class="recent-icon">⟳</span>
+                <div style="flex:1;overflow:hidden;">
+                    <div class="recent-title">{t}</div>
+                    <div class="recent-score">Year · {y}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
+    with col_results:
+        st.markdown(f"""
+        <div class="results-header">
+            <div class="results-header-title">Live Suggestions</div>
+            <div class="results-count">{n} Entit{'y' if n==1 else 'ies'} Matched</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for i, item in enumerate(search_results[:6]):
+            poster  = item.get("Poster", "N/A")
+            title   = item.get("Title", "Unknown")
+            year    = item.get("Year", "")
+            imdb_id = item.get("imdbID", "")
+            itype   = item.get("Type", "movie").title()
+            has_poster = poster and poster != "N/A"
+
+            # Build badge HTML
+            badges_html = f"""
+            <span class="result-badge badge-type">{itype}</span>
+            <span class="result-badge badge-genre">{year}</span>
+            """
+
+            # Poster HTML
             if has_poster:
-                try:
-                    st.image(poster, use_container_width=True)
-                except Exception:
-                    st.markdown(
-                        f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
-                        f"display:flex;align-items:center;justify-content:center;font-size:42px;cursor:pointer;'>🎬</div>",
-                        unsafe_allow_html=True,
-                    )
+                poster_html = f'<img src="{poster}" alt="{title}" style="width:100%;height:100%;object-fit:cover;filter:grayscale(0.25);"/>'
             else:
-                st.markdown(
-                    f"<div style='height:300px;background:{C['bg_high']};border-radius:10px;"
-                    f"display:flex;align-items:center;justify-content:center;font-size:42px;cursor:pointer;'>🎬</div>",
-                    unsafe_allow_html=True,
-                )
+                poster_html = '<div class="result-no-poster">🎬</div>'
 
-            if st.button("\u200b", key=f"sel_{imdb_id}_{i}", use_container_width=True):
+            st.markdown(f"""
+            <div class="result-card" id="card_{imdb_id}">
+                <div class="result-poster">
+                    {poster_html}
+                    <div class="result-poster-fade"></div>
+                </div>
+                <div class="result-body">
+                    <div>
+                        <div class="result-title-row">
+                            <div class="result-title">{title}</div>
+                            {score_ring_html("—", 56)}
+                        </div>
+                        <div class="result-meta">{year} · {itype}</div>
+                        <div class="result-excerpt">
+                            Click to start the AI debate — a Critic and an Advocate will dissect this film across four rounds and deliver a calibrated verdict.
+                        </div>
+                    </div>
+                    <div class="result-badges">{badges_html}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Invisible click button overlaid on the card
+            if st.button(f"▶ Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True):
                 st.session_state.selected_imdb_id = imdb_id
                 st.session_state.search_results   = []
                 st.session_state.cached_movie     = None
@@ -639,11 +977,8 @@ if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
 
     if st.session_state.cached_movie:
         m = st.session_state.cached_movie
-
-        # Fetch trailer in parallel with AI analysis
         with st.spinner("Hunting down the trailer…"):
             st.session_state.cached_trailer = fetch_trailer(m["title"], m.get("year", ""))
-
         raw_reviews = {
             "title":              m["title"],
             "critic_reviews":     m["plot"],
@@ -715,14 +1050,12 @@ elif movie and result:
         </div>
         """, unsafe_allow_html=True)
 
-        # Core themes
         themes = result.get("themes", [])
         if themes:
             st.markdown("<div class='section-heading' style='margin-top:10px;'>Core Themes</div>", unsafe_allow_html=True)
             tags_html = "".join(f"<span class='theme-tag'>#{t.strip()}</span>" for t in themes)
             st.markdown(f"<div style='line-height:2.6;margin-bottom:8px;'>{tags_html}</div>", unsafe_allow_html=True)
 
-        # Overview
         st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
         st.markdown(
             f"<p style='font-family:Outfit,sans-serif;font-size:15px;font-weight:300;"
@@ -730,7 +1063,7 @@ elif movie and result:
             unsafe_allow_html=True,
         )
 
-    # ── TRAILER SECTION ──────────────────────────────────────────
+    # ── TRAILER ──────────────────────────────────────────────────
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
     st.markdown("<div class='section-heading'>Official Trailer</div>", unsafe_allow_html=True)
     st.markdown("<div class='trailer-badge'>Watch Trailer</div>", unsafe_allow_html=True)
@@ -754,7 +1087,7 @@ elif movie and result:
             unsafe_allow_html=True,
         )
 
-    # ── DEBATE AGENDA — full-width horizontal strip ───────────────
+    # ── DEBATE AGENDA ─────────────────────────────────────────────
     st.markdown("<div class='section-heading'>The Debate Agenda</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="agenda-strip">
