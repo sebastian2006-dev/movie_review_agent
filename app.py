@@ -205,7 +205,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 .stApp {{
-    background: {C["bg"]} !important;
+    background: transparent !important;
     color: {C["on_surface"]};
     font-family: 'Outfit', sans-serif;
 }}
@@ -220,36 +220,48 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-right: 2rem !important;
 }}
 
-@keyframes ambientGlow {{
-    0%   {{ transform: translate(0, 0) scale(1); opacity: 0.7; }}
-    33%  {{ transform: translate(5%, 5%) scale(1.1); opacity: 1.0; }}
-    66%  {{ transform: translate(-5%, 10%) scale(1.05); opacity: 0.8; }}
-    100% {{ transform: translate(0, 0) scale(1); opacity: 0.7; }}
+/* ── HIGH VISIBILITY ANIMATED BG ── */
+.cinema-bg {{
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -999;
+    background-color: {C["bg"]};
+    overflow: hidden;
 }}
 
-.stApp::before {{
-    content: '';
-    position: fixed;
-    inset: -150px;
-    z-index: -1;
-    background:
-        radial-gradient(circle at 20% 30%, rgba(232,131,58,0.25) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(200,96,58,0.20) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(240,144,80,0.12) 0%, transparent 60%);
-    background-size: 100% 100%;
-    animation: ambientGlow 12s ease-in-out infinite;
-    pointer-events: none;
-    filter: blur(60px);
+.glow-orb {{
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.45;
+    mix-blend-mode: screen;
+    animation: orbMove 15s ease-in-out infinite alternate;
 }}
 
-/* Secondary glow layer for extra depth */
-.stApp::after {{
-    content: '';
-    position: fixed;
-    inset: -150px;
-    z-index: -2;
-    background: {C["bg"]};
-    pointer-events: none;
+.orb-1 {{
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, {C["primary"]} 0%, transparent 70%);
+    top: -10%; left: -10%;
+    animation-duration: 18s;
+}}
+.orb-2 {{
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, {C["secondary"]} 0%, transparent 70%);
+    bottom: -10%; right: -5%;
+    animation-delay: -5s;
+}}
+.orb-3 {{
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, {C["tertiary"]} 0%, transparent 70%);
+    top: 40%; left: 30%;
+    animation-duration: 22s;
+    animation-delay: -2s;
+}}
+
+@keyframes orbMove {{
+    0%   {{ transform: translate(0, 0) scale(1); }}
+    50%  {{ transform: translate(15%, 10%) scale(1.15); }}
+    100% {{ transform: translate(-10%, 20%) scale(0.9); }}
 }}
 
 ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
@@ -664,8 +676,16 @@ with st.sidebar:
 
 
 # ================================================================
-# HERO
+# HERO & BACKGROUND
 # ================================================================
+st.markdown("""
+    <div class="cinema-bg">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+""", unsafe_allow_html=True)
+
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
