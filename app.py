@@ -150,12 +150,10 @@ st.set_page_config(
 # ================================================================
 # SESSION STATE
 # ================================================================
-if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
-if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
-if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
-if "cached_trailer"   not in st.session_state: st.session_state.cached_trailer   = None
+if "conversations"    not in st.session_state: st.session_state.conversations    = {}
+if "active_id"        not in st.session_state: st.session_state.active_id        = None
+if "search_history"   not in st.session_state: st.session_state.search_history   = []
 if "search_results"   not in st.session_state: st.session_state.search_results   = []
-if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
@@ -611,9 +609,36 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["primary_container"]} !important;
 }}
 
+/* ── SIDEBAR STYLING ── */
+[data-testid="stSidebar"] {{
+    background-color: {C["bg_low"]} !important;
+    border-right: 1px solid {C["outline"]} !important;
+}}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+    padding-top: 2rem !important;
+    gap: 0.5rem !important;
+}}
+
 p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
+
+
+# ================================================================
+# SIDEBAR: DASHBOARD & HISTORY
+# ================================================================
+with st.sidebar:
+    st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color:{C['on_surface']}; margin-top:0;'>Your Archive</h3>", unsafe_allow_html=True)
+
+    if not st.session_state.conversations:
+        st.markdown(f"<div style='color:{C['text_muted']}; font-size:13px;'>Analyzed movies will appear here.</div>", unsafe_allow_html=True)
+
+    for imdb_id, data in st.session_state.conversations.items():
+        if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
+            st.session_state.active_id = imdb_id
+            st.session_state.search_results = [] 
+            st.rerun()
 
 
 # ================================================================
@@ -632,7 +657,7 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 # ================================================================
 # SEARCH UI: Type Toggle → Search Bar
 # ================================================================
-show_search_ui = not st.session_state.selected_imdb_id or not st.session_state.cached_movie
+show_search_ui = not st.session_state.active_id
 
 active_type = st.session_state.media_type
 
@@ -694,10 +719,7 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 if user_input and user_input.strip():
     if user_input != st.session_state.last_typed:
         st.session_state.last_typed       = user_input
-        st.session_state.selected_imdb_id = None
-        st.session_state.cached_movie     = None
-        st.session_state.cached_result    = None
-        st.session_state.cached_trailer   = None
+        st.session_state.active_id         = None
         with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input, st.session_state.media_type)
             st.session_state.search_results = results
@@ -710,7 +732,7 @@ if user_input and user_input.strip():
 # ================================================================
 search_results = st.session_state.search_results
 
-if search_results and not st.session_state.selected_imdb_id:
+if search_results and not st.session_state.active_id:
     n = len(search_results[:6])
     st.markdown(
         f"<div class='search-label'>▸ {n} result{'s' if n != 1 else ''} found — select a title to start the AI debate</div>",
@@ -834,12 +856,37 @@ if search_results and not st.session_state.selected_imdb_id:
         components.html(card_html, height=215, scrolling=False)
 
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
-            st.session_state.selected_imdb_id = imdb_id
-            st.session_state.search_results   = []
-            st.session_state.cached_movie     = None
-            st.session_state.cached_result    = None
-            st.session_state.cached_trailer   = None
-            st.rerun()
+            with st.spinner("Generating AI Debate..."):
+                # 1. Fetch all data immediately upon selection
+                movie_data = fetch_movie_by_id(imdb_id)
+                trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
+                
+                # Prepare data for the AI models
+                raw_reviews = {
+                    "title":              movie_data["title"],
+                    "critic_reviews":     movie_data["plot"],
+                    "audience_reactions": movie_data["actors"],
+                    "discussion_points":  movie_data["genre"],
+                }
+                
+                # Run the AI Analysis
+                debate_result = analyze_movie(raw_reviews)
+                
+                # 2. Save to global history (This enables your Sidebar Archive)
+                st.session_state.conversations[imdb_id] = {
+                    "movie":   movie_data,
+                    "result":  debate_result,
+                    "trailer": trailer_id
+                }
+                
+                # 3. Add to search history for the suggestions feature
+                if title not in st.session_state.search_history:
+                    st.session_state.search_history.insert(0, title)
+                    
+                # 4. Set as active view and clear current search results
+                st.session_state.active_id = imdb_id
+                st.session_state.search_results = []
+                st.rerun()
 
         st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
 
@@ -849,29 +896,13 @@ if search_results and not st.session_state.selected_imdb_id:
 # ================================================================
 # RUN ANALYSIS
 # ================================================================
-if st.session_state.selected_imdb_id and not st.session_state.cached_movie:
-    with st.spinner("Fetching film details…"):
-        st.session_state.cached_movie = fetch_movie_by_id(st.session_state.selected_imdb_id)
-        st.session_state.cached_query = st.session_state.selected_imdb_id
-
-    if st.session_state.cached_movie:
-        m = st.session_state.cached_movie
-        with st.spinner("Hunting down the trailer…"):
-            st.session_state.cached_trailer = fetch_trailer(m["title"], m.get("year", ""))
-
-        raw_reviews = {
-            "title":              m["title"],
-            "critic_reviews":     m["plot"],
-            "audience_reactions": m["actors"],
-            "discussion_points":  m["genre"],
-        }
-        with st.spinner("AI models are entering the debate hall…"):
-            st.session_state.cached_result = analyze_movie(raw_reviews)
-
-
-movie   = st.session_state.cached_movie
-result  = st.session_state.cached_result
-trailer = st.session_state.cached_trailer
+if st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
+    active_data = st.session_state.conversations[st.session_state.active_id]
+    movie   = active_data["movie"]
+    result  = active_data["result"]
+    trailer = active_data["trailer"]
+else:
+    movie, result, trailer = None, None, None
 
 
 # ================================================================
@@ -881,7 +912,7 @@ if (
     st.session_state.last_typed is not None
     and not search_results
     and not movie
-    and not st.session_state.selected_imdb_id
+    and not st.session_state.active_id
 ):
     err_msg = st.session_state.get("search_error") or "No results found. Try a different title or spelling."
     st.markdown(f"<div class='err-box'>⚠ &nbsp; {err_msg}</div>", unsafe_allow_html=True)
@@ -890,7 +921,7 @@ if (
 # ================================================================
 # RENDER ANALYSIS
 # ================================================================
-elif movie and result:
+elif st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
 
     # ── MOVIE HEADER ─────────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.8], gap="large")
