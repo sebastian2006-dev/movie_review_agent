@@ -205,9 +205,12 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 .stApp {{
-    background-color: {C["bg"]} !important;
+    background: {C["bg"]} !important;
     color: {C["on_surface"]};
     font-family: 'Outfit', sans-serif;
+}}
+[data-testid="stAppViewContainer"] {{
+    background: transparent !important;
 }}
 .block-container {{
     max-width: 1200px;
@@ -218,28 +221,35 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 
 @keyframes ambientGlow {{
-    0%   {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; }}
-    25%  {{ background-position: 15% 10%, 85% 90%, 40% 60%, 50% 95%; }}
-    50%  {{ background-position: -10% 15%, 110% 85%, 60% 40%, 50% 105%; }}
-    75%  {{ background-position: 20% -5%, 80% 105%, 35% 45%, 50% 90%; }}
-    100% {{ background-position: 0% 0%, 100% 100%, 50% 50%, 50% 100%; }}
+    0%   {{ transform: translate(0, 0) scale(1); opacity: 0.7; }}
+    33%  {{ transform: translate(5%, 5%) scale(1.1); opacity: 1.0; }}
+    66%  {{ transform: translate(-5%, 10%) scale(1.05); opacity: 0.8; }}
+    100% {{ transform: translate(0, 0) scale(1); opacity: 0.7; }}
 }}
 
 .stApp::before {{
     content: '';
     position: fixed;
-    inset: -100px;
+    inset: -150px;
     z-index: -1;
     background:
-        radial-gradient(ellipse 60% 50% at 8% 0%,    rgba(232,131,58,0.22)  0%, transparent 70%),
-        radial-gradient(ellipse 50% 45% at 92% 95%,  rgba(200,96,58,0.18)   0%, transparent 65%),
-        radial-gradient(ellipse 35% 35% at 50% 55%,  rgba(240,144,80,0.10)  0%, transparent 75%),
-        radial-gradient(ellipse 85% 25% at 50% 100%, rgba(42,29,21,0.90)    0%, transparent 80%);
-    background-size: 200% 200%;
-    animation: ambientGlow 22s ease-in-out infinite;
+        radial-gradient(circle at 20% 30%, rgba(232,131,58,0.25) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(200,96,58,0.20) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(240,144,80,0.12) 0%, transparent 60%);
+    background-size: 100% 100%;
+    animation: ambientGlow 12s ease-in-out infinite;
     pointer-events: none;
-    filter: blur(40px);
-    opacity: 0.95;
+    filter: blur(60px);
+}}
+
+/* Secondary glow layer for extra depth */
+.stApp::after {{
+    content: '';
+    position: fixed;
+    inset: -150px;
+    z-index: -2;
+    background: {C["bg"]};
+    pointer-events: none;
 }}
 
 ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
