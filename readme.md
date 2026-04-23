@@ -1,4 +1,4 @@
-# 🎬 CineGlow · Movie Review Agent
+# 🎬 Movie Review Agent
 
 > *A Critic and an Advocate debate any film across four rounds — then deliver a calibrated verdict.*
 
