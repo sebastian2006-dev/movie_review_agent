@@ -150,16 +150,13 @@ st.set_page_config(
 # ================================================================
 # SESSION STATE
 # ================================================================
-if "cached_query"     not in st.session_state: st.session_state.cached_query     = None
-if "cached_movie"     not in st.session_state: st.session_state.cached_movie     = None
-if "cached_result"    not in st.session_state: st.session_state.cached_result    = None
-if "cached_trailer"   not in st.session_state: st.session_state.cached_trailer   = None
+if "conversations"    not in st.session_state: st.session_state.conversations    = {}
+if "active_id"        not in st.session_state: st.session_state.active_id        = None
+if "search_history"   not in st.session_state: st.session_state.search_history   = []
 if "search_results"   not in st.session_state: st.session_state.search_results   = []
-if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id = None
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
-
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
 # ================================================================
@@ -614,6 +611,21 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
+# ================================================================
+# SIDEBAR: DASHBOARD & HISTORY
+# ================================================================
+with st.sidebar:
+    st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color:{C['on_surface']}; margin-top:0;'>Your Archive</h3>", unsafe_allow_html=True)
+
+    if not st.session_state.conversations:
+        st.markdown(f"<div style='color:{C['text_muted']}; font-size:13px;'>Analyzed movies will appear here.</div>", unsafe_allow_html=True)
+
+    for imdb_id, data in st.session_state.conversations.items():
+        if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
+            st.session_state.active_id = imdb_id
+            st.session_state.search_results = [] 
+            st.rerun()
 
 
 # ================================================================
@@ -833,41 +845,33 @@ if search_results and not st.session_state.selected_imdb_id:
 
         components.html(card_html, height=215, scrolling=False)
 
-        # Replacement for Lines 501–508 in your app.py
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             with st.spinner("Generating AI Debate..."):
-                # 1. Fetch all data immediately upon selection
+                # 1. Fetch movie data
                 movie_data = fetch_movie_by_id(imdb_id)
                 trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
                 
-                # Prepare data for the AI models
+                # 2. Package for AI
                 raw_reviews = {
-                    "title":              movie_data["title"],
-                    "critic_reviews":     movie_data["plot"],
+                    "title": movie_data["title"],
+                    "critic_reviews": movie_data["plot"],
                     "audience_reactions": movie_data["actors"],
-                    "discussion_points":  movie_data["genre"],
+                    "discussion_points": movie_data["genre"],
                 }
-                
-                # Run the AI Analysis
                 debate_result = analyze_movie(raw_reviews)
                 
-                # 2. Save to global history (This enables your Sidebar Archive)
-                if "conversations" not in st.session_state:
-                    st.session_state.conversations = {}
-                
+                # 3. SAVE TO DASHBOARD
                 st.session_state.conversations[imdb_id] = {
-                    "movie":   movie_data,
-                    "result":  debate_result,
+                    "movie": movie_data,
+                    "result": debate_result,
                     "trailer": trailer_id
                 }
                 
-                # 3. Add to search history for the suggestions feature
-                if "search_history" not in st.session_state:
-                    st.session_state.search_history = []
+                # 4. Add to history for suggestions
                 if title not in st.session_state.search_history:
                     st.session_state.search_history.insert(0, title)
                     
-                # 4. Set as active view and clear current search results
+                # 5. Set as active and clear search
                 st.session_state.active_id = imdb_id
                 st.session_state.search_results = []
                 st.rerun()
@@ -924,7 +928,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
     movie   = active_data["movie"]
     result  = active_data["result"]
     trailer = active_data["trailer"]
-    # ── MOVIE HEADER ─────────────────────────────────────────────
+    # ── MOVIE HEADER ───────────────────────────────────────────── 
     col_poster, col_info = st.columns([1, 2.8], gap="large")
 
     with col_poster:
