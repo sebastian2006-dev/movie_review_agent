@@ -19,13 +19,13 @@ def search_movies(query: str, media_type: str = "movie"):
     try:
         r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
         d = r.json()
-        if d.get("Response") == "True" and d.get("imdbID"):
+        if d.get("Response") == "True" and d.get("imdbID") and d.get("Title"):
             exact = {
-                "Title":  d.get("Title", query),
-                "Year":   d.get("Year", ""),
-                "imdbID": d.get("imdbID", ""),
+                "Title":  d["Title"],
+                "Year":   d.get("Year", "—"),
+                "imdbID": d["imdbID"],
                 "Poster": d.get("Poster", "N/A"),
-                "Type":   d.get("Type", ""),
+                "Type":   d.get("Type", type_param),
             }
     except Exception:
         pass
@@ -35,7 +35,11 @@ def search_movies(query: str, media_type: str = "movie"):
         r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
         d = r.json()
         if d.get("Response") == "True":
-            fuzzy = d.get("Search", [])
+            # Only include items that have at least a title and ID
+            fuzzy = [
+                item for item in d.get("Search", [])
+                if item.get("Title") and item.get("imdbID")
+            ]
     except Exception:
         pass
 
@@ -48,8 +52,8 @@ def search_movies(query: str, media_type: str = "movie"):
         seen.add(exact["imdbID"])
 
     for item in fuzzy:
-        iid = item.get("imdbID", "")
-        if iid not in seen:
+        iid = item.get("imdbID")
+        if iid and iid not in seen:
             merged.append(item)
             seen.add(iid)
 
@@ -155,7 +159,6 @@ if "selected_imdb_id" not in st.session_state: st.session_state.selected_imdb_id
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
-if "selected_genre"   not in st.session_state: st.session_state.selected_genre   = "Any Genre"
 
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
@@ -191,12 +194,6 @@ C = {
     "critic_border":    "rgba(232,131,58,0.20)",
     "advocate_border":  "rgba(200,160,112,0.20)",
 }
-
-GENRES = [
-    "Any Genre", "Action", "Adventure", "Animation", "Comedy", "Crime",
-    "Documentary", "Drama", "Fantasy", "Horror", "Musical", "Mystery",
-    "Romance", "Sci-Fi", "Thriller", "Western",
-]
 
 # ================================================================
 # GLOBAL CSS
@@ -288,33 +285,6 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     border-color: {C["primary"]};
     color: {C["on_primary"]};
     box-shadow: 0 4px 20px {C["glow_copper_btn"]};
-}}
-
-/* ── GENRE LABEL ── */
-.genre-label-row {{
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-    letter-spacing: 0.24em; text-transform: uppercase;
-    color: {C["text_muted"]}; text-align: center;
-    margin-bottom: 12px; opacity: 0.8;
-}}
-
-/* ── GENRE PILL BUTTONS ── */
-div[data-testid="stButton"] > button {{
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 11px !important; font-weight: 500 !important;
-    letter-spacing: 0.10em !important; text-transform: uppercase !important;
-    border-radius: 9999px !important;
-    padding: 5px 4px !important;
-    border: 1px solid {C["outline"]} !important;
-    background: transparent !important;
-    color: {C["on_surface_var"]} !important;
-    transition: all 0.2s ease !important;
-    line-height: 1.4 !important;
-}}
-div[data-testid="stButton"] > button:hover {{
-    border-color: rgba(232,131,58,0.40) !important;
-    color: {C["tertiary"]} !important;
-    background: rgba(232,131,58,0.07) !important;
 }}
 
 /* ── CHAT INPUT ── */
@@ -680,51 +650,6 @@ with c2:
         placeholder = "Search another title…"
     user_input = st.chat_input(placeholder)
 
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
-if show_search_ui:
-    # ── 3. Genre Pills (clickable Streamlit buttons) ──────────────
-    selected_genre = st.session_state.selected_genre
-
-    # Build rows of pills — using st.columns for interactivity
-    # Render all genres as a wrapped flex row via HTML + hidden st.buttons
-    st.markdown("<div class='genre-label-row'>Filter by Genre</div>", unsafe_allow_html=True)
-
-    # Split genres into rows of 8
-    chunk_size = 8
-    genre_chunks = [GENRES[i:i+chunk_size] for i in range(0, len(GENRES), chunk_size)]
-
-    # Find which overall index the active genre is at
-    active_idx = GENRES.index(selected_genre)  # 0-based global index
-
-    # Build one CSS rule per genre button to highlight the active one.
-    # Streamlit renders buttons in DOM order — we inject a style block
-    # that uses the :nth-of-type selector on the stButton wrappers.
-    # Each genre button gets a unique key, so we can target its sibling
-    # container by counting. Simplest reliable approach: wrap active in a div.
-
-    for chunk in genre_chunks:
-        cols = st.columns(len(chunk), gap="small")
-        for col, g in zip(cols, chunk):
-            is_active = g == selected_genre
-            with col:
-                if is_active:
-                    st.markdown(
-                        f"<div style='"
-                        f"border-radius:9999px;"
-                        f"outline:1px solid {C['primary']};"
-                        f"background:rgba(232,131,58,0.13);"
-                        f"overflow:hidden;margin:-1px;'>",
-                        unsafe_allow_html=True,
-                    )
-                if st.button(g, key=f"genre_btn_{g}", use_container_width=True):
-                    st.session_state.selected_genre = g
-                    st.rerun()
-                if is_active:
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
 
@@ -763,12 +688,13 @@ if search_results and not st.session_state.selected_imdb_id:
         year    = item.get("Year", "")
         imdb_id = item.get("imdbID", "")
         itype   = item.get("Type", "movie").title()
-        has_poster = poster and poster != "N/A"
+        has_poster = poster and poster != "N/A" and poster.startswith("http")
 
         poster_html = (
             f'<img src="{poster}" alt="{title}" style="width:100%;height:100%;object-fit:cover;"/>'
             if has_poster
-            else '<div class="result-no-poster">🎬</div>'
+            else f'<div class="result-no-poster" style="background:{C["bg_high"]};">'
+                 f'<span style="font-size:40px;opacity:0.3;">🎬</span></div>'
         )
         fade_html = '<div class="result-poster-fade"></div>' if has_poster else ""
 
