@@ -248,7 +248,78 @@ if "theme"          not in st.session_state: st.session_state.theme          = "
 # ── resolve token map for current SSR render ────────────────────
 current_theme = st.session_state.theme
 C = DARK if current_theme == "dark" else LIGHT
+# ================================================================
+# THEME TOGGLE & SIDEBAR VISIBILITY FIX
+# ================================================================
+toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
+toggle_label = "Light" if current_theme == "dark" else "Dark"
+next_theme   = "light" if current_theme == "dark" else "dark"
 
+st.markdown(f"""
+<style>
+    /* 1. THEME TOGGLE POSITION & SIZE (Right below Streamlit share/pencil icons) */
+    div[data-testid="stButton"]:has(button[key="perfect_theme_toggle"]) {{
+        position: fixed !important;
+        top: 60px !important;   /* Pushes it down exactly below the header icons */
+        right: 15px !important; /* Keeps it slightly away from the extreme edge */
+        z-index: 999999 !important;
+        width: auto !important;
+    }}
+
+    /* Target this specific button to completely override the giant padding */
+    button[key="perfect_theme_toggle"] {{
+        all: unset !important; /* Completely ignores your global button CSS */
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: {C["bg_container"]} !important;
+        color: {C["primary"]} !important;
+        border: 1px solid {C["primary"]} !important;
+        border-radius: 20px !important;
+        padding: 0px 10px !important;
+        font-size: 11px !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: bold !important;
+        height: 26px !important;
+        width: 75px !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    }}
+    
+    button[key="perfect_theme_toggle"]:hover {{
+        background-color: {C["primary"]} !important;
+        color: {C["on_primary"]} !important;
+    }}
+
+    /* 2. SIDEBAR VISIBILITY FIX FOR LIGHT MODE */
+    [data-testid="stSidebarCollapsedControl"], 
+    [data-testid="collapsedControl"] {{
+        background-color: {C["bg_container"]} !important;
+        border: 2px solid {C["primary"]} !important;
+        border-radius: 50% !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }}
+
+    /* Force the arrow inside to be Copper/Orange so it NEVER vanishes */
+    [data-testid="stSidebarCollapsedControl"] svg,
+    [data-testid="collapsedControl"] svg {{
+        fill: {C["primary"]} !important;
+        stroke: {C["primary"]} !important;
+        color: {C["primary"]} !important;
+        width: 20px !important;
+        height: 20px !important;
+    }}
+</style>
+""", unsafe_allow_html=True)
+
+if st.button(f"{toggle_icon} {toggle_label}", key="perfect_theme_toggle"):
+    st.session_state.theme = next_theme
+    st.rerun()
 
 # ================================================================
 # GLOBAL CSS  (uses C tokens for SSR)
@@ -831,46 +902,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
-# ── resolve token map for current SSR render ────────────────────
-current_theme = st.session_state.theme
-C = DARK if current_theme == "dark" else LIGHT
 
-# CREATE THE VARIABLES HERE FIRST
-toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
-toggle_label = "Light" if current_theme == "dark" else "Dark"
-next_theme   = "light" if current_theme == "dark" else "dark"
-
-# NOW PASTE THE REPLACEMENT SECTION
-st.markdown(f"""
-<style>
-.ncr-theme-btn-wrapper {{
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    z-index: 999999 !important;
-}}
-
-/* Force small size and override the global button padding */
-.ncr-theme-btn-wrapper div[data-testid="stButton"] > button {{
-    padding: 2px 12px !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    width: auto !important;
-    font-size: 10px !important;
-    line-height: 1 !important;
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    border-radius: 20px !important;
-}}
-</style>
-<div class="ncr-theme-btn-wrapper">
-""", unsafe_allow_html=True)
-
-if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
-    st.session_state.theme = next_theme
-    st.rerun()
-
-st.markdown("</div>", unsafe_allow_html=True)
 
 # ── FINAL CUSTOM COMPONENT TOGGLE (PLACE AT BOTTOM) ──
 # This uses a standard HTML button to avoid Streamlit's global button CSS
