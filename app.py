@@ -243,87 +243,12 @@ if "search_results" not in st.session_state: st.session_state.search_results = [
 if "last_typed"     not in st.session_state: st.session_state.last_typed     = None
 if "search_error"   not in st.session_state: st.session_state.search_error   = None
 if "media_type"     not in st.session_state: st.session_state.media_type     = "Movie"
+if "theme"          not in st.session_state: st.session_state.theme          = "dark"
 
-# ── THEME INITIALIZATION ─────────────────────────────────────
-if "theme" not in st.session_state:
-    st.session_state.theme = "dark"
-
+# ── resolve token map for current SSR render ────────────────────
 current_theme = st.session_state.theme
 C = DARK if current_theme == "dark" else LIGHT
 
-# ================================================================
-# 1. THE ONLY THEME TOGGLE & SIDEBAR FIX YOU NEED
-# ================================================================
-toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
-toggle_label = "Light" if current_theme == "dark" else "Dark"
-
-st.markdown(f"""
-<style>
-    /* POSITION: Exactly under the Streamlit top-right icons */
-    div[data-testid="stVerticalBlock"] > div:has(button[key="true_theme_switch"]) {{
-        position: fixed !important;
-        top: 60px !important;
-        right: 15px !important;
-        z-index: 999999 !important;
-        width: auto !important;
-    }}
-
-    /* BUTTON LOOK: Small, precise, and immune to your global CSS */
-    button[key="true_theme_switch"] {{
-        all: unset !important; 
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        background-color: {C["bg_container"]} !important;
-        color: {C["primary"]} !important;
-        border: 1px solid {C["primary"]} !important;
-        border-radius: 20px !important;
-        padding: 0px 10px !important;
-        font-size: 11px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        height: 26px !important;
-        width: 75px !important;
-        cursor: pointer !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-        transition: all 0.2s ease !important;
-    }}
-    
-    button[key="true_theme_switch"]:hover {{
-        background-color: {C["primary"]} !important;
-        color: {C["on_primary"]} !important;
-    }}
-
-    /* SIDEBAR VISIBILITY: Force the arrow to be a highly visible orange/copper circle */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"] {{
-        background-color: {C["bg_container"]} !important;
-        border: 2px solid {C["primary"]} !important;
-        border-radius: 50% !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        left: 10px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-    }}
-
-    [data-testid="stSidebarCollapsedControl"] svg,
-    [data-testid="collapsedControl"] svg {{
-        fill: {C["primary"]} !important;
-        stroke: {C["primary"]} !important;
-        color: {C["primary"]} !important;
-    }}
-</style>
-""", unsafe_allow_html=True)
-
-# The ACTUAL click logic (Only happens once in the entire file)
-if st.button(f"{toggle_icon} {toggle_label}", key="true_theme_switch"):
-    st.session_state.theme = "light" if current_theme == "dark" else "dark"
-    st.rerun()
-
-# ================================================================
 
 # ================================================================
 # GLOBAL CSS  (uses C tokens for SSR)
@@ -368,9 +293,13 @@ st.markdown(f"""
 header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
-/* ── FIX: SIDEBAR COLLAPSE ARROW VISIBILITY ── */
+/* ================================================================
+   FIX 1 — SIDEBAR COLLAPSE ARROW: fully visible in BOTH themes
+   Uses baked-in C[] values so it's theme-aware at SSR time.
+   Multiple selector layers to defeat Streamlit's specificity.
+================================================================ */
 [data-testid="stSidebarCollapsedControl"],
-button[kind="headerNoSpacing"] {{
+[data-testid="collapsedControl"] {{
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -378,14 +307,6 @@ button[kind="headerNoSpacing"] {{
     border: 1px solid {C["outline"]} !important;
     border-radius: 0 8px 8px 0 !important;
     box-shadow: 2px 0 12px {C["glow_copper"]} !important;
-    left: 0 !important; /* Ensure it sticks to the left edge when closed */
-}}
-
-/* Force the icon color to your primary brand color */
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="stSidebarCollapsedControl"] i {{
-    color: {C["primary"]} !important;
-    fill: {C["primary"]} !important;
 }}
 
 /* Every button inside the collapse control */
@@ -908,69 +829,63 @@ st.markdown(
 st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
 
 
-# ── FINAL CUSTOM COMPONENT TOGGLE (PLACE AT BOTTOM) ──
-# This uses a standard HTML button to avoid Streamlit's global button CSS
+# ================================================================
+# FIX 1 — THEME TOGGLE
+# Inject a fixed-position wrapper div immediately before the button,
+# then use CSS to pull that button into the fixed layer.
+# The wrapper div gets a unique class; CSS positions it top-right.
+# ================================================================
+toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
+toggle_label = "Light" if current_theme == "dark" else "Dark"
+next_theme   = "light" if current_theme == "dark" else "dark"
+
+# Inject the positioning CSS for the toggle container
 st.markdown(f"""
 <style>
-    /* 1. POSITIONING THE CONTAINER */
-    .custom-toggle-container {{
-        position: fixed !important;
-        top: 15px !important;
-        right: 20px !important;
-        z-index: 9999999 !important;
-    }}
-
-    /* 2. THE ACTUAL BUTTON (NO STREAMLIT INHERITANCE) */
-    .theme-switch-btn {{
-        background-color: {C["bg_container"]} !important;
-        color: {C["primary"]} !important;
-        border: 1.5px solid {C["primary"]} !important;
-        border-radius: 20px !important;
-        padding: 4px 14px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-        text-transform: uppercase;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }}
-
-    .theme-switch-btn:hover {{
-        background-color: {C["primary"]} !important;
-        color: {C["on_primary"]} !important;
-    }}
-
-    /* 3. SIDEBAR FIX (FORCE VISIBILITY) */
-    [data-testid="stSidebarCollapsedControl"] {{
-        background: {C["bg_container"]} !important;
-        border: 1px solid {C["primary"]} !important;
-        border-radius: 50% !important;
-        color: {C["primary"]} !important;
-        left: 10px !important;
-    }}
-    [data-testid="stSidebarCollapsedControl"] svg {{
-        fill: {C["primary"]} !important;
-    }}
+/* Wrap the very next stButton inside a fixed top-right box */
+.ncr-toggle-container {{
+    position: fixed !important;
+    top: 14px !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+}}
+.ncr-toggle-container div[data-testid="stButton"] > button {{
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.13em !important;
+    text-transform: uppercase !important;
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    color: {C["text_muted"]} !important;
+    border-radius: 9999px !important;
+    padding: 4px 14px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    line-height: 20px !important;
+    box-shadow: 0 2px 10px {C["glow_copper"]} !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+    width: auto !important;
+    cursor: pointer !important;
+}}
+.ncr-toggle-container div[data-testid="stButton"] > button:hover {{
+    border-color: {C["primary"]} !important;
+    color: {C["primary_container"]} !important;
+    background: {C["critic_bg"]} !important;
+    box-shadow: 0 4px 18px {C["glow_copper_md"]} !important;
+    transform: translateY(-1px) !important;
+}}
 </style>
-
-<div class="custom-toggle-container">
-    <form>
-        <button formmethod="post" name="toggle_theme" value="true" class="theme-switch-btn">
-            {toggle_icon} {toggle_label}
-        </button>
-    </form>
-</div>
+<div class="ncr-toggle-container">
 """, unsafe_allow_html=True)
 
-# Handle the click from the custom HTML button
-if st.query_params.get("toggle_theme") == "true":
+if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
     st.session_state.theme = next_theme
-    # Clear the query param so it doesn't loop
-    st.query_params.clear()
     st.rerun()
 
 # Close the wrapper div — note: st.button renders outside the markdown div,
