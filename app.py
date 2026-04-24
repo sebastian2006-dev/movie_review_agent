@@ -301,6 +301,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
    Uses baked-in sidebar_icon_color (black in light, white in dark)
    so the icon is always visible regardless of theme.
 ================================================================ */
+/* FIX — SIDEBAR COLLAPSE ARROW: black in light, white in dark */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {{
     display: flex !important;
@@ -318,7 +319,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 [data-testid="collapsedControl"] button,
 [data-testid="collapsedControl"] button:hover,
 [data-testid="collapsedControl"] button:focus {{
-    color: {sidebar_icon_color} !important;
+    color: {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -326,7 +327,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     visibility: visible !important;
 }}
 
-/* SVG icon — force fill AND stroke so icon is never invisible */
 [data-testid="stSidebarCollapsedControl"] svg,
 [data-testid="stSidebarCollapsedControl"] svg *,
 [data-testid="stSidebarCollapsedControl"] button svg,
@@ -335,14 +335,13 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 [data-testid="collapsedControl"] svg *,
 [data-testid="collapsedControl"] button svg,
 [data-testid="collapsedControl"] button svg * {{
-    fill:    {sidebar_icon_color} !important;
-    stroke:  {sidebar_icon_color} !important;
-    color:   {sidebar_icon_color} !important;
+    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     opacity: 1 !important;
     visibility: visible !important;
 }}
 
-/* Inner div wrapper */
 div[data-testid="stSidebarCollapsedControl"] > div,
 div[data-testid="collapsedControl"] > div {{
     background: {C["bg_container"]} !important;
