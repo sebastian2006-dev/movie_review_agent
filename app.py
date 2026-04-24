@@ -8,174 +8,11 @@ API_KEY         = st.secrets["OMDB_API_KEY"]
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
 
-# ---------------- SEARCH MOVIES ----------------
-def search_movies(query: str, media_type: str = "movie"):
-    if not API_KEY:
-        return [], None
-    url = "http://www.omdbapi.com/"
-
-    type_param = "movie" if media_type == "Movie" else "series"
-
-    exact = None
-    try:
-        r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
-        d = r.json()
-        if d.get("Response") == "True" and d.get("imdbID") and d.get("Title"):
-            exact = {
-                "Title":  d["Title"],
-                "Year":   d.get("Year", "—"),
-                "imdbID": d["imdbID"],
-                "Poster": d.get("Poster", "N/A"),
-                "Type":   d.get("Type", type_param),
-            }
-    except Exception:
-        pass
-
-    fuzzy = []
-    try:
-        r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
-        d = r.json()
-        if d.get("Response") == "True":
-            fuzzy = [
-                item for item in d.get("Search", [])
-                if item.get("Title") and item.get("imdbID")
-            ]
-    except Exception:
-        pass
-
-    seen = set()
-    merged = []
-    error_msg = None
-
-    if exact:
-        # Fetch the short plot for the exact match
-        try:
-            r_plot = requests.get(url, params={"i": exact["imdbID"], "apikey": API_KEY, "plot": "short"}, timeout=5)
-            d_plot = r_plot.json()
-            exact["Plot"] = d_plot.get("Plot", "")
-        except:
-            exact["Plot"] = ""
-        merged.append(exact)
-        seen.add(exact["imdbID"])
-
-    # For fuzzy results, we'll fetch short plots for the top few to show snippets
-    for item in fuzzy[:6]:
-        iid = item.get("imdbID")
-        if iid and iid not in seen:
-            try:
-                r_p = requests.get(url, params={"i": iid, "apikey": API_KEY, "plot": "short"}, timeout=5)
-                d_p = r_p.json()
-                item["Plot"] = d_p.get("Plot", "")
-            except:
-                item["Plot"] = ""
-            merged.append(item)
-            seen.add(iid)
-
-    if not merged:
-        try:
-            r = requests.get(url, params={"s": query, "apikey": API_KEY, "type": type_param}, timeout=10)
-            d = r.json()
-            if d.get("Response") == "False":
-                error_msg = d.get("Error")
-        except Exception:
-            pass
-
-    return merged[:6], error_msg
-
-
-# ---------------- FETCH MOVIE DATA BY IMDB ID ----------------
-def fetch_movie_by_id(imdb_id: str):
-    if not API_KEY:
-        return None
-    url = "http://www.omdbapi.com/"
-    params = {"i": imdb_id, "apikey": API_KEY, "plot": "full", "r": "json"}
-    try:
-        res = requests.get(url, params=params, timeout=10)
-        data = res.json()
-    except Exception:
-        return None
-    if not data or data.get("Response") == "False":
-        return None
-
-    imdb_rating = data.get("imdbRating", "—")
-    if not imdb_rating or imdb_rating == "N/A":
-        imdb_rating = "—"
-
-    rt_rating = "—"
-    for r in data.get("Ratings", []):
-        source = r.get("Source", "")
-        if "Rotten Tomatoes" in source:
-            rt_rating = r.get("Value", "—")
-            break
-
-    director = data.get("Director", "")
-    if not director or director == "N/A":
-        director = "—"
-
-    return {
-        "title":       data.get("Title"),
-        "year":        data.get("Year"),
-        "plot":        data.get("Plot"),
-        "actors":      data.get("Actors"),
-        "genre":       data.get("Genre"),
-        "director":    director,
-        "imdb_rating": imdb_rating,
-        "rt_rating":   rt_rating,
-        "poster":      data.get("Poster"),
-        "runtime":     data.get("Runtime"),
-    }
-
-
-# ---------------- FETCH YOUTUBE TRAILER ----------------
-def fetch_trailer(title: str, year: str = "") -> str | None:
-    if not YOUTUBE_API_KEY:
-        return None
-    query = f"{title} {year} official trailer".strip()
-    try:
-        resp = requests.get(
-            "https://www.googleapis.com/youtube/v3/search",
-            params={
-                "part":       "snippet",
-                "q":          query,
-                "type":       "video",
-                "maxResults": 1,
-                "key":        YOUTUBE_API_KEY,
-            },
-            timeout=10,
-        )
-        data = resp.json()
-        items = data.get("items", [])
-        if items:
-            return items[0]["id"]["videoId"]
-    except Exception:
-        pass
-    return None
-
-
 # ================================================================
-# PAGE CONFIG
+# THEME DESIGN TOKENS
 # ================================================================
-st.set_page_config(
-    page_title="NoCap Reviews",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
-# ================================================================
-# SESSION STATE
-# ================================================================
-if "conversations"    not in st.session_state: st.session_state.conversations    = {}
-if "active_id"        not in st.session_state: st.session_state.active_id        = None
-if "search_history"   not in st.session_state: st.session_state.search_history   = []
-if "search_results"   not in st.session_state: st.session_state.search_results   = []
-if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
-if "search_error"     not in st.session_state: st.session_state.search_error     = None
-if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
-
-# ================================================================
-# DARK VELVET CINEMA — DESIGN TOKENS
-# ================================================================
-C = {
+DARK = {
     "bg":               "#120c09",
     "bg_lowest":        "#0d0806",
     "bg_low":           "#1a120d",
@@ -205,14 +42,281 @@ C = {
     "advocate_bg":      "rgba(200,160,112,0.07)",
     "critic_border":    "rgba(232,131,58,0.20)",
     "advocate_border":  "rgba(200,160,112,0.20)",
+    "orb1":             "#e8833a",
+    "orb2":             "#c8603a",
+    "orb3":             "#f0b87a",
+    "orb_opacity":      "0.45",
+    "orb_blend":        "screen",
+    "bg_base":          "#120c09",
 }
 
+LIGHT = {
+    "bg":               "#fdf6ee",
+    "bg_lowest":        "#f5ece0",
+    "bg_low":           "#faf2e8",
+    "bg_container":     "#fff8f0",
+    "bg_high":          "#f5e8d8",
+    "bg_highest":       "#ecdcc8",
+    "bg_bright":        "#e0cdb4",
+    "on_surface":       "#2a1a0e",
+    "on_surface_var":   "#5a3e28",
+    "on_primary":       "#ffffff",
+    "text_muted":       "#a07850",
+    "text_dim":         "#c8a882",
+    "primary":          "#c05a18",
+    "primary_dim":      "#a84810",
+    "primary_container":"#d46828",
+    "secondary":        "#b04830",
+    "tertiary":         "#c07828",
+    "outline":          "#d4b898",
+    "outline_var":      "#e8d4bc",
+    "glow_copper":      "rgba(192,90,24,0.10)",
+    "glow_copper_md":   "rgba(192,90,24,0.20)",
+    "glow_copper_btn":  "rgba(192,90,24,0.22)",
+    "glow_ember":       "rgba(176,72,48,0.08)",
+    "critic_color":     "#c05a18",
+    "advocate_color":   "#8a5c30",
+    "critic_bg":        "rgba(192,90,24,0.06)",
+    "advocate_bg":      "rgba(138,92,48,0.06)",
+    "critic_border":    "rgba(192,90,24,0.18)",
+    "advocate_border":  "rgba(138,92,48,0.18)",
+    "orb1":             "#f5c890",
+    "orb2":             "#e8a060",
+    "orb3":             "#ffd8a0",
+    "orb_opacity":      "0.30",
+    "orb_blend":        "multiply",
+    "bg_base":          "#fdf6ee",
+}
+
+# JS token maps (same values but for runtime CSS-var swap, no page reload)
+_LIGHT_JS = """{
+  "--ncr-bg":"#fdf6ee","--ncr-bg-lowest":"#f5ece0","--ncr-bg-low":"#faf2e8",
+  "--ncr-bg-container":"#fff8f0","--ncr-bg-high":"#f5e8d8","--ncr-bg-highest":"#ecdcc8",
+  "--ncr-bg-bright":"#e0cdb4","--ncr-on-surface":"#2a1a0e","--ncr-on-surface-var":"#5a3e28",
+  "--ncr-on-primary":"#ffffff","--ncr-text-muted":"#a07850","--ncr-text-dim":"#c8a882",
+  "--ncr-primary":"#c05a18","--ncr-primary-dim":"#a84810","--ncr-primary-container":"#d46828",
+  "--ncr-secondary":"#b04830","--ncr-tertiary":"#c07828","--ncr-outline":"#d4b898",
+  "--ncr-outline-var":"#e8d4bc","--ncr-glow-copper":"rgba(192,90,24,0.10)",
+  "--ncr-glow-copper-md":"rgba(192,90,24,0.20)","--ncr-glow-copper-btn":"rgba(192,90,24,0.22)",
+  "--ncr-critic-color":"#c05a18","--ncr-advocate-color":"#8a5c30",
+  "--ncr-critic-bg":"rgba(192,90,24,0.06)","--ncr-advocate-bg":"rgba(138,92,48,0.06)",
+  "--ncr-critic-border":"rgba(192,90,24,0.18)","--ncr-advocate-border":"rgba(138,92,48,0.18)"
+}"""
+
+_DARK_JS = """{
+  "--ncr-bg":"#120c09","--ncr-bg-lowest":"#0d0806","--ncr-bg-low":"#1a120d",
+  "--ncr-bg-container":"#201610","--ncr-bg-high":"#2a1d15","--ncr-bg-highest":"#36261c",
+  "--ncr-bg-bright":"#423024","--ncr-on-surface":"#f0e4d4","--ncr-on-surface-var":"#c9b098",
+  "--ncr-on-primary":"#1a0a00","--ncr-text-muted":"#7a5c42","--ncr-text-dim":"#3d2415",
+  "--ncr-primary":"#e8833a","--ncr-primary-dim":"#d4692a","--ncr-primary-container":"#f09050",
+  "--ncr-secondary":"#c8603a","--ncr-tertiary":"#f0b87a","--ncr-outline":"#4a3020",
+  "--ncr-outline-var":"#2e1e12","--ncr-glow-copper":"rgba(232,131,58,0.14)",
+  "--ncr-glow-copper-md":"rgba(232,131,58,0.26)","--ncr-glow-copper-btn":"rgba(232,131,58,0.30)",
+  "--ncr-critic-color":"#e8833a","--ncr-advocate-color":"#c8a070",
+  "--ncr-critic-bg":"rgba(232,131,58,0.07)","--ncr-advocate-bg":"rgba(200,160,112,0.07)",
+  "--ncr-critic-border":"rgba(232,131,58,0.20)","--ncr-advocate-border":"rgba(200,160,112,0.20)"
+}"""
+
+
 # ================================================================
-# GLOBAL CSS
+# SEARCH MOVIES
+# ================================================================
+def search_movies(query: str, media_type: str = "movie"):
+    if not API_KEY:
+        return [], None
+    url = "http://www.omdbapi.com/"
+    type_param = "movie" if media_type == "Movie" else "series"
+
+    exact = None
+    try:
+        r = requests.get(url, params={"t": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
+        d = r.json()
+        if d.get("Response") == "True" and d.get("imdbID") and d.get("Title"):
+            exact = {
+                "Title":  d["Title"],
+                "Year":   d.get("Year", "—"),
+                "imdbID": d["imdbID"],
+                "Poster": d.get("Poster", "N/A"),
+                "Type":   d.get("Type", type_param),
+            }
+    except Exception:
+        pass
+
+    fuzzy = []
+    try:
+        r = requests.get(url, params={"s": query, "apikey": API_KEY, "r": "json", "type": type_param}, timeout=10)
+        d = r.json()
+        if d.get("Response") == "True":
+            fuzzy = [item for item in d.get("Search", []) if item.get("Title") and item.get("imdbID")]
+    except Exception:
+        pass
+
+    seen, merged, error_msg = set(), [], None
+
+    if exact:
+        try:
+            r_plot = requests.get(url, params={"i": exact["imdbID"], "apikey": API_KEY, "plot": "short"}, timeout=5)
+            d_plot = r_plot.json()
+            exact["Plot"] = d_plot.get("Plot", "")
+        except:
+            exact["Plot"] = ""
+        merged.append(exact)
+        seen.add(exact["imdbID"])
+
+    for item in fuzzy[:6]:
+        iid = item.get("imdbID")
+        if iid and iid not in seen:
+            try:
+                r_p = requests.get(url, params={"i": iid, "apikey": API_KEY, "plot": "short"}, timeout=5)
+                d_p = r_p.json()
+                item["Plot"] = d_p.get("Plot", "")
+            except:
+                item["Plot"] = ""
+            merged.append(item)
+            seen.add(iid)
+
+    if not merged:
+        try:
+            r = requests.get(url, params={"s": query, "apikey": API_KEY, "type": type_param}, timeout=10)
+            d = r.json()
+            if d.get("Response") == "False":
+                error_msg = d.get("Error")
+        except Exception:
+            pass
+
+    return merged[:6], error_msg
+
+
+# ================================================================
+# FETCH MOVIE DATA BY IMDB ID
+# ================================================================
+def fetch_movie_by_id(imdb_id: str):
+    if not API_KEY:
+        return None
+    url = "http://www.omdbapi.com/"
+    params = {"i": imdb_id, "apikey": API_KEY, "plot": "full", "r": "json"}
+    try:
+        res  = requests.get(url, params=params, timeout=10)
+        data = res.json()
+    except Exception:
+        return None
+    if not data or data.get("Response") == "False":
+        return None
+
+    imdb_rating = data.get("imdbRating", "—")
+    if not imdb_rating or imdb_rating == "N/A":
+        imdb_rating = "—"
+
+    rt_rating = "—"
+    for r in data.get("Ratings", []):
+        if "Rotten Tomatoes" in r.get("Source", ""):
+            rt_rating = r.get("Value", "—")
+            break
+
+    director = data.get("Director", "")
+    if not director or director == "N/A":
+        director = "—"
+
+    return {
+        "title":       data.get("Title"),
+        "year":        data.get("Year"),
+        "plot":        data.get("Plot"),
+        "actors":      data.get("Actors"),
+        "genre":       data.get("Genre"),
+        "director":    director,
+        "imdb_rating": imdb_rating,
+        "rt_rating":   rt_rating,
+        "poster":      data.get("Poster"),
+        "runtime":     data.get("Runtime"),
+    }
+
+
+# ================================================================
+# FETCH YOUTUBE TRAILER
+# ================================================================
+def fetch_trailer(title: str, year: str = "") -> str | None:
+    if not YOUTUBE_API_KEY:
+        return None
+    query = f"{title} {year} official trailer".strip()
+    try:
+        resp = requests.get(
+            "https://www.googleapis.com/youtube/v3/search",
+            params={"part": "snippet", "q": query, "type": "video", "maxResults": 1, "key": YOUTUBE_API_KEY},
+            timeout=10,
+        )
+        data  = resp.json()
+        items = data.get("items", [])
+        if items:
+            return items[0]["id"]["videoId"]
+    except Exception:
+        pass
+    return None
+
+
+# ================================================================
+# PAGE CONFIG
+# ================================================================
+st.set_page_config(
+    page_title="NoCap Reviews",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ================================================================
+# SESSION STATE
+# ================================================================
+if "conversations"  not in st.session_state: st.session_state.conversations  = {}
+if "active_id"      not in st.session_state: st.session_state.active_id      = None
+if "search_history" not in st.session_state: st.session_state.search_history = []
+if "search_results" not in st.session_state: st.session_state.search_results = []
+if "last_typed"     not in st.session_state: st.session_state.last_typed     = None
+if "search_error"   not in st.session_state: st.session_state.search_error   = None
+if "media_type"     not in st.session_state: st.session_state.media_type     = "Movie"
+if "theme"          not in st.session_state: st.session_state.theme          = "dark"   # ← NEW
+
+# ── resolve token map for current SSR render ────────────────────
+current_theme = st.session_state.theme
+C = DARK if current_theme == "dark" else LIGHT
+
+
+# ================================================================
+# GLOBAL CSS  (uses C tokens for SSR; JS swaps CSS vars at runtime)
 # ================================================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Outfit:wght@300;400;500;600&display=swap');
+
+/* ── ROOT CSS CUSTOM PROPERTIES ── */
+:root {{
+  --ncr-bg:               {C["bg"]};
+  --ncr-bg-lowest:        {C["bg_lowest"]};
+  --ncr-bg-low:           {C["bg_low"]};
+  --ncr-bg-container:     {C["bg_container"]};
+  --ncr-bg-high:          {C["bg_high"]};
+  --ncr-bg-highest:       {C["bg_highest"]};
+  --ncr-bg-bright:        {C["bg_bright"]};
+  --ncr-on-surface:       {C["on_surface"]};
+  --ncr-on-surface-var:   {C["on_surface_var"]};
+  --ncr-on-primary:       {C["on_primary"]};
+  --ncr-text-muted:       {C["text_muted"]};
+  --ncr-text-dim:         {C["text_dim"]};
+  --ncr-primary:          {C["primary"]};
+  --ncr-primary-dim:      {C["primary_dim"]};
+  --ncr-primary-container:{C["primary_container"]};
+  --ncr-secondary:        {C["secondary"]};
+  --ncr-tertiary:         {C["tertiary"]};
+  --ncr-outline:          {C["outline"]};
+  --ncr-outline-var:      {C["outline_var"]};
+  --ncr-glow-copper:      {C["glow_copper"]};
+  --ncr-glow-copper-md:   {C["glow_copper_md"]};
+  --ncr-glow-copper-btn:  {C["glow_copper_btn"]};
+  --ncr-critic-color:     {C["critic_color"]};
+  --ncr-advocate-color:   {C["advocate_color"]};
+  --ncr-critic-bg:        {C["critic_bg"]};
+  --ncr-advocate-bg:      {C["advocate_bg"]};
+  --ncr-critic-border:    {C["critic_border"]};
+  --ncr-advocate-border:  {C["advocate_border"]};
+}}
 
 [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{ background: transparent !important; }}
@@ -220,7 +324,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 
 .stApp {{
     background: transparent !important;
-    color: {C["on_surface"]};
+    color: var(--ncr-on-surface);
     font-family: 'Outfit', sans-serif;
 }}
 [data-testid="stAppViewContainer"] {{
@@ -234,305 +338,217 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-right: 2rem !important;
 }}
 
-/* ── HIGH VISIBILITY ANIMATED BG ── */
+/* ── GLOBAL SMOOTH TRANSITION for theme switch ── */
+*, *::before, *::after {{
+    transition-property: background-color, border-color, color, box-shadow, fill, stroke;
+    transition-duration: 0.35s;
+    transition-timing-function: ease;
+}}
+button, a {{ transition: all 0.22s ease !important; }}
+.glow-orb {{ transition: background 0.5s ease, opacity 0.5s ease !important; }}
+
+/* ── ANIMATED BG ── */
 .cinema-bg {{
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     z-index: -999;
-    background-color: {C["bg"]};
+    background-color: {C["bg_base"]};
     overflow: hidden;
+    transition: background-color 0.5s ease;
 }}
-
 .glow-orb {{
-    position: absolute;
-    border-radius: 50%;
+    position: absolute; border-radius: 50%;
     filter: blur(80px);
-    opacity: 0.45;
-    mix-blend-mode: screen;
+    opacity: {C["orb_opacity"]};
+    mix-blend-mode: {C["orb_blend"]};
     animation: orbMove 15s ease-in-out infinite alternate;
 }}
-
 .orb-1 {{
     width: 600px; height: 600px;
-    background: radial-gradient(circle, {C["primary"]} 0%, transparent 70%);
-    top: -10%; left: -10%;
-    animation-duration: 18s;
+    background: radial-gradient(circle, {C["orb1"]} 0%, transparent 70%);
+    top: -10%; left: -10%; animation-duration: 18s;
 }}
 .orb-2 {{
     width: 500px; height: 500px;
-    background: radial-gradient(circle, {C["secondary"]} 0%, transparent 70%);
-    bottom: -10%; right: -5%;
-    animation-delay: -5s;
+    background: radial-gradient(circle, {C["orb2"]} 0%, transparent 70%);
+    bottom: -10%; right: -5%; animation-delay: -5s;
 }}
 .orb-3 {{
     width: 400px; height: 400px;
-    background: radial-gradient(circle, {C["tertiary"]} 0%, transparent 70%);
-    top: 40%; left: 30%;
-    animation-duration: 22s;
-    animation-delay: -2s;
+    background: radial-gradient(circle, {C["orb3"]} 0%, transparent 70%);
+    top: 40%; left: 30%; animation-duration: 22s; animation-delay: -2s;
 }}
-
 @keyframes orbMove {{
-    0%   {{ transform: translate(0, 0) scale(1); }}
-    50%  {{ transform: translate(15%, 10%) scale(1.15); }}
-    100% {{ transform: translate(-10%, 20%) scale(0.9); }}
+    0%   {{ transform: translate(0,0) scale(1); }}
+    50%  {{ transform: translate(15%,10%) scale(1.15); }}
+    100% {{ transform: translate(-10%,20%) scale(0.9); }}
 }}
 
 ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
-::-webkit-scrollbar-track {{ background: {C["bg_lowest"]}; }}
-::-webkit-scrollbar-thumb {{ background: {C["bg_highest"]}; border-radius: 4px; }}
-::-webkit-scrollbar-thumb:hover {{ background: {C["outline"]}; }}
+::-webkit-scrollbar-track {{ background: var(--ncr-bg-lowest); }}
+::-webkit-scrollbar-thumb {{ background: var(--ncr-bg-highest); border-radius: 4px; }}
+::-webkit-scrollbar-thumb:hover {{ background: var(--ncr-outline); }}
 
 h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
 
 /* ── HERO ── */
 .hero-eyebrow {{
-    font-family: 'Outfit', sans-serif;
-    font-size: 10px; font-weight: 600; letter-spacing: 0.28em;
-    color: {C["primary"]}; text-transform: uppercase; text-align: center;
-    margin-bottom: 16px; opacity: 0.9;
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.28em; color: var(--ncr-primary); text-transform: uppercase;
+    text-align: center; margin-bottom: 16px; opacity: 0.9;
 }}
 .hero-title {{
     font-family: 'Playfair Display', serif;
-    font-size: clamp(38px, 5.5vw, 66px); font-weight: 800;
+    font-size: clamp(38px,5.5vw,66px); font-weight: 800;
     letter-spacing: -0.01em; line-height: 1.08;
-    text-align: center; color: {C["on_surface"]}; margin-bottom: 12px;
+    text-align: center; color: var(--ncr-on-surface); margin-bottom: 12px;
 }}
 .hero-title em {{
-    font-style: italic; color: {C["primary_container"]};
-    text-shadow: 0 0 40px rgba(240,144,80,0.35);
+    font-style: italic; color: var(--ncr-primary-container);
+    text-shadow: 0 0 40px var(--ncr-glow-copper-md);
 }}
 .hero-sub {{
     font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
-    color: {C["on_surface_var"]}; text-align: center;
+    color: var(--ncr-on-surface-var); text-align: center;
     max-width: 500px; margin: 0 auto 12px auto; line-height: 1.65;
 }}
 .hero-ornament {{
-    text-align: center; font-size: 18px; color: {C["primary"]};
-    opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 24px;
+    text-align: center; font-size: 18px; color: var(--ncr-primary);
+    opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 8px;
 }}
 
-/* ── TYPE TOGGLE — fully themed pill buttons ── */
-.type-toggle-wrap {{
-    display: flex; justify-content: center; gap: 0;
-    margin-bottom: 18px;
-}}
-
-/* Override ALL default Streamlit button styles for type-toggle and analyse buttons */
+/* ── TYPE TOGGLE & BUTTONS ── */
 div[data-testid="stButton"] > button {{
     font-family: 'Outfit', sans-serif !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.18em !important;
-    text-transform: uppercase !important;
+    font-size: 12px !important; font-weight: 600 !important;
+    letter-spacing: 0.18em !important; text-transform: uppercase !important;
     transition: all 0.22s ease !important;
-    border: 1px solid {C["outline"]} !important;
-    background: {C["bg_container"]} !important;
-    color: {C["text_muted"]} !important;
+    border: 1px solid var(--ncr-outline) !important;
+    background: var(--ncr-bg-container) !important;
+    color: var(--ncr-text-muted) !important;
     border-radius: 9999px !important;
-    padding: 10px 30px !important;
-    box-shadow: none !important;
+    padding: 10px 30px !important; box-shadow: none !important;
 }}
 div[data-testid="stButton"] > button:hover {{
-    border-color: {C["primary"]} !important;
-    color: {C["primary_container"]} !important;
-    background: rgba(232,131,58,0.08) !important;
-    box-shadow: 0 4px 20px {C["glow_copper"]} !important;
+    border-color: var(--ncr-primary) !important;
+    color: var(--ncr-primary-container) !important;
+    background: var(--ncr-critic-bg) !important;
+    box-shadow: 0 4px 20px var(--ncr-glow-copper) !important;
 }}
 div[data-testid="stButton"] > button:focus {{
     outline: none !important;
-    box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
+    box-shadow: 0 0 0 2px var(--ncr-glow-copper-md) !important;
 }}
-
-
-
-/* Analyse CTA button — copper gradient pill */
-div[data-testid="stButton"].analyse-btn > button,
 div[data-testid="stButton"] > button[kind="primary"] {{
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
-    border-color: {C["primary"]} !important;
-    color: {C["on_primary"]} !important;
-    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
-    font-size: 11px !important;
-    letter-spacing: 0.20em !important;
+    background: linear-gradient(135deg, var(--ncr-primary), var(--ncr-secondary)) !important;
+    border-color: var(--ncr-primary) !important;
+    color: var(--ncr-on-primary) !important;
+    box-shadow: 0 4px 20px var(--ncr-glow-copper-btn) !important;
+    font-size: 11px !important; letter-spacing: 0.20em !important;
     padding: 10px 28px !important;
 }}
-div[data-testid="stButton"].analyse-btn > button:hover,
 div[data-testid="stButton"] > button[kind="primary"]:hover {{
     transform: translateY(-1px) !important;
-    box-shadow: 0 8px 32px {C["glow_copper_md"]} !important;
-    background: linear-gradient(135deg, {C["primary_container"]}, {C["primary"]}) !important;
+    box-shadow: 0 8px 32px var(--ncr-glow-copper-md) !important;
+    background: linear-gradient(135deg, var(--ncr-primary-container), var(--ncr-primary)) !important;
 }}
 
 /* ── CHAT INPUT ── */
 div[data-testid="stChatInput"] {{
-    background: {C["bg_low"]} !important;
-    border: 1px solid {C["outline"]} !important;
+    background: var(--ncr-bg-low) !important;
+    border: 1px solid var(--ncr-outline) !important;
     border-radius: 9999px !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 2px 20px rgba(0,0,0,0.3) !important;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.15), 0 2px 20px rgba(0,0,0,0.10) !important;
     padding: 0 8px !important;
 }}
 div[data-testid="stChatInput"] > div,
 div[data-testid="stChatInput"] div[class*="st-"] {{
-    background-color: transparent !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    background-color: transparent !important; background: transparent !important;
+    border: none !important; box-shadow: none !important;
 }}
 textarea[data-testid="stChatInputTextArea"] {{
-    background: transparent !important;
-    background-color: transparent !important;
+    background: transparent !important; background-color: transparent !important;
     border: none !important;
-    color: {C["on_surface"]} !important;
-    -webkit-text-fill-color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 16px !important;
-    padding: 14px 20px !important;
-    box-shadow: none !important;
-    caret-color: {C["primary_container"]} !important;
+    color: var(--ncr-on-surface) !important;
+    -webkit-text-fill-color: var(--ncr-on-surface) !important;
+    font-family: 'Outfit', sans-serif !important; font-size: 16px !important;
+    padding: 14px 20px !important; box-shadow: none !important;
+    caret-color: var(--ncr-primary-container) !important;
 }}
 textarea[data-testid="stChatInputTextArea"]::placeholder {{
-    color: {C["text_muted"]} !important;
-    -webkit-text-fill-color: {C["text_muted"]} !important;
-}}
-div[data-testid="stChatInput"] div:focus-within {{
-    border: none !important; outline: none !important; box-shadow: none !important;
+    color: var(--ncr-text-muted) !important;
+    -webkit-text-fill-color: var(--ncr-text-muted) !important;
 }}
 button[data-testid="stChatInputSubmitButton"] {{
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
+    background: linear-gradient(135deg, var(--ncr-primary), var(--ncr-secondary)) !important;
     border-radius: 9999px !important;
-    box-shadow: 0 4px 20px {C["glow_copper_btn"]} !important;
+    box-shadow: 0 4px 20px var(--ncr-glow-copper-btn) !important;
     margin-top: 5px !important;
 }}
 button[data-testid="stChatInputSubmitButton"]:hover {{
     transform: scale(1.10) !important;
-    box-shadow: 0 6px 30px {C["glow_copper_md"]} !important;
+    box-shadow: 0 6px 30px var(--ncr-glow-copper-md) !important;
 }}
 button[data-testid="stChatInputSubmitButton"] svg {{
-    stroke: {C["on_primary"]} !important; fill: none !important;
+    stroke: var(--ncr-on-primary) !important; fill: none !important;
     width: 16px !important; height: 16px !important;
 }}
 
 /* ── SEARCH LABEL ── */
 .search-label {{
     font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.24em; text-transform: uppercase;
-    color: {C["primary"]}; margin-bottom: 18px; margin-top: 6px; opacity: 0.8;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--ncr-primary);
+    margin-bottom: 18px; margin-top: 6px; opacity: 0.8;
 }}
 
 /* ── RESULT CARDS ── */
 .result-card {{
-    background: {C["bg_container"]};
-    border: 1px solid rgba(74,48,32,0.35);
-    border-radius: 14px; overflow: hidden;
-    margin-bottom: 4px;
-    transition: all 0.30s ease;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-    display: flex;
-    flex-direction: row;
+    background: var(--ncr-bg-container); border: 1px solid var(--ncr-outline-var);
+    border-radius: 14px; overflow: hidden; margin-bottom: 4px;
+    transition: all 0.30s ease; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    display: flex; flex-direction: row;
 }}
 .result-card:hover {{
-    background: {C["bg_high"]};
-    border-color: rgba(232,131,58,0.28);
-    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6),
-                0 0 0 1px rgba(232,131,58,0.14);
+    background: var(--ncr-bg-high); border-color: var(--ncr-outline);
+    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.12), 0 0 0 1px var(--ncr-glow-copper-md);
     transform: translateY(-2px);
-}}
-.result-poster-col {{
-    width: 130px;
-    min-width: 130px;
-    min-height: 200px;
-    flex-shrink: 0;
-    overflow: hidden;
-    position: relative;
-    background: {C["bg_high"]};
-}}
-.result-poster-col img {{
-    width: 130px;
-    height: 200px;
-    object-fit: cover;
-    display: block;
-}}
-.result-poster-fade {{
-    position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
-    background: linear-gradient(to right, transparent, {C["bg_container"]});
-    pointer-events: none;
-}}
-.result-no-poster {{
-    width: 130px; height: 200px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px; color: {C["text_dim"]};
-    background: {C["bg_high"]};
-}}
-.result-body {{
-    flex: 1; padding: 22px 26px 18px 22px;
-    display: flex; flex-direction: column; justify-content: space-between;
-}}
-.result-title {{
-    font-family: 'Playfair Display', serif;
-    font-size: 22px; font-weight: 700;
-    color: {C["on_surface"]}; line-height: 1.18; margin-bottom: 6px;
-}}
-.result-meta {{
-    font-family: 'Outfit', sans-serif; font-size: 12px;
-    color: {C["on_surface_var"]}; margin-bottom: 12px;
-    letter-spacing: 0.04em;
-}}
-.result-cta {{
-    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
-    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 14px;
-}}
-.result-badge {{
-    display: inline-block;
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 3px; margin-right: 6px;
-    background: rgba(74,48,32,0.5); color: {C["tertiary"]};
-    border: 1px solid rgba(74,48,32,0.8);
-}}
-.result-badge.type-badge {{
-    background: rgba(232,131,58,0.10); color: {C["primary"]};
-    border: 1px solid rgba(232,131,58,0.25);
 }}
 
 /* ── MOVIE TITLE / META ── */
 .movie-title-display {{
     font-family: 'Playfair Display', serif;
-    font-size: clamp(26px, 3.5vw, 46px); font-weight: 800;
+    font-size: clamp(26px,3.5vw,46px); font-weight: 800;
     letter-spacing: -0.01em; line-height: 1.08;
-    color: {C["on_surface"]}; margin-bottom: 10px;
+    color: var(--ncr-on-surface); margin-bottom: 10px;
 }}
 .movie-meta-inline {{
     font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
-    color: {C["on_surface_var"]}; margin-bottom: 20px;
+    color: var(--ncr-on-surface-var); margin-bottom: 20px;
     display: flex; flex-wrap: wrap; gap: 6px 0; align-items: center;
 }}
-.meta-label {{
-    font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
-    text-transform: uppercase; color: {C["text_muted"]};
-}}
-.meta-value {{ font-size: 13px; color: {C["on_surface_var"]}; }}
-.meta-value.accent {{ color: {C["primary_container"]}; font-weight: 600; }}
-.meta-sep {{ color: {C["outline"]}; margin: 0 10px; font-size: 11px; opacity: 0.5; }}
+.meta-label {{ font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ncr-text-muted); }}
+.meta-value {{ font-size: 13px; color: var(--ncr-on-surface-var); }}
+.meta-value.accent {{ color: var(--ncr-primary-container); font-weight: 600; }}
+.meta-sep {{ color: var(--ncr-outline); margin: 0 10px; font-size: 11px; opacity: 0.5; }}
 
 /* ── SECTION HEADING ── */
 .section-heading {{
     font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.24em; text-transform: uppercase; color: {C["primary"]};
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--ncr-primary);
     margin: 32px 0 14px 0; display: flex; align-items: center; gap: 10px; opacity: 0.85;
 }}
 .section-heading::after {{
     content: ''; flex: 1; height: 1px;
-    background: linear-gradient(to right, {C["outline"]}80, transparent);
+    background: linear-gradient(to right, var(--ncr-outline), transparent); opacity: 0.5;
 }}
 
 /* ── TRAILER ── */
 .trailer-wrapper {{
     position: relative; width: 100%; padding-top: 56.25%;
-    border-radius: 14px; overflow: hidden; background: {C["bg_lowest"]};
-    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75),
-                0 0 0 1px {C["outline"]},
-                0 0 60px -20px rgba(232,131,58,0.20);
+    border-radius: 14px; overflow: hidden; background: var(--ncr-bg-lowest);
+    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.15),
+                0 0 0 1px var(--ncr-outline),
+                0 0 60px -20px var(--ncr-glow-copper-md);
 }}
 .trailer-wrapper iframe {{
     position: absolute; top: 0; left: 0;
@@ -540,66 +556,64 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 }}
 .trailer-badge {{
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(232,131,58,0.10);
-    border: 1px solid rgba(232,131,58,0.25);
-    color: {C["primary_container"]};
-    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.18em; text-transform: uppercase;
+    background: var(--ncr-critic-bg); border: 1px solid var(--ncr-critic-border);
+    color: var(--ncr-primary-container); font-family: 'Outfit', sans-serif;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
     padding: 4px 14px; border-radius: 9999px; margin-bottom: 14px;
 }}
-.trailer-badge::before {{ content: '▶'; font-size: 8px; color: {C["primary"]}; }}
+.trailer-badge::before {{ content: '▶'; font-size: 8px; color: var(--ncr-primary); }}
 .trailer-no-result {{
     display: flex; align-items: center; justify-content: center;
-    height: 120px; background: {C["bg_container"]};
-    border: 1px dashed {C["outline"]}; border-radius: 14px;
+    height: 120px; background: var(--ncr-bg-container);
+    border: 1px dashed var(--ncr-outline); border-radius: 14px;
     font-family: 'Outfit', sans-serif; font-size: 13px;
-    color: {C["text_muted"]}; letter-spacing: 0.04em;
+    color: var(--ncr-text-muted); letter-spacing: 0.04em;
 }}
 
 /* ── AGENDA STRIP ── */
 .agenda-strip {{
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 0; background: {C["bg_container"]};
-    border: 1px solid {C["outline"]}; border-radius: 14px;
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 0; background: var(--ncr-bg-container);
+    border: 1px solid var(--ncr-outline); border-radius: 14px;
     overflow: hidden; margin-top: 14px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(232,131,58,0.08);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
 }}
 .agenda-cell {{
-    padding: 26px 24px; border-right: 1px solid {C["outline_var"]};
+    padding: 26px 24px; border-right: 1px solid var(--ncr-outline-var);
     position: relative; transition: background 0.25s ease;
 }}
 .agenda-cell:last-child {{ border-right: none; }}
-.agenda-cell:hover {{ background: rgba(232,131,58,0.05); }}
+.agenda-cell:hover {{ background: var(--ncr-critic-bg); }}
 .agenda-round {{
     font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
     letter-spacing: 0.22em; text-transform: uppercase;
-    color: {C["primary"]}; margin-bottom: 10px; opacity: 0.70;
+    color: var(--ncr-primary); margin-bottom: 10px; opacity: 0.70;
 }}
 .agenda-num {{
     font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700;
-    color: {C["bg_highest"]}; line-height: 1; margin-bottom: 14px;
+    color: var(--ncr-bg-highest); line-height: 1; margin-bottom: 14px;
 }}
 .agenda-text {{
     font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
-    color: {C["on_surface_var"]}; line-height: 1.6;
+    color: var(--ncr-on-surface-var); line-height: 1.6;
 }}
-.agenda-text b {{ color: {C["on_surface"]}; font-weight: 600; }}
+.agenda-text b {{ color: var(--ncr-on-surface); font-weight: 600; }}
 
 /* ── SUMMARY BOX ── */
 .summary-box {{
-    background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}80 100%);
-    border-left: 3px solid {C["primary"]};
+    background: linear-gradient(135deg, var(--ncr-bg-container) 0%, var(--ncr-bg-high) 100%);
+    border-left: 3px solid var(--ncr-primary);
     border-radius: 0 14px 14px 0; padding: 24px 30px;
     font-family: 'Playfair Display', serif; font-size: 17px; font-style: italic;
-    color: {C["on_surface_var"]}; line-height: 1.9;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    color: var(--ncr-on-surface-var); line-height: 1.9;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
 }}
 
 /* ── THEME CHIPS ── */
 .theme-tag {{
-    display: inline-block;
-    background: rgba(232,131,58,0.08); border: 1px solid rgba(232,131,58,0.22);
-    color: {C["tertiary"]}; font-family: 'Outfit', sans-serif;
+    display: inline-block; background: var(--ncr-critic-bg);
+    border: 1px solid var(--ncr-critic-border);
+    color: var(--ncr-tertiary); font-family: 'Outfit', sans-serif;
     font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
     padding: 5px 14px; border-radius: 9999px; margin: 4px 3px;
 }}
@@ -609,62 +623,61 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .debate-bubble {{
     padding: 18px 22px; font-family: 'Outfit', sans-serif;
     font-size: 15px; font-weight: 400; line-height: 1.75;
-    max-width: 88%; color: {C["on_surface_var"]};
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    max-width: 88%; color: var(--ncr-on-surface-var);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }}
-.bubble-critic   {{ background: {C["critic_bg"]}; border: 1px solid {C["critic_border"]}; border-radius: 16px 16px 16px 4px; align-self: flex-start; }}
-.bubble-advocate {{ background: {C["advocate_bg"]}; border: 1px solid {C["advocate_border"]}; border-radius: 16px 16px 4px 16px; align-self: flex-end; }}
+.bubble-critic   {{ background: var(--ncr-critic-bg); border: 1px solid var(--ncr-critic-border); border-radius: 16px 16px 16px 4px; align-self: flex-start; }}
+.bubble-advocate {{ background: var(--ncr-advocate-bg); border: 1px solid var(--ncr-advocate-border); border-radius: 16px 16px 4px 16px; align-self: flex-end; }}
 .bubble-label {{ font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 10px; }}
-.bubble-label-critic   {{ color: {C["critic_color"]}; }}
-.bubble-label-advocate {{ color: {C["advocate_color"]}; }}
+.bubble-label-critic   {{ color: var(--ncr-critic-color); }}
+.bubble-label-advocate {{ color: var(--ncr-advocate-color); }}
 .bubble-model-tag {{ font-size: 9px; opacity: 0.4; margin-left: 8px; letter-spacing: 0.06em; }}
 .round-pill {{
-    display: block; width: fit-content;
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    background: rgba(232,131,58,0.09); border: 1px solid rgba(232,131,58,0.25);
-    color: {C["primary"]}; padding: 3px 14px; border-radius: 9999px;
+    display: block; width: fit-content; font-family: 'Outfit', sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    background: var(--ncr-critic-bg); border: 1px solid var(--ncr-critic-border);
+    color: var(--ncr-primary); padding: 3px 14px; border-radius: 9999px;
     margin: 14px auto 6px auto; text-align: center;
 }}
 
 /* ── DIVIDER ── */
 .fancy-divider {{
     height: 1px;
-    background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
-    margin: 32px 0;
+    background: linear-gradient(to right, transparent, var(--ncr-outline), transparent);
+    margin: 32px 0; opacity: 0.5;
 }}
 
 /* ── ERROR BOX ── */
 .err-box {{
-    background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
-    border-radius: 12px; padding: 20px 28px;
-    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
-    color: {C["primary"]}; text-align: center; letter-spacing: 0.02em;
+    background: var(--ncr-critic-bg); border: 1px solid var(--ncr-critic-border);
+    border-radius: 12px; padding: 20px 28px; font-family: 'Outfit', sans-serif;
+    font-size: 14px; font-weight: 500; color: var(--ncr-primary);
+    text-align: center; letter-spacing: 0.02em;
 }}
 
 [data-testid="stImage"] img {{
     border-radius: 12px !important;
-    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75), 0 0 50px -18px {C["glow_copper_md"]} !important;
+    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.20), 0 0 50px -18px var(--ncr-glow-copper-md) !important;
 }}
 [data-testid="stExpander"] {{
-    background: {C["bg_container"]} !important; border: 1px solid {C["outline"]} !important;
+    background: var(--ncr-bg-container) !important;
+    border: 1px solid var(--ncr-outline) !important;
     border-radius: 12px !important; margin-top: 4px !important;
 }}
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p {{
     font-family: 'Outfit', sans-serif !important; font-size: 13px !important;
     font-weight: 600 !important; letter-spacing: 0.06em !important;
-    color: {C["primary_container"]} !important;
+    color: var(--ncr-primary-container) !important;
 }}
 
-/* ── SIDEBAR STYLING ── */
+/* ── SIDEBAR ── */
 [data-testid="stSidebar"] {{
-    background-color: {C["bg_low"]} !important;
-    border-right: 1px solid {C["outline"]} !important;
+    background-color: var(--ncr-bg-low) !important;
+    border-right: 1px solid var(--ncr-outline) !important;
 }}
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    padding-top: 2rem !important;
-    gap: 0.5rem !important;
+    padding-top: 2rem !important; gap: 0.5rem !important;
 }}
 
 p, li, div {{ font-size: 15px; }}
@@ -673,7 +686,7 @@ p, li, div {{ font-size: 15px; }}
 
 
 # ================================================================
-# SIDEBAR: DASHBOARD & HISTORY
+# SIDEBAR
 # ================================================================
 with st.sidebar:
     st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
@@ -685,14 +698,14 @@ with st.sidebar:
     for imdb_id, data in st.session_state.conversations.items():
         if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
             st.session_state.active_id = imdb_id
-            st.session_state.search_results = [] 
+            st.session_state.search_results = []
             st.rerun()
 
 
 # ================================================================
-# HERO & BACKGROUND
+# BACKGROUND ORBS
 # ================================================================
-st.markdown("""
+st.markdown(f"""
     <div class="cinema-bg">
         <div class="glow-orb orb-1"></div>
         <div class="glow-orb orb-2"></div>
@@ -711,16 +724,132 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
+# THEME TOGGLE  ← injected right after hero ornament
+# ================================================================
+next_theme  = "light" if current_theme == "dark" else "dark"
+toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
+toggle_label = "Light Mode" if current_theme == "dark" else "Dark Mode"
+
+_toggle_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap" rel="stylesheet">
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{ background:transparent; display:flex; justify-content:center; padding:4px 0; }}
+  .pill {{
+    display: inline-flex; align-items: center; gap: 9px;
+    background: {C["bg_container"]};
+    border: 1px solid {C["outline"]};
+    border-radius: 9999px; padding: 7px 20px 7px 14px;
+    cursor: pointer; user-select: none;
+    font-family: 'Outfit', sans-serif; font-size: 11px;
+    font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: {C["text_muted"]};
+    box-shadow: 0 2px 12px {C["glow_copper"]};
+    transition: all 0.22s ease;
+  }}
+  .pill:hover {{
+    border-color: {C["primary"]};
+    color: {C["primary_container"]};
+    box-shadow: 0 4px 20px {C["glow_copper_md"]};
+    transform: translateY(-1px);
+  }}
+  .icon {{ font-size: 15px; line-height: 1; }}
+</style>
+</head>
+<body>
+<div class="pill" id="toggle" onclick="doToggle()">
+  <span class="icon">{toggle_icon}</span>
+  {toggle_label}
+</div>
+<script>
+const LIGHT = {_LIGHT_JS};
+const DARK  = {_DARK_JS};
+const NEXT  = "{next_theme}";
+
+const LIGHT_DOM = {{
+  bgColor: "#fdf6ee", orbBlend: "multiply", orbOpacity: "0.30",
+  orb1: "radial-gradient(circle,#f5c890 0%,transparent 70%)",
+  orb2: "radial-gradient(circle,#e8a060 0%,transparent 70%)",
+  orb3: "radial-gradient(circle,#ffd8a0 0%,transparent 70%)",
+  textColor: "#2a1a0e"
+}};
+const DARK_DOM = {{
+  bgColor: "#120c09", orbBlend: "screen", orbOpacity: "0.45",
+  orb1: "radial-gradient(circle,#e8833a 0%,transparent 70%)",
+  orb2: "radial-gradient(circle,#c8603a 0%,transparent 70%)",
+  orb3: "radial-gradient(circle,#f0b87a 0%,transparent 70%)",
+  textColor: "#f0e4d4"
+}};
+
+function applyTokens(tokens) {{
+  const root = window.parent.document.documentElement;
+  for (const [k, v] of Object.entries(tokens)) root.style.setProperty(k, v);
+}}
+
+function applyDomOverrides(dom) {{
+  const pd = window.parent.document;
+  // background
+  const bg = pd.querySelector('.cinema-bg');
+  if (bg) bg.style.backgroundColor = dom.bgColor;
+  // orbs
+  const orbs = pd.querySelectorAll('.glow-orb');
+  if (orbs.length >= 3) {{
+    [orbs[0], orbs[1], orbs[2]].forEach((o, i) => {{
+      o.style.mixBlendMode = dom.orbBlend;
+      o.style.opacity = dom.orbOpacity;
+      o.style.background = [dom.orb1, dom.orb2, dom.orb3][i];
+    }});
+  }}
+  // chat textarea text colour
+  pd.querySelectorAll('textarea[data-testid="stChatInputTextArea"]').forEach(a => {{
+    a.style.color = dom.textColor;
+    a.style.webkitTextFillColor = dom.textColor;
+  }});
+  // stApp background
+  pd.querySelectorAll('[data-testid="stAppViewContainer"], .stApp').forEach(el => {{
+    el.style.backgroundColor = dom.bgColor;
+  }});
+  // sidebar
+  const sb = pd.querySelector('[data-testid="stSidebar"]');
+  if (sb) sb.style.backgroundColor = (NEXT === 'light') ? '#faf2e8' : '#1a120d';
+}}
+
+function doToggle() {{
+  const tokens = NEXT === 'light' ? LIGHT : DARK;
+  const dom    = NEXT === 'light' ? LIGHT_DOM : DARK_DOM;
+  applyTokens(tokens);
+  applyDomOverrides(dom);
+  // Tell Streamlit to persist the new theme value → triggers silent rerun
+  window.parent.postMessage({{
+    isStreamlitMessage: true,
+    type: "streamlit:setComponentValue",
+    value: NEXT
+  }}, "*");
+}}
+</script>
+</body>
+</html>
+"""
+
+_result = components.html(_toggle_html, height=52, scrolling=False)
+# Persist theme across reruns via session_state
+if _result in ("light", "dark") and _result != current_theme:
+    st.session_state.theme = _result
+    st.rerun()
+
+st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+
+# ================================================================
 # SEARCH UI: Type Toggle → Search Bar
 # ================================================================
 show_search_ui = not st.session_state.active_id
-
-active_type = st.session_state.media_type
+active_type    = st.session_state.media_type
 
 if show_search_ui:
-    # ── Type toggle: inject active style onto the correct button via CSS ──
-    # We give the toggle wrapper a unique id, then target nth-child to highlight
-    # whichever button matches the current active_type.
     active_idx = 1 if active_type == "Movie" else 2
     st.markdown(f"""
     <style>
@@ -745,7 +874,6 @@ if show_search_ui:
             st.session_state.media_type = "Series"
             st.rerun()
 
-    # Underline indicator
     st.markdown(f"""
     <div style="display:flex;justify-content:center;margin:-4px 0 22px 0;">
         <div style="display:flex;width:280px;gap:10px;">
@@ -757,13 +885,12 @@ if show_search_ui:
     </div>
     """, unsafe_allow_html=True)
 
-# ── Search bar (always rendered, centered) ─────────────────
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
-    if show_search_ui:
-        placeholder = f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
-    else:
-        placeholder = "Search another title…"
+    placeholder = (
+        f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
+        if show_search_ui else "Search another title…"
+    )
     user_input = st.chat_input(placeholder)
 
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
@@ -774,8 +901,8 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ================================================================
 if user_input and user_input.strip():
     if user_input != st.session_state.last_typed:
-        st.session_state.last_typed       = user_input
-        st.session_state.active_id         = None
+        st.session_state.last_typed = user_input
+        st.session_state.active_id  = None
         with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input, st.session_state.media_type)
             st.session_state.search_results = results
@@ -784,7 +911,7 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# RESULTS — CARDS WITH NATIVE st.image FOR POSTER
+# RESULTS — CARDS
 # ================================================================
 search_results = st.session_state.search_results
 
@@ -803,95 +930,46 @@ if search_results and not st.session_state.active_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        poster_bg = f"url('{poster}')" if has_poster else "none"
+        poster_bg   = f"url('{poster}')" if has_poster else "none"
         placeholder = "" if has_poster else "<div style=\"font-size:34px;opacity:0.18;\">🎬</div>"
 
         desc_text = item.get("Plot") or "A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict."
         if len(desc_text) > 135:
             desc_text = desc_text[:132] + "..."
 
-        # Use components.html — renders in a sandboxed iframe, bypasses Streamlit's
-        # HTML sanitizer entirely so background-image, gradients, custom fonts all work.
         card_html = f"""
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body {{ background:transparent; font-family:'Outfit',sans-serif; }}
   .card {{
-    display:flex;
-    background:{C['bg_container']};
-    border:1px solid rgba(74,48,32,0.40);
-    border-radius:14px;
-    overflow:hidden;
-    min-height:200px;
-    box-shadow:0 4px 24px rgba(0,0,0,0.5);
+    display:flex; background:{C["bg_container"]};
+    border:1px solid {C["outline_var"]}; border-radius:14px;
+    overflow:hidden; min-height:200px; box-shadow:0 4px 24px rgba(0,0,0,0.08);
   }}
   .poster {{
-    width:140px;
-    min-width:140px;
-    min-height:200px;
-    flex-shrink:0;
-    position:relative;
-    background-image:{poster_bg};
-    background-size:cover;
-    background-position:center top;
-    background-repeat:no-repeat;
-    background-color:{C['bg_high']};
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    width:140px; min-width:140px; min-height:200px; flex-shrink:0;
+    position:relative; background-image:{poster_bg}; background-size:cover;
+    background-position:center top; background-repeat:no-repeat;
+    background-color:{C["bg_high"]}; display:flex; align-items:center; justify-content:center;
   }}
   .poster-fade {{
-    position:absolute;
-    top:0; left:0; right:0; bottom:0;
-    background:linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    background:linear-gradient(to right,transparent 60%,{C["bg_container"]} 100%);
   }}
-  .body {{
-    flex:1;
-    padding:20px 24px 18px 18px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    min-width:0;
-  }}
-  .title {{
-    font-family:'Playfair Display',serif;
-    font-size:21px;
-    font-weight:700;
-    color:{C['on_surface']};
-    line-height:1.2;
-    margin-bottom:8px;
-  }}
-  .desc {{
-    font-size:13px;
-    font-weight:300;
-    color:rgba(201,176,152,0.60);
-    line-height:1.65;
-    margin-bottom:12px;
-  }}
-  .badge {{
-    display:inline-block;
-    font-size:9px;
-    font-weight:600;
-    letter-spacing:0.14em;
-    text-transform:uppercase;
-    padding:4px 11px;
-    border-radius:3px;
-    margin-right:5px;
-  }}
-  .badge-type {{ background:rgba(232,131,58,0.12); color:{C['primary']}; border:1px solid rgba(232,131,58,0.28); }}
-  .badge-year {{ background:rgba(74,48,32,0.5); color:{C['tertiary']}; border:1px solid rgba(74,48,32,0.8); }}
+  .body {{ flex:1; padding:20px 24px 18px 18px; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }}
+  .title {{ font-family:'Playfair Display',serif; font-size:21px; font-weight:700; color:{C["on_surface"]}; line-height:1.2; margin-bottom:8px; }}
+  .desc {{ font-size:13px; font-weight:300; color:{C["on_surface_var"]}; opacity:0.75; line-height:1.65; margin-bottom:12px; }}
+  .badge {{ display:inline-block; font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; padding:4px 11px; border-radius:3px; margin-right:5px; }}
+  .badge-type {{ background:{C["critic_bg"]}; color:{C["primary"]}; border:1px solid {C["critic_border"]}; }}
+  .badge-year {{ background:rgba(74,48,32,0.12); color:{C["tertiary"]}; border:1px solid {C["outline"]}; }}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="poster">
-    {placeholder}
-    <div class="poster-fade"></div>
-  </div>
+  <div class="poster">{placeholder}<div class="poster-fade"></div></div>
   <div class="body">
     <div>
       <div class="title">{title}</div>
@@ -903,40 +981,28 @@ if search_results and not st.session_state.active_id:
     </div>
   </div>
 </div>
-</body>
-</html>"""
+</body></html>"""
 
         components.html(card_html, height=215, scrolling=False)
 
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             with st.spinner("Generating AI Debate..."):
-                # 1. Fetch all data immediately upon selection
                 movie_data = fetch_movie_by_id(imdb_id)
                 trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
-                
-                # Prepare data for the AI models
                 raw_reviews = {
                     "title":              movie_data["title"],
                     "critic_reviews":     movie_data["plot"],
                     "audience_reactions": movie_data["actors"],
                     "discussion_points":  movie_data["genre"],
                 }
-                
-                # Run the AI Analysis
                 debate_result = analyze_movie(raw_reviews)
-                
-                # 2. Save to global history (This enables your Sidebar Archive)
                 st.session_state.conversations[imdb_id] = {
                     "movie":   movie_data,
                     "result":  debate_result,
                     "trailer": trailer_id
                 }
-                
-                # 3. Add to search history for the suggestions feature
                 if title not in st.session_state.search_history:
                     st.session_state.search_history.insert(0, title)
-                    
-                # 4. Set as active view and clear current search results
                 st.session_state.active_id = imdb_id
                 st.session_state.search_results = []
                 st.rerun()
@@ -947,7 +1013,7 @@ if search_results and not st.session_state.active_id:
 
 
 # ================================================================
-# RUN ANALYSIS
+# RESOLVE ACTIVE DATA
 # ================================================================
 if st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
     active_data = st.session_state.conversations[st.session_state.active_id]
@@ -976,7 +1042,7 @@ if (
 # ================================================================
 elif st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
 
-    # ── MOVIE HEADER ─────────────────────────────────────────────
+    # ── MOVIE HEADER ───────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.8], gap="large")
 
     with col_poster:
@@ -1027,22 +1093,18 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             unsafe_allow_html=True,
         )
 
-    # ── TRAILER ──────────────────────────────────────────────────
+    # ── TRAILER ──────────────────────────────────────────────
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
     st.markdown("<div class='section-heading'>Official Trailer</div>", unsafe_allow_html=True)
     st.markdown("<div class='trailer-badge'>Watch Trailer</div>", unsafe_allow_html=True)
 
     if trailer:
         st.markdown(
-            f"""
-            <div class="trailer-wrapper">
-                <iframe
-                    src="https://www.youtube.com/embed/{trailer}?rel=0&modestbranding=1&color=white"
+            f"""<div class="trailer-wrapper">
+                <iframe src="https://www.youtube.com/embed/{trailer}?rel=0&modestbranding=1&color=white"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
-            </div>
-            """,
+                    allowfullscreen></iframe>
+            </div>""",
             unsafe_allow_html=True,
         )
     else:
@@ -1051,28 +1113,24 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             unsafe_allow_html=True,
         )
 
-    # ── DEBATE AGENDA ─────────────────────────────────────────────
+    # ── DEBATE AGENDA ─────────────────────────────────────────
     st.markdown("<div class='section-heading'>The Debate Agenda</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="agenda-strip">
         <div class="agenda-cell">
-            <div class="agenda-round">Round 01</div>
-            <div class="agenda-num">01</div>
+            <div class="agenda-round">Round 01</div><div class="agenda-num">01</div>
             <div class="agenda-text"><b>Opening Statements</b><br>Initial critical assessment versus a contrarian defence of the film's core premise and intent</div>
         </div>
         <div class="agenda-cell">
-            <div class="agenda-round">Round 02</div>
-            <div class="agenda-num">02</div>
+            <div class="agenda-round">Round 02</div><div class="agenda-num">02</div>
             <div class="agenda-text"><b>Craft &amp; Vision</b><br>Deep dive into cinematography, direction, character arcs, score, and the film's technical artistry</div>
         </div>
         <div class="agenda-cell">
-            <div class="agenda-round">Round 03</div>
-            <div class="agenda-num">03</div>
+            <div class="agenda-round">Round 03</div><div class="agenda-num">03</div>
             <div class="agenda-text"><b>Rebuttals</b><br>Pacing critiques, narrative coherence, thematic depth, and competing views on cultural legacy</div>
         </div>
         <div class="agenda-cell">
-            <div class="agenda-round">Round 04</div>
-            <div class="agenda-num">04</div>
+            <div class="agenda-round">Round 04</div><div class="agenda-num">04</div>
             <div class="agenda-text"><b>Final Synthesis</b><br>Nuanced convergence delivering a calibrated score on a global 10-point cinematic quality scale</div>
         </div>
     </div>
@@ -1080,7 +1138,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── DEBATE SUMMARY ────────────────────────────────────────────
+    # ── DEBATE SUMMARY ────────────────────────────────────────
     st.markdown("<div class='section-heading'>Debate Summary</div>", unsafe_allow_html=True)
     st.markdown(
         f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
@@ -1089,7 +1147,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── SCORES ────────────────────────────────────────────────────
+    # ── SCORES ────────────────────────────────────────────────
     st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
     raw_ai_score = str(result.get("final_score", "N/A"))
@@ -1129,16 +1187,13 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
         aname  = f"scoreAnim_{anim_id}"
         return f"""
 <svg viewBox="0 0 36 36" style="display:block;width:130px;height:130px;">
-  <defs>
-    <style>
-      @keyframes {aname} {{
-        from {{ stroke-dasharray: 0 {CIRC}; }}
-        to   {{ stroke-dasharray: {filled} {gap}; }}
-      }}
-    </style>
-  </defs>
-  <circle cx="18" cy="18" r="15.9155"
-    style="fill:none;stroke:{track};stroke-width:3.2;"/>
+  <defs><style>
+    @keyframes {aname} {{
+      from {{ stroke-dasharray: 0 {CIRC}; }}
+      to   {{ stroke-dasharray: {filled} {gap}; }}
+    }}
+  </style></defs>
+  <circle cx="18" cy="18" r="15.9155" style="fill:none;stroke:{track};stroke-width:3.2;"/>
   <circle cx="18" cy="18" r="15.9155"
     style="fill:none;stroke:{stroke};stroke-width:2.6;stroke-linecap:round;
            filter:drop-shadow(0 0 6px {glow});
@@ -1170,7 +1225,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
-    # ── DEBATE TRANSCRIPT ─────────────────────────────────────────
+    # ── DEBATE TRANSCRIPT ─────────────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
         st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
@@ -1203,7 +1258,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
 
-    # ── SCORING BASIS ─────────────────────────────────────────────
+    # ── SCORING BASIS ─────────────────────────────────────────
     basis = result.get("scoring_basis")
     if basis:
         st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
