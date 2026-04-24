@@ -358,30 +358,13 @@ div[data-testid="collapsedControl"] > div {{
    absolutely positioned via CSS to top-right corner.
 ================================================================ */
 /* Hide the column spacer approach entirely */
-/* Hide the column spacer approach entirely */
-.ncr-theme-toggle-col {{
+/* Target the very first button on the page (your Theme Toggle) */
+div[data-testid="stButton"]:first-of-type {{
     position: fixed !important;
-    top: 6px !important;
-    right: 20px !important;
+    top: 14px !important;      /* Perfect height for the Streamlit header */
+    right: 140px !important;   /* Shifted left so it doesn't overlap 'Deploy' */
     z-index: 999999 !important;
-    width: auto !important;
-}}
-
-/* Target the toggle button specifically by its key */
-div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
-.ncr-theme-btn-wrap {{
-    position: fixed !important;
-    top: 6px !important;
-    right: 20px !important;
-    z-index: 999999 !important;
-}}
-
-/* Style the toggle button — small pill */
-#ncr-theme-toggle-fixed {{
-    position: fixed;
-    top: 6px;
-    right: 20px;
-    z-index: 999999;
+    margin: 0 !important;
 }}
 #ncr-theme-toggle-fixed button,
 .ncr-theme-btn-wrap div[data-testid="stButton"] > button,
@@ -847,8 +830,8 @@ st.markdown(f"""
 /* Wrap the very next stButton inside a fixed top-right box */
 .ncr-toggle-container {{
     position: fixed !important;
-    top: 6px !important; /* Decreased from 14px */
-    right: 20px !important;
+    top: 14px !important;
+    right: 140px !important;
     z-index: 999999 !important;
     width: auto !important;
     height: auto !important;
