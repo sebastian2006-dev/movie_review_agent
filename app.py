@@ -830,6 +830,30 @@ st.markdown(f"""
     box-shadow: 0 4px 18px {C["glow_copper_md"]} !important;
     transform: translateY(-1px) !important;
 }}
+div[data-testid="stButton"]:has(button) {
+    position: static !important;
+}
+
+/* Target the FIRST button rendered (your toggle) */
+div[data-testid="stButton"]:nth-of-type(1) {{
+    position: fixed !important;
+    top: 12px !important;
+    left: 80px !important;   /* adjust */
+    right: auto !important;
+    z-index: 999999 !important;
+}}
+
+/* Style it nicely */
+div[data-testid="stButton"]:nth-of-type(1) button {{
+    height: 38px !important;
+    width: 38px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}}
 </style>
 
 """, unsafe_allow_html=True)
