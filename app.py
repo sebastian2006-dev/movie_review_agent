@@ -243,32 +243,34 @@ if "search_results" not in st.session_state: st.session_state.search_results = [
 if "last_typed"     not in st.session_state: st.session_state.last_typed     = None
 if "search_error"   not in st.session_state: st.session_state.search_error   = None
 if "media_type"     not in st.session_state: st.session_state.media_type     = "Movie"
-if "theme"          not in st.session_state: st.session_state.theme          = "dark"
 
-# ── resolve token map for current SSR render ────────────────────
+# ── THEME INITIALIZATION ─────────────────────────────────────
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+
 current_theme = st.session_state.theme
 C = DARK if current_theme == "dark" else LIGHT
+
 # ================================================================
-# THEME TOGGLE & SIDEBAR VISIBILITY FIX
+# 1. THE ONLY THEME TOGGLE & SIDEBAR FIX YOU NEED
 # ================================================================
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
 toggle_label = "Light" if current_theme == "dark" else "Dark"
-next_theme   = "light" if current_theme == "dark" else "dark"
 
 st.markdown(f"""
 <style>
-    /* 1. THEME TOGGLE POSITION & SIZE (Right below Streamlit share/pencil icons) */
-    div[data-testid="stButton"]:has(button[key="perfect_theme_toggle"]) {{
+    /* POSITION: Exactly under the Streamlit top-right icons */
+    div[data-testid="stVerticalBlock"] > div:has(button[key="true_theme_switch"]) {{
         position: fixed !important;
-        top: 60px !important;   /* Pushes it down exactly below the header icons */
-        right: 15px !important; /* Keeps it slightly away from the extreme edge */
+        top: 60px !important;
+        right: 15px !important;
         z-index: 999999 !important;
         width: auto !important;
     }}
 
-    /* Target this specific button to completely override the giant padding */
-    button[key="perfect_theme_toggle"] {{
-        all: unset !important; /* Completely ignores your global button CSS */
+    /* BUTTON LOOK: Small, precise, and immune to your global CSS */
+    button[key="true_theme_switch"] {{
+        all: unset !important; 
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -279,20 +281,21 @@ st.markdown(f"""
         padding: 0px 10px !important;
         font-size: 11px !important;
         font-family: 'Outfit', sans-serif !important;
-        font-weight: bold !important;
+        font-weight: 700 !important;
         height: 26px !important;
         width: 75px !important;
         cursor: pointer !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+        transition: all 0.2s ease !important;
     }}
     
-    button[key="perfect_theme_toggle"]:hover {{
+    button[key="true_theme_switch"]:hover {{
         background-color: {C["primary"]} !important;
         color: {C["on_primary"]} !important;
     }}
 
-    /* 2. SIDEBAR VISIBILITY FIX FOR LIGHT MODE */
-    [data-testid="stSidebarCollapsedControl"], 
+    /* SIDEBAR VISIBILITY: Force the arrow to be a highly visible orange/copper circle */
+    [data-testid="stSidebarCollapsedControl"],
     [data-testid="collapsedControl"] {{
         background-color: {C["bg_container"]} !important;
         border: 2px solid {C["primary"]} !important;
@@ -302,24 +305,25 @@ st.markdown(f"""
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        left: 10px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
     }}
 
-    /* Force the arrow inside to be Copper/Orange so it NEVER vanishes */
     [data-testid="stSidebarCollapsedControl"] svg,
     [data-testid="collapsedControl"] svg {{
         fill: {C["primary"]} !important;
         stroke: {C["primary"]} !important;
         color: {C["primary"]} !important;
-        width: 20px !important;
-        height: 20px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-if st.button(f"{toggle_icon} {toggle_label}", key="perfect_theme_toggle"):
-    st.session_state.theme = next_theme
+# The ACTUAL click logic (Only happens once in the entire file)
+if st.button(f"{toggle_icon} {toggle_label}", key="true_theme_switch"):
+    st.session_state.theme = "light" if current_theme == "dark" else "dark"
     st.rerun()
+
+# ================================================================
 
 # ================================================================
 # GLOBAL CSS  (uses C tokens for SSR)
