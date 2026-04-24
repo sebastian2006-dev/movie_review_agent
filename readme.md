@@ -155,3 +155,7 @@ MIT License — feel free to fork, modify, and build on this project.
 - [Groq](https://groq.com) for blazing-fast LLM inference
 - [YouTube Data API](https://developers.google.com/youtube/v3) for trailer embedding
 - [Streamlit](https://streamlit.io) for making Python apps delightful to build
+
+## LiveLink
+
+https://moviereviewagent-nbitflwbejdpyskpneu2yk.streamlit.app/
