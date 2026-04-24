@@ -822,26 +822,7 @@ st.markdown(f"""
     display: flex !important;
     align-items: center !important;
 }}
-.ncr-toggle-container div[data-testid="stButton"] > button {{
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 9px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.13em !important;
-    text-transform: uppercase !important;
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    color: {C["text_muted"]} !important;
-    border-radius: 9999px !important;
-    padding: 3px 10px !important;
-    height: 22px !important;
-    min-height: 22px !important;
-    line-height: 16px !important;
-    box-shadow: 0 2px 10px {C["glow_copper"]} !important;
-    white-space: nowrap !important;
-    min-width: 0 !important;
-    width: auto !important;
-    cursor: pointer !important;
-}}
+
 .ncr-toggle-container div[data-testid="stButton"] > button:hover {{
     border-color: {C["primary"]} !important;
     color: {C["primary_container"]} !important;
