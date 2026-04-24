@@ -154,7 +154,7 @@ def fetch_trailer(title: str, year: str = "") -> str | None:
 # PAGE CONFIG
 # ================================================================
 st.set_page_config(
-    page_title="NoCap Reviews",
+    page_title="Movie Review Agent",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -162,23 +162,16 @@ st.set_page_config(
 # ================================================================
 # SESSION STATE
 # ================================================================
-if "conversations"      not in st.session_state: st.session_state.conversations      = {}
-if "active_id"          not in st.session_state: st.session_state.active_id          = None
-if "search_history"     not in st.session_state: st.session_state.search_history     = []
-if "search_results"     not in st.session_state: st.session_state.search_results     = []
-if "last_typed"         not in st.session_state: st.session_state.last_typed         = None
-if "search_error"       not in st.session_state: st.session_state.search_error       = None
-if "media_type"         not in st.session_state: st.session_state.media_type         = "Movie"
-if "user_name"          not in st.session_state: st.session_state.user_name          = ""
-if "user_genres"        not in st.session_state: st.session_state.user_genres        = []
-if "user_pref_type"     not in st.session_state: st.session_state.user_pref_type     = ""
-if "profile_complete"   not in st.session_state: st.session_state.profile_complete   = False
-if "show_edit_profile"  not in st.session_state: st.session_state.show_edit_profile  = False
-# Onboarding multi-step state
-if "onboard_step"       not in st.session_state: st.session_state.onboard_step       = 1
-if "onboard_name_input" not in st.session_state: st.session_state.onboard_name_input = ""
-if "onboard_type"       not in st.session_state: st.session_state.onboard_type       = ""
-if "onboard_genres"     not in st.session_state: st.session_state.onboard_genres     = []
+if "conversations"    not in st.session_state: st.session_state.conversations    = {}
+if "active_id"        not in st.session_state: st.session_state.active_id        = None
+if "search_history"   not in st.session_state: st.session_state.search_history   = []
+if "search_results"   not in st.session_state: st.session_state.search_results   = []
+if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
+if "search_error"     not in st.session_state: st.session_state.search_error     = None
+if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
+if "user_name"        not in st.session_state: st.session_state.user_name        = ""
+if "profile_saved"    not in st.session_state: st.session_state.profile_saved    = False
+if "show_profile_form" not in st.session_state: st.session_state.show_profile_form = False
 
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
@@ -215,12 +208,6 @@ C = {
     "advocate_border":  "rgba(200,160,112,0.20)",
 }
 
-ALL_GENRES = [
-    "Action", "Adventure", "Animation", "Comedy", "Crime",
-    "Documentary", "Drama", "Fantasy", "Horror", "Musical",
-    "Mystery", "Romance", "Sci-Fi", "Thriller", "Western",
-]
-
 # ================================================================
 # GLOBAL CSS
 # ================================================================
@@ -256,6 +243,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     background-color: {C["bg"]};
     overflow: hidden;
 }}
+
+/* Film grain overlay */
 .cinema-bg::after {{
     content: '';
     position: absolute;
@@ -267,6 +256,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     pointer-events: none;
     z-index: 1;
 }}
+
 @keyframes grainShift {{
     0%   {{ transform: translate(0, 0); }}
     10%  {{ transform: translate(-2%, -3%); }}
@@ -280,6 +270,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     90%  {{ transform: translate(3%, -1%); }}
     100% {{ transform: translate(-2%, 4%); }}
 }}
+
+/* Vignette */
 .cinema-bg::before {{
     content: '';
     position: absolute;
@@ -288,6 +280,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     z-index: 2;
     pointer-events: none;
 }}
+
+/* Horizontal scan lines */
 .scan-lines {{
     position: absolute;
     inset: 0;
@@ -301,6 +295,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     );
     pointer-events: none;
 }}
+
 .glow-orb {{
     position: absolute;
     border-radius: 50%;
@@ -308,6 +303,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     opacity: 0.38;
     mix-blend-mode: screen;
 }}
+
 .orb-1 {{
     width: 700px; height: 700px;
     background: radial-gradient(circle, {C["primary"]} 0%, transparent 70%);
@@ -326,6 +322,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     top: 38%; left: 28%;
     animation: orbPulse3 24s ease-in-out infinite alternate;
 }}
+/* Subtle fourth orb for depth */
 .orb-4 {{
     width: 300px; height: 300px;
     background: radial-gradient(circle, rgba(180,80,30,0.7) 0%, transparent 70%);
@@ -333,6 +330,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     animation: orbPulse4 14s ease-in-out infinite alternate;
     opacity: 0.22;
 }}
+
 @keyframes orbPulse1 {{
     0%   {{ transform: translate(0, 0) scale(1); opacity: 0.38; }}
     33%  {{ transform: translate(8%, 6%) scale(1.12); opacity: 0.44; }}
@@ -353,6 +351,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     0%   {{ transform: translate(0, 0) scale(1); }}
     100% {{ transform: translate(-15%, 20%) scale(1.3); }}
 }}
+
+/* Ember particles */
 .ember {{
     position: absolute;
     border-radius: 50%;
@@ -392,6 +392,33 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     font-style: italic; color: {C["primary_container"]};
     text-shadow: 0 0 40px rgba(240,144,80,0.35);
 }}
+
+/* ── GREETING ── */
+.greeting-block {{
+    text-align: center;
+    margin-bottom: 6px;
+}}
+.greeting-time {{
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.26em;
+    color: {C["primary"]}; text-transform: uppercase; opacity: 0.85;
+    margin-bottom: 6px;
+}}
+.greeting-name {{
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 4vw, 52px); font-weight: 700;
+    color: {C["on_surface"]}; line-height: 1.15;
+    animation: fadeSlideDown 0.8s cubic-bezier(0.22,1,0.36,1) both;
+}}
+.greeting-name em {{
+    font-style: italic; color: {C["primary_container"]};
+    text-shadow: 0 0 40px rgba(240,144,80,0.35);
+}}
+@keyframes fadeSlideDown {{
+    from {{ opacity: 0; transform: translateY(-14px); }}
+    to   {{ opacity: 1; transform: translateY(0); }}
+}}
+
 .hero-sub {{
     font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
     color: {C["on_surface_var"]}; text-align: center;
@@ -427,6 +454,8 @@ div[data-testid="stButton"] > button:focus {{
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
 }}
+
+div[data-testid="stButton"].analyse-btn > button,
 div[data-testid="stButton"] > button[kind="primary"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
     border-color: {C["primary"]} !important;
@@ -436,6 +465,7 @@ div[data-testid="stButton"] > button[kind="primary"] {{
     letter-spacing: 0.20em !important;
     padding: 10px 28px !important;
 }}
+div[data-testid="stButton"].analyse-btn > button:hover,
 div[data-testid="stButton"] > button[kind="primary"]:hover {{
     transform: translateY(-1px) !important;
     box-shadow: 0 8px 32px {C["glow_copper_md"]} !important;
@@ -473,6 +503,9 @@ textarea[data-testid="stChatInputTextArea"]::placeholder {{
     color: {C["text_muted"]} !important;
     -webkit-text-fill-color: {C["text_muted"]} !important;
 }}
+div[data-testid="stChatInput"] div:focus-within {{
+    border: none !important; outline: none !important; box-shadow: none !important;
+}}
 button[data-testid="stChatInputSubmitButton"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
     border-radius: 9999px !important;
@@ -506,6 +539,12 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     display: flex;
     flex-direction: row;
 }}
+.result-card:hover {{
+    background: {C["bg_high"]};
+    border-color: rgba(232,131,58,0.28);
+    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,131,58,0.14);
+    transform: translateY(-2px);
+}}
 
 /* ── SIDEBAR STYLES ── */
 [data-testid="stSidebar"] {{
@@ -516,6 +555,33 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     padding-top: 0 !important;
     gap: 0 !important;
 }}
+
+/* Sidebar text input theming */
+[data-testid="stSidebar"] div[data-testid="stTextInput"] input {{
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    border-radius: 10px !important;
+    color: {C["on_surface"]} !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 14px !important;
+    padding: 10px 14px !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
+    caret-color: {C["primary_container"]} !important;
+    transition: border-color 0.2s ease !important;
+}}
+[data-testid="stSidebar"] div[data-testid="stTextInput"] input:focus {{
+    border-color: {C["primary"]} !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 0 2px rgba(232,131,58,0.18) !important;
+    outline: none !important;
+}}
+[data-testid="stSidebar"] div[data-testid="stTextInput"] input::placeholder {{
+    color: {C["text_muted"]} !important;
+}}
+[data-testid="stSidebar"] div[data-testid="stTextInput"] label {{
+    display: none !important;
+}}
+
+/* Hide default Streamlit sidebar nav button styles */
 [data-testid="stSidebar"] div[data-testid="stButton"] > button {{
     border-radius: 10px !important;
     padding: 0 !important;
@@ -547,11 +613,13 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .sb-archive-card:hover {{
     border-color: rgba(232,131,58,0.35);
     background: {C["bg_high"]};
+    box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,131,58,0.12);
     transform: translateX(3px);
 }}
 .sb-archive-card.active {{
     border-color: rgba(232,131,58,0.50);
     background: rgba(232,131,58,0.08);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,131,58,0.20);
 }}
 .sb-poster-thumb {{
     width: 40px; height: 56px;
@@ -568,7 +636,9 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; flex-shrink: 0;
 }}
-.sb-card-info {{ flex: 1; min-width: 0; }}
+.sb-card-info {{
+    flex: 1; min-width: 0;
+}}
 .sb-card-title {{
     font-family: 'Playfair Display', serif;
     font-size: 13px; font-weight: 700;
@@ -579,6 +649,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .sb-card-meta {{
     font-family: 'Outfit', sans-serif; font-size: 10px;
     color: {C["text_muted"]}; letter-spacing: 0.05em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }}
 .sb-card-score {{
     font-family: 'Playfair Display', serif;
@@ -586,6 +657,8 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["primary_container"]};
     flex-shrink: 0;
 }}
+
+/* Sidebar profile section */
 .sb-profile-wrap {{
     padding: 20px 16px 14px 16px;
     border-bottom: 1px solid {C["outline_var"]};
@@ -614,7 +687,13 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     padding: 10px 12px; border-radius: 12px;
     background: rgba(232,131,58,0.07);
     border: 1px solid rgba(232,131,58,0.18);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}}
+.sb-user-badge:hover {{
+    background: rgba(232,131,58,0.12);
+    border-color: rgba(232,131,58,0.30);
 }}
 .sb-avatar {{
     width: 34px; height: 34px; border-radius: 50%;
@@ -633,16 +712,8 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     letter-spacing: 0.14em; text-transform: uppercase;
     color: {C["primary"]}; opacity: 0.75;
 }}
-.sb-genre-chips {{
-    display: flex; flex-wrap: wrap; gap: 4px;
-    margin-top: 8px;
-}}
-.sb-genre-chip {{
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-    letter-spacing: 0.10em; text-transform: uppercase;
-    background: rgba(232,131,58,0.09); border: 1px solid rgba(232,131,58,0.22);
-    color: {C["tertiary"]}; padding: 3px 9px; border-radius: 9999px;
-}}
+.sb-edit-icon {{ font-size: 11px; color: {C["text_muted"]}; }}
+
 .sb-archive-label {{
     font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
     letter-spacing: 0.22em; text-transform: uppercase;
@@ -662,124 +733,11 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     border-radius: 12px;
 }}
 .sb-empty-icon {{ font-size: 28px; margin-bottom: 8px; opacity: 0.4; }}
+
+/* Sidebar scrollable archive area */
 .sb-archive-scroll {{
     padding: 0 16px 20px 16px;
-    overflow-y: auto; max-height: calc(100vh - 300px);
-}}
-
-/* ── ONBOARDING OVERLAY ── */
-.onboard-overlay {{
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(8,4,2,0.92);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}}
-.onboard-card {{
-    background: {C["bg_low"]};
-    border: 1px solid {C["outline"]};
-    border-radius: 24px;
-    padding: 48px 52px 40px 52px;
-    max-width: 520px;
-    width: 90vw;
-    box-shadow: 0 32px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(232,131,58,0.12), 0 0 80px -20px {C["primary"]};
-    animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
-}}
-@keyframes cardIn {{
-    from {{ opacity: 0; transform: translateY(28px) scale(0.97); }}
-    to   {{ opacity: 1; transform: translateY(0) scale(1); }}
-}}
-.onboard-step-label {{
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
-    letter-spacing: 0.28em; text-transform: uppercase;
-    color: {C["primary"]}; margin-bottom: 18px; opacity: 0.80;
-}}
-.onboard-title {{
-    font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 800;
-    color: {C["on_surface"]}; line-height: 1.2; margin-bottom: 8px;
-}}
-.onboard-title em {{
-    font-style: italic; color: {C["primary_container"]};
-}}
-.onboard-sub {{
-    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 300;
-    color: {C["on_surface_var"]}; line-height: 1.7; margin-bottom: 28px;
-}}
-.onboard-dots {{
-    display: flex; gap: 8px; margin-bottom: 28px;
-}}
-.onboard-dot {{
-    width: 6px; height: 6px; border-radius: 50%;
-    background: {C["bg_highest"]};
-    transition: all 0.3s ease;
-}}
-.onboard-dot.active {{
-    background: {C["primary"]};
-    box-shadow: 0 0 8px {C["primary"]};
-    width: 18px; border-radius: 3px;
-}}
-.onboard-dot.done {{
-    background: {C["primary_dim"]};
-}}
-
-/* genre grid */
-.genre-grid {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 24px;
-}}
-.genre-chip {{
-    font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500;
-    padding: 9px 14px; border-radius: 9999px; text-align: center; cursor: pointer;
-    border: 1px solid {C["outline"]}; background: {C["bg_container"]};
-    color: {C["on_surface_var"]}; transition: all 0.18s ease;
-    user-select: none;
-}}
-.genre-chip:hover {{
-    border-color: {C["primary"]}; color: {C["primary_container"]};
-    background: rgba(232,131,58,0.07);
-}}
-.genre-chip.selected {{
-    background: rgba(232,131,58,0.14);
-    border-color: {C["primary"]};
-    color: {C["primary_container"]};
-    box-shadow: 0 0 0 1px rgba(232,131,58,0.30);
-}}
-
-/* type choice tiles */
-.type-grid {{
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 12px; margin-bottom: 24px;
-}}
-.type-tile {{
-    padding: 20px 16px; border-radius: 16px; cursor: pointer; text-align: center;
-    border: 1px solid {C["outline"]}; background: {C["bg_container"]};
-    transition: all 0.20s ease;
-    user-select: none;
-}}
-.type-tile:hover {{
-    border-color: rgba(232,131,58,0.40);
-    background: rgba(232,131,58,0.06);
-}}
-.type-tile.selected {{
-    border-color: {C["primary"]};
-    background: rgba(232,131,58,0.12);
-    box-shadow: 0 0 0 1px rgba(232,131,58,0.30);
-}}
-.type-tile-icon {{ font-size: 28px; margin-bottom: 8px; }}
-.type-tile-label {{
-    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: {C["on_surface"]};
-}}
-.type-tile-sub {{
-    font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 300;
-    color: {C["text_muted"]}; margin-top: 4px;
+    overflow-y: auto; max-height: calc(100vh - 260px);
 }}
 
 /* ── MOVIE TITLE / META ── */
@@ -808,6 +766,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     content: ''; flex: 1; height: 1px;
     background: linear-gradient(to right, {C["outline"]}80, transparent);
 }}
+
 .trailer-wrapper {{
     position: relative; width: 100%; padding-top: 56.25%;
     border-radius: 14px; overflow: hidden; background: {C["bg_lowest"]};
@@ -833,6 +792,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     font-family: 'Outfit', sans-serif; font-size: 13px;
     color: {C["text_muted"]}; letter-spacing: 0.04em;
 }}
+
 .agenda-strip {{
     display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 0; background: {C["bg_container"]};
@@ -842,7 +802,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 }}
 .agenda-cell {{
     padding: 26px 24px; border-right: 1px solid {C["outline_var"]};
-    transition: background 0.25s ease;
+    position: relative; transition: background 0.25s ease;
 }}
 .agenda-cell:last-child {{ border-right: none; }}
 .agenda-cell:hover {{ background: rgba(232,131,58,0.05); }}
@@ -850,6 +810,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .agenda-num {{ font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: {C["bg_highest"]}; line-height: 1; margin-bottom: 14px; }}
 .agenda-text {{ font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400; color: {C["on_surface_var"]}; line-height: 1.6; }}
 .agenda-text b {{ color: {C["on_surface"]}; font-weight: 600; }}
+
 .summary-box {{
     background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}80 100%);
     border-left: 3px solid {C["primary"]};
@@ -858,6 +819,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["on_surface_var"]}; line-height: 1.9;
     box-shadow: 0 4px 24px rgba(0,0,0,0.35);
 }}
+
 .theme-tag {{
     display: inline-block;
     background: rgba(232,131,58,0.08); border: 1px solid rgba(232,131,58,0.22);
@@ -865,6 +827,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
     padding: 5px 14px; border-radius: 9999px; margin: 4px 3px;
 }}
+
 .debate-wrap {{ display: flex; flex-direction: column; gap: 18px; margin-top: 10px; }}
 .debate-bubble {{
     padding: 18px 22px; font-family: 'Outfit', sans-serif;
@@ -886,17 +849,20 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["primary"]}; padding: 3px 14px; border-radius: 9999px;
     margin: 14px auto 6px auto; text-align: center;
 }}
+
 .fancy-divider {{
     height: 1px;
     background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
     margin: 32px 0;
 }}
+
 .err-box {{
     background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
     border-radius: 12px; padding: 20px 28px;
     font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
     color: {C["primary"]}; text-align: center; letter-spacing: 0.02em;
 }}
+
 [data-testid="stImage"] img {{
     border-radius: 12px !important;
     box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75), 0 0 50px -18px {C["glow_copper_md"]} !important;
@@ -911,8 +877,10 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     font-weight: 600 !important; letter-spacing: 0.06em !important;
     color: {C["primary_container"]} !important;
 }}
+
 p, li, div {{ font-size: 15px; }}
 
+/* Profile form input overrides in main area */
 div[data-testid="stTextInput"] input {{
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
@@ -934,7 +902,7 @@ div[data-testid="stTextInput"] input:focus {{
 
 
 # ================================================================
-# CINEMATIC BACKGROUND
+# CINEMATIC BACKGROUND — enhanced with grain + particles + scan lines
 # ================================================================
 st.markdown("""
     <div class="cinema-bg">
@@ -943,6 +911,7 @@ st.markdown("""
         <div class="glow-orb orb-3"></div>
         <div class="glow-orb orb-4"></div>
         <div class="scan-lines"></div>
+        <!-- Ember particles injected via JS below -->
     </div>
     <script>
     (function() {
@@ -969,236 +938,71 @@ st.markdown("""
 
 
 # ================================================================
-# ONBOARDING FLOW  (shown as inline section, not a real overlay,
-# since Streamlit can't do true fixed overlays reliably)
-# ================================================================
-if not st.session_state.profile_complete:
-
-    # Render a visually distinct centered onboarding card
-    st.markdown("<div style='height:3rem'></div>", unsafe_allow_html=True)
-
-    step = st.session_state.onboard_step
-
-    # Dots HTML
-    def dots_html(current):
-        out = "<div class='onboard-dots'>"
-        for i in range(1, 4):
-            cls = "active" if i == current else ("done" if i < current else "onboard-dot")
-            out += f"<div class='onboard-dot {cls}'></div>"
-        out += "</div>"
-        return out
-
-    # ── Centre the card ──
-    _, card_col, _ = st.columns([1, 2, 1])
-
-    with card_col:
-        st.markdown(f"""
-        <div style="background:{C['bg_low']};border:1px solid {C['outline']};
-             border-radius:24px;padding:48px 48px 36px 48px;
-             box-shadow:0 32px 100px rgba(0,0,0,0.8),0 0 0 1px rgba(232,131,58,0.12),
-             0 0 80px -20px {C['primary']};
-             animation:cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;">
-        """, unsafe_allow_html=True)
-
-        if step == 1:
-            st.markdown(f"""
-            {dots_html(1)}
-            <div class="onboard-step-label">Step 1 of 3 &nbsp;·&nbsp; Welcome</div>
-            <div class="onboard-title">Welcome to <em>NoCap Reviews</em></div>
-            <div class="onboard-sub">Two AI models. Four rounds. One verdict. Let's set up your profile so we know what you're into.</div>
-            """, unsafe_allow_html=True)
-
-            name_val = st.text_input(
-                "Your name",
-                value=st.session_state.onboard_name_input,
-                placeholder="What should we call you?",
-                key="ob_name",
-                label_visibility="collapsed",
-            )
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-            col_btn, _ = st.columns([1, 2])
-            with col_btn:
-                if st.button("Continue →", key="ob_step1_next", type="primary", use_container_width=True):
-                    if name_val.strip():
-                        st.session_state.onboard_name_input = name_val.strip()
-                        st.session_state.onboard_step = 2
-                        st.rerun()
-
-        elif step == 2:
-            st.markdown(f"""
-            {dots_html(2)}
-            <div class="onboard-step-label">Step 2 of 3 &nbsp;·&nbsp; Preference</div>
-            <div class="onboard-title">Movies or <em>Shows</em>?</div>
-            <div class="onboard-sub">What's your primary vibe? You can always search both.</div>
-            """, unsafe_allow_html=True)
-
-            col_m, col_s = st.columns(2)
-            with col_m:
-                movie_selected = st.session_state.onboard_type == "Movie"
-                style_m = f"border:2px solid {C['primary']};background:rgba(232,131,58,0.12);" if movie_selected else f"border:1px solid {C['outline']};background:{C['bg_container']};"
-                st.markdown(f"""
-                <div style="{style_m}padding:20px 16px;border-radius:16px;text-align:center;cursor:pointer;transition:all 0.2s;">
-                    <div style="font-size:30px;margin-bottom:8px;">🎬</div>
-                    <div style="font-family:Outfit,sans-serif;font-size:13px;font-weight:600;
-                         letter-spacing:0.08em;text-transform:uppercase;color:{C['on_surface']};">Movies</div>
-                    <div style="font-family:Outfit,sans-serif;font-size:11px;font-weight:300;
-                         color:{C['text_muted']};margin-top:4px;">Feature films</div>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button("Select Movies", key="ob_type_movie", use_container_width=True):
-                    st.session_state.onboard_type = "Movie"
-                    st.rerun()
-
-            with col_s:
-                show_selected = st.session_state.onboard_type == "Series"
-                style_s = f"border:2px solid {C['primary']};background:rgba(232,131,58,0.12);" if show_selected else f"border:1px solid {C['outline']};background:{C['bg_container']};"
-                st.markdown(f"""
-                <div style="{style_s}padding:20px 16px;border-radius:16px;text-align:center;cursor:pointer;transition:all 0.2s;">
-                    <div style="font-size:30px;margin-bottom:8px;">📺</div>
-                    <div style="font-family:Outfit,sans-serif;font-size:13px;font-weight:600;
-                         letter-spacing:0.08em;text-transform:uppercase;color:{C['on_surface']};">Shows</div>
-                    <div style="font-family:Outfit,sans-serif;font-size:11px;font-weight:300;
-                         color:{C['text_muted']};margin-top:4px;">Series & TV</div>
-                </div>
-                """, unsafe_allow_html=True)
-                if st.button("Select Shows", key="ob_type_series", use_container_width=True):
-                    st.session_state.onboard_type = "Series"
-                    st.rerun()
-
-            st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-            col_back, col_next, _ = st.columns([1, 1, 1])
-            with col_back:
-                if st.button("← Back", key="ob_step2_back", use_container_width=True):
-                    st.session_state.onboard_step = 1
-                    st.rerun()
-            with col_next:
-                if st.button("Continue →", key="ob_step2_next", type="primary", use_container_width=True):
-                    if st.session_state.onboard_type:
-                        st.session_state.onboard_step = 3
-                        st.rerun()
-
-        elif step == 3:
-            st.markdown(f"""
-            {dots_html(3)}
-            <div class="onboard-step-label">Step 3 of 3 &nbsp;·&nbsp; Genres</div>
-            <div class="onboard-title">What do you <em>love</em>?</div>
-            <div class="onboard-sub">Pick your favourite genres — select as many as you like.</div>
-            """, unsafe_allow_html=True)
-
-            # Genre grid — 5 cols
-            cols = st.columns(5)
-            for idx, genre in enumerate(ALL_GENRES):
-                with cols[idx % 5]:
-                    is_sel = genre in st.session_state.onboard_genres
-                    btn_label = f"✓ {genre}" if is_sel else genre
-                    sel_style = f"background:rgba(232,131,58,0.14);border-color:{C['primary']};color:{C['primary_container']};" if is_sel else ""
-                    st.markdown(f"""
-                    <div style="{sel_style}font-family:Outfit,sans-serif;font-size:11px;font-weight:500;
-                         padding:8px 6px;border-radius:9999px;text-align:center;
-                         border:1px solid {C['outline'] if not is_sel else C['primary']};
-                         background:{('rgba(232,131,58,0.14)' if is_sel else C['bg_container'])};
-                         color:{C['primary_container'] if is_sel else C['on_surface_var']};
-                         margin-bottom:2px;">
-                        {genre}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    if st.button(genre, key=f"ob_genre_{genre}", use_container_width=True):
-                        if genre in st.session_state.onboard_genres:
-                            st.session_state.onboard_genres.remove(genre)
-                        else:
-                            st.session_state.onboard_genres.append(genre)
-                        st.rerun()
-
-            if st.session_state.onboard_genres:
-                selected_str = " · ".join(st.session_state.onboard_genres)
-                st.markdown(
-                    f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{C['primary']};margin-top:8px;opacity:0.8;'>"
-                    f"Selected: {selected_str}</div>",
-                    unsafe_allow_html=True,
-                )
-
-            st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-            col_back2, col_finish, _ = st.columns([1, 1, 1])
-            with col_back2:
-                if st.button("← Back", key="ob_step3_back", use_container_width=True):
-                    st.session_state.onboard_step = 2
-                    st.rerun()
-            with col_finish:
-                if st.button("Let's Go 🎬", key="ob_finish", type="primary", use_container_width=True):
-                    st.session_state.user_name       = st.session_state.onboard_name_input
-                    st.session_state.user_genres     = st.session_state.onboard_genres[:]
-                    st.session_state.user_pref_type  = st.session_state.onboard_type
-                    st.session_state.media_type      = st.session_state.onboard_type or "Movie"
-                    st.session_state.profile_complete = True
-                    st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.stop()   # Don't render the rest of the app until onboarding is done
-
-
-# ================================================================
-# SIDEBAR — Profile + Archive  (only shown after onboarding)
+# SIDEBAR — Profile + Archive
 # ================================================================
 with st.sidebar:
 
-    name     = st.session_state.user_name
+    # ── Profile section ──────────────────────────────────────────
+    name = st.session_state.user_name
     initials = "".join(w[0].upper() for w in name.split() if w)[:2] if name else "?"
-    genres   = st.session_state.user_genres
-    pref     = st.session_state.user_pref_type
 
     st.markdown(f"""
     <div class="sb-profile-wrap">
         <div class="sb-logo">
-            <span class="sb-logo-dot"></span> NoCap Reviews
+            <span class="sb-logo-dot"></span> CineAgent
         </div>
     """, unsafe_allow_html=True)
 
-    if not st.session_state.show_edit_profile:
-        genre_chips = "".join(f"<span class='sb-genre-chip'>{g}</span>" for g in genres[:6])
-        pref_label  = f"Loves {pref}s" if pref else "Viewer Profile"
+    if name and not st.session_state.show_profile_form:
+        # Show user badge
         st.markdown(f"""
-        <div class="sb-user-badge">
+        <div class="sb-user-badge" title="Click Edit to update your name">
             <div class="sb-avatar">{initials}</div>
             <div class="sb-user-info">
                 <div class="sb-user-name">{name}</div>
-                <div class="sb-user-label">{pref_label}</div>
+                <div class="sb-user-label">Viewer Profile</div>
             </div>
+            <div class="sb-edit-icon">✎</div>
         </div>
         """, unsafe_allow_html=True)
-        if genres:
-            st.markdown(f"<div class='sb-genre-chips'>{genre_chips}</div>", unsafe_allow_html=True)
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        if st.button("✎  Edit Profile", key="btn_edit_profile"):
-            st.session_state.show_edit_profile = True
-            st.rerun()
+
+        col_edit, _ = st.columns([1, 2])
+        with col_edit:
+            if st.button("Edit Name", key="btn_edit_profile"):
+                st.session_state.show_profile_form = True
+                st.rerun()
     else:
+        # Show name input form
         st.markdown(
             f"<div style='font-family:Outfit,sans-serif;font-size:11px;font-weight:600;"
-            f"letter-spacing:0.14em;text-transform:uppercase;color:{C['text_muted']};margin-bottom:8px;'>"
-            f"Update Profile</div>",
+            f"letter-spacing:0.18em;text-transform:uppercase;color:{C['text_muted']};margin-bottom:8px;'>"
+            f"{'Update' if name else 'Set up'} your profile</div>",
             unsafe_allow_html=True,
         )
         new_name = st.text_input(
-            "Name", value=name, placeholder="Your name…",
-            key="edit_name_input", label_visibility="collapsed",
+            "Your name",
+            value=name,
+            placeholder="Enter your name…",
+            key="profile_name_input",
+            label_visibility="collapsed",
         )
-        col_sv, col_cx = st.columns(2)
-        with col_sv:
-            if st.button("Save", key="btn_save_edit", type="primary"):
+        col_s, col_c = st.columns([1, 1])
+        with col_s:
+            if st.button("Save", key="btn_save_profile", type="primary"):
                 if new_name.strip():
                     st.session_state.user_name = new_name.strip()
-                    st.session_state.show_edit_profile = False
+                    st.session_state.profile_saved = True
+                    st.session_state.show_profile_form = False
                     st.rerun()
-        with col_cx:
-            if st.button("Cancel", key="btn_cancel_edit"):
-                st.session_state.show_edit_profile = False
-                st.rerun()
+        if name:
+            with col_c:
+                if st.button("Cancel", key="btn_cancel_profile"):
+                    st.session_state.show_profile_form = False
+                    st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── Archive ──────────────────────────────────────────────────
+    # ── Archive section ───────────────────────────────────────────
     st.markdown(f"""
     <div class="sb-archive-scroll">
         <div class="sb-archive-label">Archive &nbsp;·&nbsp; {len(st.session_state.conversations)} film{"s" if len(st.session_state.conversations) != 1 else ""}</div>
@@ -1208,14 +1012,15 @@ with st.sidebar:
         st.markdown("""
         <div class="sb-empty-state">
             <div class="sb-empty-icon">🎬</div>
-            Analyzed films will appear here.<br>Search a title to begin.
+            Analyzed films will appear here.<br>
+            Search a title to begin.
         </div>
         """, unsafe_allow_html=True)
     else:
         for imdb_id, data in st.session_state.conversations.items():
             m = data["movie"]
             r = data.get("result", {})
-            score  = r.get("final_score", "—")
+            score = r.get("final_score", "—")
             poster = m.get("poster", "N/A")
             year   = m.get("year", "")
             genre_raw = m.get("genre", "") or ""
@@ -1228,8 +1033,10 @@ with st.sidebar:
                 if has_poster
                 else '<div class="sb-poster-placeholder">🎬</div>'
             )
+
             active_class = "active" if is_active else ""
-            st.markdown(f"""
+
+            card_html = f"""
             <div class="sb-archive-card {active_class}">
                 {poster_html}
                 <div class="sb-card-info">
@@ -1238,9 +1045,15 @@ with st.sidebar:
                 </div>
                 <div class="sb-card-score">{score}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
 
-            if st.button(f"{m['title']}", key=f"nav_{imdb_id}", use_container_width=True):
+            # Invisible full-width button over the card for click handling
+            if st.button(
+                f"{m['title']}",
+                key=f"nav_{imdb_id}",
+                use_container_width=True,
+            ):
                 st.session_state.active_id = imdb_id
                 st.session_state.search_results = []
                 st.rerun()
@@ -1249,52 +1062,57 @@ with st.sidebar:
 
 
 # ================================================================
-# HERO HEADER — time-aware personalised greeting
+# HERO HEADER — with dynamic greeting
 # ================================================================
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 
-name_js  = st.session_state.user_name.strip()
-pref_js  = st.session_state.user_pref_type  # "Movie" | "Series" | ""
+# Greeting logic (JS-driven, so it reads browser local time)
+name_js = st.session_state.user_name.strip() if st.session_state.user_name else ""
 
 greeting_html = f"""
-<div style="text-align:center;">
-    <div class="hero-eyebrow" id="greeting-eyebrow">⬡ NoCap Reviews</div>
-    <div class="hero-title" id="greeting-title">NoCap <em>Reviews</em></div>
+<div class="greeting-block">
+    <div class="greeting-time" id="greeting-eyebrow">⬡ Curated by AI · Two Models · One Verdict</div>
+    <div class="hero-title" id="greeting-title">Movie Review <em>Agent</em></div>
 </div>
 <script>
 (function() {{
     const name = {repr(name_js)};
-    const pref = {repr(pref_js)};
     const h = new Date().getHours();
     let timeLabel, timeEmoji;
-    if      (h >= 5  && h < 12) {{ timeLabel = 'Good morning';   timeEmoji = '☀️'; }}
-    else if (h >= 12 && h < 17) {{ timeLabel = 'Good afternoon'; timeEmoji = '🌤️'; }}
-    else if (h >= 17 && h < 21) {{ timeLabel = 'Good evening';   timeEmoji = '🌆'; }}
-    else                        {{ timeLabel = 'Good night';     timeEmoji = '🌙'; }}
+    if (h >= 5 && h < 12)  {{ timeLabel = 'Good morning';   timeEmoji = '☀️'; }}
+    else if (h < 17)        {{ timeLabel = 'Good afternoon'; timeEmoji = '🌤️'; }}
+    else if (h < 21)        {{ timeLabel = 'Good evening';   timeEmoji = '🌆'; }}
+    else                    {{ timeLabel = 'Good night';     timeEmoji = '🌙'; }}
 
     const eyebrow = document.getElementById('greeting-eyebrow');
     const title   = document.getElementById('greeting-title');
     if (!eyebrow || !title) return;
 
-    eyebrow.textContent = timeEmoji + '\u2002' + timeLabel;
-    eyebrow.style.fontSize = '12px';
-    title.innerHTML = timeLabel + ', <em>' + (name || 'Cinephile') + '</em>';
+    if (name) {{
+        eyebrow.textContent = timeEmoji + '  ' + timeLabel;
+        eyebrow.style.fontSize = '12px';
+        title.innerHTML = timeLabel + ', <em>' + name + '</em>';
+    }} else {{
+        eyebrow.textContent = '⬡ Curated by AI · Two Models · One Verdict';
+        title.innerHTML = 'Movie Review <em>Agent</em>';
+    }}
 }})();
 </script>
 """
+
 st.markdown(greeting_html, unsafe_allow_html=True)
 
-# Sub-tagline personalised to their pref
-pref_label_map = {"Movie": "films", "Series": "shows", "": "films & shows"}
-pref_word = pref_label_map.get(st.session_state.user_pref_type, "films & shows")
-genres_display = (
-    " · ".join(st.session_state.user_genres[:3])
-    if st.session_state.user_genres
-    else "all genres"
-)
+# Show "set your name" prompt if no name yet
+if not st.session_state.user_name:
+    st.markdown(
+        f"<div style='text-align:center;font-family:Outfit,sans-serif;font-size:12px;"
+        f"color:{C['text_muted']};letter-spacing:0.08em;margin-bottom:4px;'>"
+        f"Set your name in the sidebar for a personalised greeting ↖</div>",
+        unsafe_allow_html=True,
+    )
+
 st.markdown(
-    f"<div class='hero-sub'>Search any {pref_word} — a Critic and an Advocate debate it across four rounds, "
-    f"then deliver a calibrated verdict. Your taste: <span style='color:{C['primary_container']};font-weight:500;'>{genres_display}</span></div>",
+    "<div class='hero-sub'>Search any film or series — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
     unsafe_allow_html=True,
 )
 st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
@@ -1304,7 +1122,7 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 # SEARCH UI: Type Toggle → Search Bar
 # ================================================================
 show_search_ui = not st.session_state.active_id
-active_type    = st.session_state.media_type
+active_type = st.session_state.media_type
 
 if show_search_ui:
     active_idx = 1 if active_type == "Movie" else 2
@@ -1342,25 +1160,25 @@ if show_search_ui:
     </div>
     """, unsafe_allow_html=True)
 
+# ── Search bar ─────────────────────────────────────────────────
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
-    placeholder_txt = (
-        f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
-        if show_search_ui
-        else "Search another title…"
-    )
-    user_input = st.chat_input(placeholder_txt)
+    if show_search_ui:
+        placeholder = f"Search a {st.session_state.media_type.lower()} title, e.g. Oppenheimer…"
+    else:
+        placeholder = "Search another title…"
+    user_input = st.chat_input(placeholder)
 
 st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
 
 # ================================================================
-# HANDLE SEARCH
+# HANDLE SEARCH INPUT
 # ================================================================
 if user_input and user_input.strip():
     if user_input != st.session_state.last_typed:
-        st.session_state.last_typed   = user_input
-        st.session_state.active_id    = None
+        st.session_state.last_typed        = user_input
+        st.session_state.active_id          = None
         with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input, st.session_state.media_type)
             st.session_state.search_results = results
@@ -1395,7 +1213,8 @@ if search_results and not st.session_state.active_id:
         if len(desc_text) > 135:
             desc_text = desc_text[:132] + "..."
 
-        card_html = f"""<!DOCTYPE html>
+        card_html = f"""
+<!DOCTYPE html>
 <html>
 <head>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -1403,23 +1222,28 @@ if search_results and not st.session_state.active_id:
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   body {{ background:transparent; font-family:'Outfit',sans-serif; }}
   .card {{
-    display:flex; background:{C['bg_container']};
-    border:1px solid rgba(74,48,32,0.40); border-radius:14px;
-    overflow:hidden; min-height:200px; box-shadow:0 4px 24px rgba(0,0,0,0.5);
+    display:flex;
+    background:{C['bg_container']};
+    border:1px solid rgba(74,48,32,0.40);
+    border-radius:14px;
+    overflow:hidden;
+    min-height:200px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.5);
   }}
   .poster {{
     width:140px; min-width:140px; min-height:200px; flex-shrink:0; position:relative;
-    background-image:{poster_bg}; background-size:cover;
-    background-position:center top; background-color:{C['bg_high']};
+    background-image:{poster_bg};
+    background-size:cover; background-position:center top; background-repeat:no-repeat;
+    background-color:{C['bg_high']};
     display:flex; align-items:center; justify-content:center;
   }}
   .poster-fade {{
-    position:absolute; inset:0;
+    position:absolute; top:0; left:0; right:0; bottom:0;
     background:linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
   }}
   .body {{ flex:1; padding:20px 24px 18px 18px; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }}
   .title {{ font-family:'Playfair Display',serif; font-size:21px; font-weight:700; color:{C['on_surface']}; line-height:1.2; margin-bottom:8px; }}
-  .desc  {{ font-size:13px; font-weight:300; color:rgba(201,176,152,0.60); line-height:1.65; margin-bottom:12px; }}
+  .desc {{ font-size:13px; font-weight:300; color:rgba(201,176,152,0.60); line-height:1.65; margin-bottom:12px; }}
   .badge {{ display:inline-block; font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; padding:4px 11px; border-radius:3px; margin-right:5px; }}
   .badge-type {{ background:rgba(232,131,58,0.12); color:{C['primary']}; border:1px solid rgba(232,131,58,0.28); }}
   .badge-year {{ background:rgba(74,48,32,0.5); color:{C['tertiary']}; border:1px solid rgba(74,48,32,0.8); }}
