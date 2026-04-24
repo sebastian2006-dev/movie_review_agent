@@ -232,23 +232,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-# theme setup (important — must be before button)
-if "theme" not in st.session_state:
-    st.session_state.theme = "dark"
 
-current_theme = st.session_state.theme
-next_theme = "light" if current_theme == "dark" else "dark"
-toggle_icon = "🌙" if current_theme == "light" else "☀️"
-
-
-# 🔥 PLACE TOGGLE HERE (top of UI)
-st.markdown('<div class="theme-toggle-wrap">', unsafe_allow_html=True)
-
-if st.button(toggle_icon, key="theme_toggle"):
-    st.session_state.theme = next_theme
-    st.rerun()
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 # ================================================================
 # SESSION STATE
