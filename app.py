@@ -301,20 +301,38 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     border-radius: 0 8px 8px 0 !important;
     box-shadow: 2px 0 12px {C["glow_copper"]} !important;
 }}
-[data-testid="stSidebarCollapsedControl"] button {{
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] button:hover,
+[data-testid="stSidebarCollapsedControl"] button:focus {{
     color: {C["primary"]} !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
 }}
-[data-testid="stSidebarCollapsedControl"] svg {{
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="stSidebarCollapsedControl"] svg *,
+[data-testid="stSidebarCollapsedControl"] button svg,
+[data-testid="stSidebarCollapsedControl"] button svg * {{
     fill: {C["primary"]} !important;
     stroke: {C["primary"]} !important;
     color: {C["primary"]} !important;
+    opacity: 1 !important;
 }}
-[data-testid="collapsedControl"] {{
+[data-testid="collapsedControl"],
+[data-testid="collapsedControl"] * {{
     color: {C["primary"]} !important;
+    opacity: 1 !important;
 }}
-[data-testid="collapsedControl"] svg {{
+[data-testid="collapsedControl"] svg,
+[data-testid="collapsedControl"] svg * {{
     fill: {C["primary"]} !important;
     stroke: {C["primary"]} !important;
+}}
+/* Force the arrow icon wrapper background in both themes */
+div[data-testid="stSidebarCollapsedControl"] > div {{
+    background: {C["bg_container"]} !important;
+    border-radius: 0 8px 8px 0 !important;
 }}
 
 /* ── THEME TOGGLE — fixed top-right ── */
@@ -326,19 +344,20 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 .ncr-theme-toggle-wrap div[data-testid="stButton"] > button {{
     font-family: 'Outfit', sans-serif !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.16em !important;
+    letter-spacing: 0.14em !important;
     text-transform: uppercase !important;
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
     color: {C["text_muted"]} !important;
     border-radius: 9999px !important;
-    padding: 8px 20px !important;
+    padding: 5px 14px !important;
     box-shadow: 0 2px 12px {C["glow_copper"]} !important;
     white-space: nowrap !important;
     transition: all 0.22s ease !important;
-    min-width: 120px !important;
+    min-width: 0 !important;
+    line-height: 1.4 !important;
 }}
 .ncr-theme-toggle-wrap div[data-testid="stButton"] > button:hover {{
     border-color: {C["primary"]} !important;
@@ -749,26 +768,34 @@ st.markdown(
 st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
 
 
-# ================================================================
-# THEME TOGGLE — fixed top-right, pure st.button (no iframe/postMessage)
-# FIX 1: st.button → session_state → st.rerun() is the correct Streamlit
-#         pattern; the old components.html postMessage approach never
-#         actually landed a return value back into Python.
-# FIX 2: Sidebar arrow CSS is injected in the global stylesheet above,
-#         keyed to the current C token map so it's always visible.
-# FIX 3: .ncr-theme-toggle-wrap uses position:fixed top-right in CSS above.
-# ================================================================
+# ── THEME TOGGLE ────────────────────────────────────────────────
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
-toggle_label = "Light Mode" if current_theme == "dark" else "Dark Mode"
+toggle_label = "Light" if current_theme == "dark" else "Dark"
 next_theme   = "light" if current_theme == "dark" else "dark"
 
-st.markdown('<div class="ncr-theme-toggle-wrap">', unsafe_allow_html=True)
-if st.button(f"{toggle_icon}  {toggle_label}", key="theme_toggle"):
-    st.session_state.theme = next_theme
-    st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+# Inject a spacer column so the button floats to the far right
+_t1, _t2, _t3 = st.columns([6, 1, 1])
+with _t3:
+    st.markdown(f"""
+    <style>
+    div[data-testid="column"]:last-child div[data-testid="stButton"] > button {{
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 10px !important; font-weight: 600 !important;
+        letter-spacing: 0.13em !important; text-transform: uppercase !important;
+        background: {C["bg_container"]} !important;
+        border: 1px solid {C["outline"]} !important;
+        color: {C["text_muted"]} !important;
+        border-radius: 9999px !important;
+        padding: 5px 14px !important;
+        box-shadow: 0 2px 10px {C["glow_copper"]} !important;
+        white-space: nowrap !important; line-height: 1.4 !important;
+        min-width: 0 !important; width: auto !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
+        st.session_state.theme = next_theme
+        st.rerun()
 
 
 # ================================================================
