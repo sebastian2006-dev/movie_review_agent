@@ -355,10 +355,11 @@ div[data-testid="column"]:last-child {{
     position: relative;
 }}
 
-div[data-testid="column"]:last-child div[data-testid="stButton"] {{
+div[data-testid="stButton"]:has(button#theme_toggle) {{
     position: fixed !important;
     top: 12px !important;
-    left: 80px !important;
+    left: 20px !important;
+    right: auto !important;   /* IMPORTANT: kill right positioning */
     z-index: 999999 !important;
 }}
 
