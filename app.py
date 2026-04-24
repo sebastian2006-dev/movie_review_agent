@@ -871,12 +871,9 @@ st.markdown(f"""
     transform: translateY(-1px) !important;
 }}
 </style>
-<div class="ncr-toggle-container">
+
 """, unsafe_allow_html=True)
 
-if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
-    st.session_state.theme = next_theme
-    st.rerun()
 
 # TOP RIGHT TOGGLE (NO JS NEEDED)
 col1, col2 = st.columns([10, 1])
