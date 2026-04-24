@@ -350,62 +350,39 @@ div[data-testid="collapsedControl"] > div {{
     visibility: visible !important;
 }}
 
-/* ================================================================
-   FIX 2 — THEME TOGGLE
-   Raised higher (top: 6px) and smaller pill (height: 22px).
-   Uses .ncr-toggle-container fixed-position wrapper + JS reparent.
-================================================================ */
-.ncr-theme-toggle-col {{
-    position: fixed !important;
-    top: 6px !important;
-    right: 20px !important;
-    z-index: 999999 !important;
-    width: auto !important;
+/* Fix toggle to top-right */
+div[data-testid="column"]:last-child {{
+    position: relative;
 }}
 
-div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
-.ncr-theme-btn-wrap {{
+div[data-testid="column"]:last-child div[data-testid="stButton"] {{
     position: fixed !important;
     top: 12px !important;
-    right: 20px !important;
+    right: 16px !important;
     z-index: 999999 !important;
 }}
 
-#ncr-theme-toggle-fixed {{
-    position: fixed;
-    top: 6px;
-    right: 20px;
-    z-index: 999999;
+/* Clean small circular button */
+div[data-testid="column"]:last-child button {{
+    height: 38px !important;
+    width: 38px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+
+    background: var(--ncr-bg-container) !important;
+    border: 1px solid var(--ncr-outline) !important;
+    color: var(--ncr-primary) !important;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }}
-#ncr-theme-toggle-fixed button,
-.ncr-theme-btn-wrap div[data-testid="stButton"] > button,
-[data-testid="stButton"][aria-label="theme_toggle"] > button {{
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 9px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.13em !important;
-    text-transform: uppercase !important;
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    color: {C["text_muted"]} !important;
-    border-radius: 9999px !important;
-    padding: 3px 10px !important;
-    height: 22px !important;
-    min-height: 22px !important;
-    line-height: 1 !important;
-    box-shadow: 0 2px 10px {C["glow_copper"]} !important;
-    white-space: nowrap !important;
-    min-width: 0 !important;
-    width: auto !important;
-    cursor: pointer !important;
-}}
-#ncr-theme-toggle-fixed button:hover,
-.ncr-theme-btn-wrap div[data-testid="stButton"] > button:hover {{
-    border-color: {C["primary"]} !important;
-    color: {C["primary_container"]} !important;
-    background: {C["critic_bg"]} !important;
-    box-shadow: 0 4px 18px {C["glow_copper_md"]} !important;
-    transform: translateY(-1px) !important;
+
+/* Hover effect */
+div[data-testid="column"]:last-child button:hover {{
+    background: var(--ncr-critic-bg) !important;
+    border-color: var(--ncr-primary) !important;
 }}
 
 .stApp {{
@@ -879,7 +856,7 @@ st.markdown(f"""
 col1, col2 = st.columns([10, 1])
 
 with col2:
-    if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
+    if st.button(f"{toggle_icon}", key="theme_toggle"):
         st.session_state.theme = next_theme
         st.rerun()
 
