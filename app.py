@@ -156,7 +156,7 @@ def fetch_trailer(title: str, year: str = "") -> str | None:
 # PAGE CONFIG
 # ================================================================
 st.set_page_config(
-    page_title="Movie Review Agent",
+    page_title="NoCap Reviews",
     layout="wide",
     initial_sidebar_state="expanded",
 )
