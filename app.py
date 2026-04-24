@@ -1361,3 +1361,57 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             )
 
     st.markdown("<div style='margin-bottom:100px;'></div>", unsafe_allow_html=True)
+    # ── FINAL UI OVERRIDES (PLACE AT THE VERY BOTTOM OF APP.PY) ──
+st.markdown(f"""
+<style>
+    /* 1. FORCE THEME TOGGLE TO TOP RIGHT */
+    div.ncr-theme-btn-wrapper {{
+        position: fixed !important;
+        top: 10px !important;
+        right: 15px !important;
+        z-index: 99999999 !important; /* Extremely high z-index */
+        display: block !important;
+    }}
+    
+    /* Target the button specifically inside our wrapper */
+    .ncr-theme-btn-wrapper button {{
+        width: 100px !important;
+        height: 32px !important;
+        padding: 0px !important;
+        background-color: {C["bg_container"]} !important;
+        border: 1px solid {C["primary"]} !important;
+        color: {C["primary"]} !important;
+        border-radius: 20px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    }}
+
+    /* 2. FORCE SIDEBAR BUTTON VISIBILITY */
+    /* This targets the Streamlit "hamburger/chevron" button */
+    [data-testid="stHeader"] {{
+        background: transparent !important;
+    }}
+    
+    [data-testid="stSidebarCollapsedControl"] svg {{
+        fill: {C["primary"]} !important;
+        stroke: {C["primary"]} !important;
+        filter: drop-shadow(0px 0px 5px {C["primary"]}40) !important;
+    }}
+    
+    [data-testid="stSidebarCollapsedControl"] {{
+        background-color: {C["bg_container"]} !important;
+        border-radius: 50% !important;
+        border: 1px solid {C["outline"]} !important;
+        top: 10px !important;
+        left: 10px !important;
+    }}
+</style>
+<div class="ncr-theme-btn-wrapper">
+""", unsafe_allow_html=True)
+
+if st.button(f"{toggle_icon} {toggle_label}", key="final_atomic_toggle"):
+    st.session_state.theme = next_theme
+    st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
