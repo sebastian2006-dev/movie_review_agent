@@ -366,7 +366,7 @@ div[data-testid="collapsedControl"] > div {{
 div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
 .ncr-theme-btn-wrap {{
     position: fixed !important;
-    top: 6px !important;
+    top: 12px !important;
     right: 20px !important;
     z-index: 999999 !important;
 }}
@@ -878,30 +878,13 @@ if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
     st.session_state.theme = next_theme
     st.rerun()
 
-st.markdown("""
-</div>
-<script>
-(function() {
-    function reparentToggle() {
-        const container = document.querySelector('.ncr-toggle-container');
-        if (!container) return;
-        const allBtns = document.querySelectorAll('div[data-testid="stButton"]');
-        for (const btn of allBtns) {
-            const txt = btn.innerText || '';
-            if (txt.includes('Light') || txt.includes('Dark')) {
-                container.appendChild(btn);
-                break;
-            }
-        }
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', reparentToggle);
-    } else {
-        setTimeout(reparentToggle, 100);
-    }
-})();
-</script>
-""", unsafe_allow_html=True)
+# TOP RIGHT TOGGLE (NO JS NEEDED)
+col1, col2 = st.columns([10, 1])
+
+with col2:
+    if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
+        st.session_state.theme = next_theme
+        st.rerun()
 
 
 # ================================================================
