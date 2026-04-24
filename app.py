@@ -802,47 +802,49 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# THEME TOGGLE — Fixed Top-Left
+# TOP-LEFT THEME TOGGLE
 # ================================================================
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
 next_theme   = "light" if current_theme == "dark" else "dark"
 
+# 1. CSS for Top-Left Positioning
 st.markdown(f"""
 <style>
+/* Position next to the sidebar arrow */
 div[data-testid="stButton"]:has(button#theme_toggle) {{
     position: fixed !important;
-    top: 15px !important;
-    left: 65px !important; 
+    top: 12px !important;    
+    left: 60px !important;   
     z-index: 999999 !important;
     width: auto !important;
 }}
 
-/* Style the button as a clean circle */
+/* Styling the button into a circle */
 div[data-testid="stButton"]:has(button#theme_toggle) > button {{
-    height: 38px !important;
-    width: 38px !important;
+    height: 35px !important;
+    width: 35px !important;
     border-radius: 50% !important;
     padding: 0 !important;
     display: flex !important;
-    align-items: center;
-    justify-content: center;
+    align-items: center !important;
+    justify-content: center !important;
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
     color: {C["primary"]} !important;
-    box-shadow: 0 4px 12px {C["glow_copper"]} !important;
-    font-size: 18px !important;
+    box-shadow: 0 4px 10px {C["glow_copper"]}33 !important;
+    font-size: 16px !important;
+    transition: all 0.2s ease-in-out !important;
 }}
 
-/* Hover interaction */
 div[data-testid="stButton"]:has(button#theme_toggle) > button:hover {{
-    background: {C["critic_bg"]} !important;
     border-color: {C["primary"]} !important;
-    transform: scale(1.05) !important;
+    transform: scale(1.1) !important;
+    background: {C["bg_high"]} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# 2. Render the actual button (no columns needed since it is fixed)
+# Render the actual button (no columns needed since it is fixed)
 if st.button(f"{toggle_icon}", key="theme_toggle"):
     st.session_state.theme = next_theme
     st.rerun()
