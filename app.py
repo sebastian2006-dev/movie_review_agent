@@ -88,35 +88,6 @@ LIGHT = {
     "bg_base":          "#fdf6ee",
 }
 
-# JS token maps (same values but for runtime CSS-var swap, no page reload)
-_LIGHT_JS = """{
-  "--ncr-bg":"#fdf6ee","--ncr-bg-lowest":"#f5ece0","--ncr-bg-low":"#faf2e8",
-  "--ncr-bg-container":"#fff8f0","--ncr-bg-high":"#f5e8d8","--ncr-bg-highest":"#ecdcc8",
-  "--ncr-bg-bright":"#e0cdb4","--ncr-on-surface":"#2a1a0e","--ncr-on-surface-var":"#5a3e28",
-  "--ncr-on-primary":"#ffffff","--ncr-text-muted":"#a07850","--ncr-text-dim":"#c8a882",
-  "--ncr-primary":"#c05a18","--ncr-primary-dim":"#a84810","--ncr-primary-container":"#d46828",
-  "--ncr-secondary":"#b04830","--ncr-tertiary":"#c07828","--ncr-outline":"#d4b898",
-  "--ncr-outline-var":"#e8d4bc","--ncr-glow-copper":"rgba(192,90,24,0.10)",
-  "--ncr-glow-copper-md":"rgba(192,90,24,0.20)","--ncr-glow-copper-btn":"rgba(192,90,24,0.22)",
-  "--ncr-critic-color":"#c05a18","--ncr-advocate-color":"#8a5c30",
-  "--ncr-critic-bg":"rgba(192,90,24,0.06)","--ncr-advocate-bg":"rgba(138,92,48,0.06)",
-  "--ncr-critic-border":"rgba(192,90,24,0.18)","--ncr-advocate-border":"rgba(138,92,48,0.18)"
-}"""
-
-_DARK_JS = """{
-  "--ncr-bg":"#120c09","--ncr-bg-lowest":"#0d0806","--ncr-bg-low":"#1a120d",
-  "--ncr-bg-container":"#201610","--ncr-bg-high":"#2a1d15","--ncr-bg-highest":"#36261c",
-  "--ncr-bg-bright":"#423024","--ncr-on-surface":"#f0e4d4","--ncr-on-surface-var":"#c9b098",
-  "--ncr-on-primary":"#1a0a00","--ncr-text-muted":"#7a5c42","--ncr-text-dim":"#3d2415",
-  "--ncr-primary":"#e8833a","--ncr-primary-dim":"#d4692a","--ncr-primary-container":"#f09050",
-  "--ncr-secondary":"#c8603a","--ncr-tertiary":"#f0b87a","--ncr-outline":"#4a3020",
-  "--ncr-outline-var":"#2e1e12","--ncr-glow-copper":"rgba(232,131,58,0.14)",
-  "--ncr-glow-copper-md":"rgba(232,131,58,0.26)","--ncr-glow-copper-btn":"rgba(232,131,58,0.30)",
-  "--ncr-critic-color":"#e8833a","--ncr-advocate-color":"#c8a070",
-  "--ncr-critic-bg":"rgba(232,131,58,0.07)","--ncr-advocate-bg":"rgba(200,160,112,0.07)",
-  "--ncr-critic-border":"rgba(232,131,58,0.20)","--ncr-advocate-border":"rgba(200,160,112,0.20)"
-}"""
-
 
 # ================================================================
 # SEARCH MOVIES
@@ -272,7 +243,7 @@ if "search_results" not in st.session_state: st.session_state.search_results = [
 if "last_typed"     not in st.session_state: st.session_state.last_typed     = None
 if "search_error"   not in st.session_state: st.session_state.search_error   = None
 if "media_type"     not in st.session_state: st.session_state.media_type     = "Movie"
-if "theme"          not in st.session_state: st.session_state.theme          = "dark"   # ← NEW
+if "theme"          not in st.session_state: st.session_state.theme          = "dark"
 
 # ── resolve token map for current SSR render ────────────────────
 current_theme = st.session_state.theme
@@ -280,7 +251,7 @@ C = DARK if current_theme == "dark" else LIGHT
 
 
 # ================================================================
-# GLOBAL CSS  (uses C tokens for SSR; JS swaps CSS vars at runtime)
+# GLOBAL CSS  (uses C tokens for SSR)
 # ================================================================
 st.markdown(f"""
 <style>
@@ -318,9 +289,64 @@ st.markdown(f"""
   --ncr-advocate-border:  {C["advocate_border"]};
 }}
 
-[data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+/* ── HIDE DEFAULT HEADER ── */
 header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
+
+/* ── SIDEBAR COLLAPSE ARROW — always visible in both themes ── */
+[data-testid="stSidebarCollapsedControl"] {{
+    display: flex !important;
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    border-radius: 0 8px 8px 0 !important;
+    box-shadow: 2px 0 12px {C["glow_copper"]} !important;
+}}
+[data-testid="stSidebarCollapsedControl"] button {{
+    color: {C["primary"]} !important;
+}}
+[data-testid="stSidebarCollapsedControl"] svg {{
+    fill: {C["primary"]} !important;
+    stroke: {C["primary"]} !important;
+    color: {C["primary"]} !important;
+}}
+[data-testid="collapsedControl"] {{
+    color: {C["primary"]} !important;
+}}
+[data-testid="collapsedControl"] svg {{
+    fill: {C["primary"]} !important;
+    stroke: {C["primary"]} !important;
+}}
+
+/* ── THEME TOGGLE — fixed top-right ── */
+.ncr-theme-toggle-wrap {{
+    position: fixed;
+    top: 1rem;
+    right: 1.5rem;
+    z-index: 99999;
+}}
+.ncr-theme-toggle-wrap div[data-testid="stButton"] > button {{
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    color: {C["text_muted"]} !important;
+    border-radius: 9999px !important;
+    padding: 8px 20px !important;
+    box-shadow: 0 2px 12px {C["glow_copper"]} !important;
+    white-space: nowrap !important;
+    transition: all 0.22s ease !important;
+    min-width: 120px !important;
+}}
+.ncr-theme-toggle-wrap div[data-testid="stButton"] > button:hover {{
+    border-color: {C["primary"]} !important;
+    color: {C["primary_container"]} !important;
+    background: {C["critic_bg"]} !important;
+    box-shadow: 0 4px 20px {C["glow_copper_md"]} !important;
+    transform: translateY(-1px) !important;
+}}
 
 .stApp {{
     background: transparent !important;
@@ -724,121 +750,23 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# THEME TOGGLE  ← injected right after hero ornament
+# THEME TOGGLE — fixed top-right, pure st.button (no iframe/postMessage)
+# FIX 1: st.button → session_state → st.rerun() is the correct Streamlit
+#         pattern; the old components.html postMessage approach never
+#         actually landed a return value back into Python.
+# FIX 2: Sidebar arrow CSS is injected in the global stylesheet above,
+#         keyed to the current C token map so it's always visible.
+# FIX 3: .ncr-theme-toggle-wrap uses position:fixed top-right in CSS above.
 # ================================================================
-next_theme  = "light" if current_theme == "dark" else "dark"
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
 toggle_label = "Light Mode" if current_theme == "dark" else "Dark Mode"
+next_theme   = "light" if current_theme == "dark" else "dark"
 
-_toggle_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600&display=swap" rel="stylesheet">
-<style>
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
-  body {{ background:transparent; display:flex; justify-content:center; padding:4px 0; }}
-  .pill {{
-    display: inline-flex; align-items: center; gap: 9px;
-    background: {C["bg_container"]};
-    border: 1px solid {C["outline"]};
-    border-radius: 9999px; padding: 7px 20px 7px 14px;
-    cursor: pointer; user-select: none;
-    font-family: 'Outfit', sans-serif; font-size: 11px;
-    font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-    color: {C["text_muted"]};
-    box-shadow: 0 2px 12px {C["glow_copper"]};
-    transition: all 0.22s ease;
-  }}
-  .pill:hover {{
-    border-color: {C["primary"]};
-    color: {C["primary_container"]};
-    box-shadow: 0 4px 20px {C["glow_copper_md"]};
-    transform: translateY(-1px);
-  }}
-  .icon {{ font-size: 15px; line-height: 1; }}
-</style>
-</head>
-<body>
-<div class="pill" id="toggle" onclick="doToggle()">
-  <span class="icon">{toggle_icon}</span>
-  {toggle_label}
-</div>
-<script>
-const LIGHT = {_LIGHT_JS};
-const DARK  = {_DARK_JS};
-const NEXT  = "{next_theme}";
-
-const LIGHT_DOM = {{
-  bgColor: "#fdf6ee", orbBlend: "multiply", orbOpacity: "0.30",
-  orb1: "radial-gradient(circle,#f5c890 0%,transparent 70%)",
-  orb2: "radial-gradient(circle,#e8a060 0%,transparent 70%)",
-  orb3: "radial-gradient(circle,#ffd8a0 0%,transparent 70%)",
-  textColor: "#2a1a0e"
-}};
-const DARK_DOM = {{
-  bgColor: "#120c09", orbBlend: "screen", orbOpacity: "0.45",
-  orb1: "radial-gradient(circle,#e8833a 0%,transparent 70%)",
-  orb2: "radial-gradient(circle,#c8603a 0%,transparent 70%)",
-  orb3: "radial-gradient(circle,#f0b87a 0%,transparent 70%)",
-  textColor: "#f0e4d4"
-}};
-
-function applyTokens(tokens) {{
-  const root = window.parent.document.documentElement;
-  for (const [k, v] of Object.entries(tokens)) root.style.setProperty(k, v);
-}}
-
-function applyDomOverrides(dom) {{
-  const pd = window.parent.document;
-  // background
-  const bg = pd.querySelector('.cinema-bg');
-  if (bg) bg.style.backgroundColor = dom.bgColor;
-  // orbs
-  const orbs = pd.querySelectorAll('.glow-orb');
-  if (orbs.length >= 3) {{
-    [orbs[0], orbs[1], orbs[2]].forEach((o, i) => {{
-      o.style.mixBlendMode = dom.orbBlend;
-      o.style.opacity = dom.orbOpacity;
-      o.style.background = [dom.orb1, dom.orb2, dom.orb3][i];
-    }});
-  }}
-  // chat textarea text colour
-  pd.querySelectorAll('textarea[data-testid="stChatInputTextArea"]').forEach(a => {{
-    a.style.color = dom.textColor;
-    a.style.webkitTextFillColor = dom.textColor;
-  }});
-  // stApp background
-  pd.querySelectorAll('[data-testid="stAppViewContainer"], .stApp').forEach(el => {{
-    el.style.backgroundColor = dom.bgColor;
-  }});
-  // sidebar
-  const sb = pd.querySelector('[data-testid="stSidebar"]');
-  if (sb) sb.style.backgroundColor = (NEXT === 'light') ? '#faf2e8' : '#1a120d';
-}}
-
-function doToggle() {{
-  const tokens = NEXT === 'light' ? LIGHT : DARK;
-  const dom    = NEXT === 'light' ? LIGHT_DOM : DARK_DOM;
-  applyTokens(tokens);
-  applyDomOverrides(dom);
-  // Tell Streamlit to persist the new theme value → triggers silent rerun
-  window.parent.postMessage({{
-    isStreamlitMessage: true,
-    type: "streamlit:setComponentValue",
-    value: NEXT
-  }}, "*");
-}}
-</script>
-</body>
-</html>
-"""
-
-_result = components.html(_toggle_html, height=52, scrolling=False)
-# Persist theme across reruns via session_state
-if _result in ("light", "dark") and _result != current_theme:
-    st.session_state.theme = _result
+st.markdown('<div class="ncr-theme-toggle-wrap">', unsafe_allow_html=True)
+if st.button(f"{toggle_icon}  {toggle_label}", key="theme_toggle"):
+    st.session_state.theme = next_theme
     st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
