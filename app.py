@@ -802,47 +802,50 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# THEME TOGGLE — fixed top-right, small pill
-# Inject fixed-position wrapper, render button, then JS-reparent it.
-# Raised to top: 6px, shrunk to height: 22px.
+# THEME TOGGLE — Fixed Top-Left
 # ================================================================
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
-toggle_label = "Light" if current_theme == "dark" else "Dark"
 next_theme   = "light" if current_theme == "dark" else "dark"
 
 st.markdown(f"""
 <style>
-.ncr-toggle-container {{
+div[data-testid="stButton"]:has(button#theme_toggle) {{
     position: fixed !important;
-    top: 6px !important;
-    right: 20px !important;
+    top: 15px !important;
+    left: 65px !important; 
     z-index: 999999 !important;
     width: auto !important;
-    height: auto !important;
+}}
+
+/* Style the button as a clean circle */
+div[data-testid="stButton"]:has(button#theme_toggle) > button {{
+    height: 38px !important;
+    width: 38px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
     display: flex !important;
-    align-items: center !important;
+    align-items: center;
+    justify-content: center;
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    color: {C["primary"]} !important;
+    box-shadow: 0 4px 12px {C["glow_copper"]} !important;
+    font-size: 18px !important;
 }}
 
-.ncr-toggle-container div[data-testid="stButton"] > button:hover {{
-    border-color: {C["primary"]} !important;
-    color: {C["primary_container"]} !important;
+/* Hover interaction */
+div[data-testid="stButton"]:has(button#theme_toggle) > button:hover {{
     background: {C["critic_bg"]} !important;
-    box-shadow: 0 4px 18px {C["glow_copper_md"]} !important;
-    transform: translateY(-1px) !important;
+    border-color: {C["primary"]} !important;
+    transform: scale(1.05) !important;
 }}
-
 </style>
-
 """, unsafe_allow_html=True)
 
-
-# TOP RIGHT TOGGLE (NO JS NEEDED)
-col1, col2 = st.columns([10, 1])
-
-with col2:
-    if st.button(f"{toggle_icon}", key="theme_toggle"):
-        st.session_state.theme = next_theme
-        st.rerun()
+# 2. Render the actual button (no columns needed since it is fixed)
+if st.button(f"{toggle_icon}", key="theme_toggle"):
+    st.session_state.theme = next_theme
+    st.rerun()
 
 
 # ================================================================
