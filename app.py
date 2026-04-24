@@ -351,18 +351,6 @@ div[data-testid="collapsedControl"] > div {{
     visibility: visible !important;
 }}
 
-/* Fix toggle to top-right */
-div[data-testid="column"]:last-child {{
-    position: relative;
-}}
-
-div[data-testid="stButton"]:has(button#theme_toggle) {{
-    position: fixed !important;
-    top: 12px !important;
-    left: 20px !important;
-    right: auto !important;   /* IMPORTANT: kill right positioning */
-    z-index: 999999 !important;
-}}
 
 /* Clean small circular button */
 div[data-testid="column"]:last-child button {{
@@ -802,20 +790,25 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# TOP-LEFT THEME TOGGLE (FORCED POSITIONING)
+# FINAL TOP-LEFT THEME TOGGLE
 # ================================================================
-toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
-next_theme   = "light" if current_theme == "dark" else "dark"
+toggle_icon = "☀️" if current_theme == "dark" else "🌙"
+next_theme  = "light" if current_theme == "dark" else "dark"
 
+# 1. Inject the CSS specifically for the top-left anchor
 st.markdown(f"""
 <style>
-    /* This targets the button specifically to pop it out of the layout */
-    div.stButton > button:has(div:contains("{toggle_icon}")), 
-    div.stButton > button[key="theme_toggle"] {{
+    /* Target the button by its key to force it to the top-left */
+    div[data-testid="stButton"]:has(button[key="theme_toggle_final"]) {{
         position: fixed !important;
-        top: 12px !important;
-        left: 60px !important;
-        z-index: 99999999 !important; /* Extremely high to stay above sidebar */
+        top: 15px !important;
+        left: 60px !important; /* This aligns it perfectly next to the sidebar arrow */
+        z-index: 1000000 !important;
+        width: auto !important;
+    }}
+
+    /* Style the button as a circular glass-morphism element */
+    button[key="theme_toggle_final"] {{
         height: 38px !important;
         width: 38px !important;
         border-radius: 50% !important;
@@ -826,18 +819,20 @@ st.markdown(f"""
         background: {C["bg_container"]} !important;
         border: 1px solid {C["outline"]} !important;
         color: {C["primary"]} !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+        transition: all 0.2s ease !important;
     }}
 
-    /* Specific fix for Streamlit's container padding */
-    [data-testid="stHeader"] {{
-        z-index: 0 !important; /* Move header back so button stays front */
+    button[key="theme_toggle_final"]:hover {{
+        border-color: {C["primary"]} !important;
+        transform: scale(1.1) !important;
+        background: {C["bg_high"]} !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# THE BUTTON (Place this outside of any columns or sidebars)
-if st.button(f"{toggle_icon}", key="theme_toggle"):
+# 2. The actual button - notice the new KEY to avoid cache issues
+if st.button(toggle_icon, key="theme_toggle_final"):
     st.session_state.theme = next_theme
     st.rerun()
 
