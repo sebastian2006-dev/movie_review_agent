@@ -1014,10 +1014,10 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
         </div>
         """, unsafe_allow_html=True)
 
-        genres = result.get("genres", [])
-        if genres:
-            st.markdown("<div class='section-heading' style='margin-top:10px;'>Genres</div>", unsafe_allow_html=True)
-            tags_html = "".join(f"<span class='theme-tag'>#{t.strip()}</span>" for t in genres)
+        themes = result.get("themes", [])
+        if themes:
+            st.markdown("<div class='section-heading' style='margin-top:10px;'>Core Themes</div>", unsafe_allow_html=True)
+            tags_html = "".join(f"<span class='theme-tag'>#{t.strip()}</span>" for t in themes)
             st.markdown(f"<div style='line-height:2.6;margin-bottom:8px;'>{tags_html}</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='section-heading'>Overview</div>", unsafe_allow_html=True)
