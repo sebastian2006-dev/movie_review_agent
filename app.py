@@ -390,8 +390,8 @@ div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
     color: {C["text_muted"]} !important;
     border-radius: 9999px !important;
     padding: 3px 10px !important;
-    height: 22px !important;
-    min-height: 22px !important;
+    height: 24px !important;
+    min-height: 24px !important;
     line-height: 1 !important;
     box-shadow: 0 2px 10px {C["glow_copper"]} !important;
     white-space: nowrap !important;
