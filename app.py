@@ -249,6 +249,9 @@ if "theme"          not in st.session_state: st.session_state.theme          = "
 current_theme = st.session_state.theme
 C = DARK if current_theme == "dark" else LIGHT
 
+# ── resolve sidebar icon color: near-black in light, near-white in dark ──
+sidebar_icon_color = "#1a1a1a" if current_theme == "light" else "#f0f0f0"
+
 
 # ================================================================
 # GLOBAL CSS  (uses C tokens for SSR)
@@ -294,9 +297,9 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 /* ================================================================
-   FIX 1 — SIDEBAR COLLAPSE ARROW: fully visible in BOTH themes
-   Uses baked-in C[] values so it's theme-aware at SSR time.
-   Multiple selector layers to defeat Streamlit's specificity.
+   FIX 1 — SIDEBAR COLLAPSE ARROW
+   Uses baked-in sidebar_icon_color (black in light, white in dark)
+   so the icon is always visible regardless of theme.
 ================================================================ */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {{
@@ -309,14 +312,13 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     box-shadow: 2px 0 12px {C["glow_copper"]} !important;
 }}
 
-/* Every button inside the collapse control */
 [data-testid="stSidebarCollapsedControl"] button,
 [data-testid="stSidebarCollapsedControl"] button:hover,
 [data-testid="stSidebarCollapsedControl"] button:focus,
 [data-testid="collapsedControl"] button,
 [data-testid="collapsedControl"] button:hover,
 [data-testid="collapsedControl"] button:focus {{
-    color: {C["primary"]} !important;
+    color: {sidebar_icon_color} !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -333,9 +335,9 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 [data-testid="collapsedControl"] svg *,
 [data-testid="collapsedControl"] button svg,
 [data-testid="collapsedControl"] button svg * {{
-    fill:    {C["primary"]} !important;
-    stroke:  {C["primary"]} !important;
-    color:   {C["primary"]} !important;
+    fill:    {sidebar_icon_color} !important;
+    stroke:  {sidebar_icon_color} !important;
+    color:   {sidebar_icon_color} !important;
     opacity: 1 !important;
     visibility: visible !important;
 }}
@@ -350,35 +352,29 @@ div[data-testid="collapsedControl"] > div {{
 }}
 
 /* ================================================================
-   FIX 2 — THEME TOGGLE: fixed top-right, small pill button.
-   We hide the Streamlit column layout button visually and overlay
-   a fixed-position label, then use a real st.button for the click.
-   Approach: render the button inside a fixed-position wrapper div
-   injected via CSS — the actual button stays in DOM flow but is
-   absolutely positioned via CSS to top-right corner.
+   FIX 2 — THEME TOGGLE
+   Raised higher (top: 6px) and smaller pill (height: 22px).
+   Uses .ncr-toggle-container fixed-position wrapper + JS reparent.
 ================================================================ */
-/* Hide the column spacer approach entirely */
 .ncr-theme-toggle-col {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important;
     right: 20px !important;
     z-index: 999999 !important;
     width: auto !important;
 }}
 
-/* Target the toggle button specifically by its key */
 div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
 .ncr-theme-btn-wrap {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important;
     right: 20px !important;
     z-index: 999999 !important;
 }}
 
-/* Style the toggle button — small pill */
 #ncr-theme-toggle-fixed {{
     position: fixed;
-    top: 14px;
+    top: 6px;
     right: 20px;
     z-index: 999999;
 }}
@@ -386,7 +382,7 @@ div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
 .ncr-theme-btn-wrap div[data-testid="stButton"] > button,
 [data-testid="stButton"][aria-label="theme_toggle"] > button {{
     font-family: 'Outfit', sans-serif !important;
-    font-size: 10px !important;
+    font-size: 9px !important;
     font-weight: 600 !important;
     letter-spacing: 0.13em !important;
     text-transform: uppercase !important;
@@ -394,9 +390,9 @@ div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
     border: 1px solid {C["outline"]} !important;
     color: {C["text_muted"]} !important;
     border-radius: 9999px !important;
-    padding: 4px 12px !important;
-    height: 28px !important;
-    min-height: 28px !important;
+    padding: 3px 10px !important;
+    height: 22px !important;
+    min-height: 22px !important;
     line-height: 1 !important;
     box-shadow: 0 2px 10px {C["glow_copper"]} !important;
     white-space: nowrap !important;
@@ -544,14 +540,12 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {{
     background: linear-gradient(135deg, var(--ncr-primary-container), var(--ncr-primary)) !important;
 }}
 
-/* Override the global button style specifically for the theme toggle
-   so it stays small regardless of the global padding/font rules */
-div[data-testid="stButton"]:has(> button[key="theme_toggle"]) > button,
+/* Override global button style for the theme toggle — stays small */
 .ncr-toggle-container div[data-testid="stButton"] > button {{
-    padding: 4px 12px !important;
-    font-size: 10px !important;
-    height: 28px !important;
-    min-height: 28px !important;
+    padding: 3px 10px !important;
+    font-size: 9px !important;
+    height: 22px !important;
+    min-height: 22px !important;
     letter-spacing: 0.13em !important;
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
@@ -830,22 +824,19 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 
 
 # ================================================================
-# FIX 1 — THEME TOGGLE
-# Inject a fixed-position wrapper div immediately before the button,
-# then use CSS to pull that button into the fixed layer.
-# The wrapper div gets a unique class; CSS positions it top-right.
+# THEME TOGGLE — fixed top-right, small pill
+# Inject fixed-position wrapper, render button, then JS-reparent it.
+# Raised to top: 6px, shrunk to height: 22px.
 # ================================================================
 toggle_icon  = "☀️" if current_theme == "dark" else "🌙"
 toggle_label = "Light" if current_theme == "dark" else "Dark"
 next_theme   = "light" if current_theme == "dark" else "dark"
 
-# Inject the positioning CSS for the toggle container
 st.markdown(f"""
 <style>
-/* Wrap the very next stButton inside a fixed top-right box */
 .ncr-toggle-container {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important;
     right: 20px !important;
     z-index: 999999 !important;
     width: auto !important;
@@ -855,7 +846,7 @@ st.markdown(f"""
 }}
 .ncr-toggle-container div[data-testid="stButton"] > button {{
     font-family: 'Outfit', sans-serif !important;
-    font-size: 10px !important;
+    font-size: 9px !important;
     font-weight: 600 !important;
     letter-spacing: 0.13em !important;
     text-transform: uppercase !important;
@@ -863,10 +854,10 @@ st.markdown(f"""
     border: 1px solid {C["outline"]} !important;
     color: {C["text_muted"]} !important;
     border-radius: 9999px !important;
-    padding: 4px 14px !important;
-    height: 28px !important;
-    min-height: 28px !important;
-    line-height: 20px !important;
+    padding: 3px 10px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    line-height: 16px !important;
     box-shadow: 0 2px 10px {C["glow_copper"]} !important;
     white-space: nowrap !important;
     min-width: 0 !important;
@@ -888,18 +879,13 @@ if st.button(f"{toggle_icon} {toggle_label}", key="theme_toggle"):
     st.session_state.theme = next_theme
     st.rerun()
 
-# Close the wrapper div — note: st.button renders outside the markdown div,
-# so we use a JS trick to reparent it into the fixed container.
 st.markdown("""
 </div>
 <script>
 (function() {
-    // Find the toggle button by its key and move it into the fixed container
     function reparentToggle() {
         const container = document.querySelector('.ncr-toggle-container');
         if (!container) return;
-        // The button rendered by st.button ends up as a sibling stButton block
-        // Find it by searching for a button whose text includes the toggle labels
         const allBtns = document.querySelectorAll('div[data-testid="stButton"]');
         for (const btn of allBtns) {
             const txt = btn.innerText || '';
