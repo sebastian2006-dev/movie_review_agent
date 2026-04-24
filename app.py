@@ -358,7 +358,7 @@ div[data-testid="column"]:last-child {{
 div[data-testid="column"]:last-child div[data-testid="stButton"] {{
     position: fixed !important;
     top: 12px !important;
-    right: 16px !important;
+    left: 80px !important;
     z-index: 999999 !important;
 }}
 
