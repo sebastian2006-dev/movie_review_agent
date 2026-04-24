@@ -702,7 +702,7 @@ st.markdown("""
 
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-title'>NoCap <em>Reviews</em></div>", unsafe_allow_html=True)
 st.markdown(
     "<div class='hero-sub'>Search any film or series — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
     unsafe_allow_html=True,
