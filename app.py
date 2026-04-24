@@ -88,6 +88,62 @@ LIGHT = {
     "bg_base":          "#fdf6ee",
 }
 
+# ================================================================
+# TOP-LEFT THEME TOGGLE (SNAP TO ARROW)
+# ================================================================
+# Check theme state
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"
+
+current_theme = st.session_state.theme
+C = DARK if current_theme == "dark" else LIGHT
+toggle_icon = "☀️" if current_theme == "dark" else "🌙"
+next_theme = "light" if current_theme == "dark" else "dark"
+
+# CSS to force the button to the top-left regardless of layout
+st.markdown(f"""
+<style>
+    /* 1. Remove the default header background so the button is visible */
+    header[data-testid="stHeader"] {{
+        background: transparent !important;
+        z-index: 1 !important;
+    }}
+
+    /* 2. Target the specific button by its key */
+    div[data-testid="stButton"]:has(button[key="THEME_FIXED_TOP_LEFT"]) {{
+        position: fixed !important;
+        top: 12px !important;
+        left: 60px !important; /* This aligns it perfectly with the sidebar arrow */
+        z-index: 9999999 !important;
+        width: auto !important;
+    }}
+
+    /* 3. Style the button */
+    button[key="THEME_FIXED_TOP_LEFT"] {{
+        height: 38px !important;
+        width: 38px !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: {C["bg_container"]} !important;
+        border: 1px solid {C["outline"]} !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        transition: all 0.2s ease !important;
+    }}
+
+    button[key="THEME_FIXED_TOP_LEFT"]:hover {{
+        border-color: {C["primary"]} !important;
+        transform: scale(1.1) !important;
+    }}
+</style>
+""", unsafe_allow_html=True)
+
+# 4. Create the button (NOT inside any column)
+if st.button(toggle_icon, key="THEME_FIXED_TOP_LEFT"):
+    st.session_state.theme = next_theme
+    st.rerun()
 
 # ================================================================
 # SEARCH MOVIES
@@ -789,52 +845,6 @@ st.markdown(
 st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=True)
 
 
-# ================================================================
-# FINAL TOP-LEFT THEME TOGGLE
-# ================================================================
-toggle_icon = "☀️" if current_theme == "dark" else "🌙"
-next_theme  = "light" if current_theme == "dark" else "dark"
-
-# 1. Inject the CSS specifically for the top-left anchor
-st.markdown(f"""
-<style>
-    /* Target the button by its key to force it to the top-left */
-    div[data-testid="stButton"]:has(button[key="theme_toggle_final"]) {{
-        position: fixed !important;
-        top: 15px !important;
-        left: 60px !important; /* This aligns it perfectly next to the sidebar arrow */
-        z-index: 1000000 !important;
-        width: auto !important;
-    }}
-
-    /* Style the button as a circular glass-morphism element */
-    button[key="theme_toggle_final"] {{
-        height: 38px !important;
-        width: 38px !important;
-        border-radius: 50% !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        background: {C["bg_container"]} !important;
-        border: 1px solid {C["outline"]} !important;
-        color: {C["primary"]} !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
-        transition: all 0.2s ease !important;
-    }}
-
-    button[key="theme_toggle_final"]:hover {{
-        border-color: {C["primary"]} !important;
-        transform: scale(1.1) !important;
-        background: {C["bg_high"]} !important;
-    }}
-</style>
-""", unsafe_allow_html=True)
-
-# 2. The actual button - notice the new KEY to avoid cache issues
-if st.button(toggle_icon, key="theme_toggle_final"):
-    st.session_state.theme = next_theme
-    st.rerun()
 
 
 # ================================================================
