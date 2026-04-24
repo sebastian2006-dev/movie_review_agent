@@ -48,6 +48,7 @@ def search_movies(query: str, media_type: str = "movie"):
     error_msg = None
 
     if exact:
+        # Fetch the short plot for the exact match
         try:
             r_plot = requests.get(url, params={"i": exact["imdbID"], "apikey": API_KEY, "plot": "short"}, timeout=5)
             d_plot = r_plot.json()
@@ -57,6 +58,7 @@ def search_movies(query: str, media_type: str = "movie"):
         merged.append(exact)
         seen.add(exact["imdbID"])
 
+    # For fuzzy results, we'll fetch short plots for the top few to show snippets
     for item in fuzzy[:6]:
         iid = item.get("imdbID")
         if iid and iid not in seen:
@@ -169,9 +171,6 @@ if "search_results"   not in st.session_state: st.session_state.search_results  
 if "last_typed"       not in st.session_state: st.session_state.last_typed       = None
 if "search_error"     not in st.session_state: st.session_state.search_error     = None
 if "media_type"       not in st.session_state: st.session_state.media_type       = "Movie"
-if "user_name"        not in st.session_state: st.session_state.user_name        = ""
-if "profile_saved"    not in st.session_state: st.session_state.profile_saved    = False
-if "show_profile_form" not in st.session_state: st.session_state.show_profile_form = False
 
 # ================================================================
 # DARK VELVET CINEMA — DESIGN TOKENS
@@ -235,7 +234,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     padding-right: 2rem !important;
 }}
 
-/* ── CINEMATIC BACKGROUND WITH FILM GRAIN ── */
+/* ── HIGH VISIBILITY ANIMATED BG ── */
 .cinema-bg {{
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -244,128 +243,39 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     overflow: hidden;
 }}
 
-/* Film grain overlay */
-.cinema-bg::after {{
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-    opacity: 0.55;
-    animation: grainShift 0.12s steps(1) infinite;
-    pointer-events: none;
-    z-index: 1;
-}}
-
-@keyframes grainShift {{
-    0%   {{ transform: translate(0, 0); }}
-    10%  {{ transform: translate(-2%, -3%); }}
-    20%  {{ transform: translate(3%, 1%); }}
-    30%  {{ transform: translate(-1%, 4%); }}
-    40%  {{ transform: translate(4%, -2%); }}
-    50%  {{ transform: translate(-3%, 3%); }}
-    60%  {{ transform: translate(2%, -4%); }}
-    70%  {{ transform: translate(-4%, 1%); }}
-    80%  {{ transform: translate(1%, 3%); }}
-    90%  {{ transform: translate(3%, -1%); }}
-    100% {{ transform: translate(-2%, 4%); }}
-}}
-
-/* Vignette */
-.cinema-bg::before {{
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 35%, rgba(8,4,2,0.75) 100%);
-    z-index: 2;
-    pointer-events: none;
-}}
-
-/* Horizontal scan lines */
-.scan-lines {{
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.018) 2px,
-        rgba(0,0,0,0.018) 4px
-    );
-    pointer-events: none;
-}}
-
 .glow-orb {{
     position: absolute;
     border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.38;
+    filter: blur(80px);
+    opacity: 0.45;
     mix-blend-mode: screen;
+    animation: orbMove 15s ease-in-out infinite alternate;
 }}
 
 .orb-1 {{
-    width: 700px; height: 700px;
+    width: 600px; height: 600px;
     background: radial-gradient(circle, {C["primary"]} 0%, transparent 70%);
-    top: -15%; left: -12%;
-    animation: orbPulse1 20s ease-in-out infinite alternate;
+    top: -10%; left: -10%;
+    animation-duration: 18s;
 }}
 .orb-2 {{
-    width: 550px; height: 550px;
+    width: 500px; height: 500px;
     background: radial-gradient(circle, {C["secondary"]} 0%, transparent 70%);
-    bottom: -12%; right: -8%;
-    animation: orbPulse2 17s ease-in-out infinite alternate;
+    bottom: -10%; right: -5%;
+    animation-delay: -5s;
 }}
 .orb-3 {{
-    width: 420px; height: 420px;
+    width: 400px; height: 400px;
     background: radial-gradient(circle, {C["tertiary"]} 0%, transparent 70%);
-    top: 38%; left: 28%;
-    animation: orbPulse3 24s ease-in-out infinite alternate;
-}}
-/* Subtle fourth orb for depth */
-.orb-4 {{
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(180,80,30,0.7) 0%, transparent 70%);
-    top: 10%; right: 20%;
-    animation: orbPulse4 14s ease-in-out infinite alternate;
-    opacity: 0.22;
+    top: 40%; left: 30%;
+    animation-duration: 22s;
+    animation-delay: -2s;
 }}
 
-@keyframes orbPulse1 {{
-    0%   {{ transform: translate(0, 0) scale(1); opacity: 0.38; }}
-    33%  {{ transform: translate(8%, 6%) scale(1.12); opacity: 0.44; }}
-    66%  {{ transform: translate(-5%, 12%) scale(0.94); opacity: 0.30; }}
-    100% {{ transform: translate(12%, -4%) scale(1.08); opacity: 0.40; }}
-}}
-@keyframes orbPulse2 {{
-    0%   {{ transform: translate(0, 0) scale(1); opacity: 0.38; }}
-    40%  {{ transform: translate(-10%, -8%) scale(1.18); opacity: 0.32; }}
-    100% {{ transform: translate(6%, 10%) scale(0.88); opacity: 0.45; }}
-}}
-@keyframes orbPulse3 {{
-    0%   {{ transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.28; }}
-    50%  {{ transform: translate(6%, -10%) scale(1.20) rotate(8deg); opacity: 0.20; }}
-    100% {{ transform: translate(-8%, 8%) scale(0.85) rotate(-4deg); opacity: 0.34; }}
-}}
-@keyframes orbPulse4 {{
+@keyframes orbMove {{
     0%   {{ transform: translate(0, 0) scale(1); }}
-    100% {{ transform: translate(-15%, 20%) scale(1.3); }}
-}}
-
-/* Ember particles */
-.ember {{
-    position: absolute;
-    border-radius: 50%;
-    background: {C["primary"]};
-    pointer-events: none;
-    animation: emberFloat linear infinite;
-    opacity: 0;
-}}
-@keyframes emberFloat {{
-    0%   {{ transform: translateY(100vh) translateX(0) scale(1); opacity: 0; }}
-    10%  {{ opacity: 0.7; }}
-    90%  {{ opacity: 0.4; }}
-    100% {{ transform: translateY(-10vh) translateX(var(--drift)) scale(0.3); opacity: 0; }}
+    50%  {{ transform: translate(15%, 10%) scale(1.15); }}
+    100% {{ transform: translate(-10%, 20%) scale(0.9); }}
 }}
 
 ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
@@ -392,33 +302,6 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     font-style: italic; color: {C["primary_container"]};
     text-shadow: 0 0 40px rgba(240,144,80,0.35);
 }}
-
-/* ── GREETING ── */
-.greeting-block {{
-    text-align: center;
-    margin-bottom: 6px;
-}}
-.greeting-time {{
-    font-family: 'Outfit', sans-serif;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.26em;
-    color: {C["primary"]}; text-transform: uppercase; opacity: 0.85;
-    margin-bottom: 6px;
-}}
-.greeting-name {{
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(30px, 4vw, 52px); font-weight: 700;
-    color: {C["on_surface"]}; line-height: 1.15;
-    animation: fadeSlideDown 0.8s cubic-bezier(0.22,1,0.36,1) both;
-}}
-.greeting-name em {{
-    font-style: italic; color: {C["primary_container"]};
-    text-shadow: 0 0 40px rgba(240,144,80,0.35);
-}}
-@keyframes fadeSlideDown {{
-    from {{ opacity: 0; transform: translateY(-14px); }}
-    to   {{ opacity: 1; transform: translateY(0); }}
-}}
-
 .hero-sub {{
     font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 300;
     color: {C["on_surface_var"]}; text-align: center;
@@ -429,7 +312,13 @@ h1, h2, h3, h4 {{ font-family: 'Playfair Display', serif !important; }}
     opacity: 0.45; letter-spacing: 0.5em; margin-bottom: 24px;
 }}
 
-/* ── TYPE TOGGLE ── */
+/* ── TYPE TOGGLE — fully themed pill buttons ── */
+.type-toggle-wrap {{
+    display: flex; justify-content: center; gap: 0;
+    margin-bottom: 18px;
+}}
+
+/* Override ALL default Streamlit button styles for type-toggle and analyse buttons */
 div[data-testid="stButton"] > button {{
     font-family: 'Outfit', sans-serif !important;
     font-size: 12px !important;
@@ -455,6 +344,9 @@ div[data-testid="stButton"] > button:focus {{
     box-shadow: 0 0 0 2px rgba(232,131,58,0.35) !important;
 }}
 
+
+
+/* Analyse CTA button — copper gradient pill */
 div[data-testid="stButton"].analyse-btn > button,
 div[data-testid="stButton"] > button[kind="primary"] {{
     background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]}) !important;
@@ -542,202 +434,65 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 .result-card:hover {{
     background: {C["bg_high"]};
     border-color: rgba(232,131,58,0.28);
-    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,131,58,0.14);
+    box-shadow: 0 12px 48px -8px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(232,131,58,0.14);
     transform: translateY(-2px);
 }}
-
-/* ── SIDEBAR STYLES ── */
-[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg, {C["bg_lowest"]} 0%, {C["bg_low"]} 100%) !important;
-    border-right: 1px solid {C["outline_var"]} !important;
-}}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    padding-top: 0 !important;
-    gap: 0 !important;
-}}
-
-/* Sidebar text input theming */
-[data-testid="stSidebar"] div[data-testid="stTextInput"] input {{
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    border-radius: 10px !important;
-    color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 14px !important;
-    padding: 10px 14px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4) !important;
-    caret-color: {C["primary_container"]} !important;
-    transition: border-color 0.2s ease !important;
-}}
-[data-testid="stSidebar"] div[data-testid="stTextInput"] input:focus {{
-    border-color: {C["primary"]} !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 0 2px rgba(232,131,58,0.18) !important;
-    outline: none !important;
-}}
-[data-testid="stSidebar"] div[data-testid="stTextInput"] input::placeholder {{
-    color: {C["text_muted"]} !important;
-}}
-[data-testid="stSidebar"] div[data-testid="stTextInput"] label {{
-    display: none !important;
-}}
-
-/* Hide default Streamlit sidebar nav button styles */
-[data-testid="stSidebar"] div[data-testid="stButton"] > button {{
-    border-radius: 10px !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    text-align: left !important;
-    width: 100% !important;
-    letter-spacing: 0 !important;
-    text-transform: none !important;
-    font-size: 13px !important;
-    color: {C["on_surface_var"]} !important;
-    box-shadow: none !important;
-}}
-
-/* ── SIDEBAR ARCHIVE CARD ── */
-.sb-archive-card {{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(74,48,32,0.30);
-    background: {C["bg_container"]};
-    cursor: pointer;
-    transition: all 0.22s ease;
-    margin-bottom: 6px;
+.result-poster-col {{
+    width: 130px;
+    min-width: 130px;
+    min-height: 200px;
+    flex-shrink: 0;
     overflow: hidden;
-}}
-.sb-archive-card:hover {{
-    border-color: rgba(232,131,58,0.35);
+    position: relative;
     background: {C["bg_high"]};
-    box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,131,58,0.12);
-    transform: translateX(3px);
 }}
-.sb-archive-card.active {{
-    border-color: rgba(232,131,58,0.50);
-    background: rgba(232,131,58,0.08);
-    box-shadow: 0 6px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(232,131,58,0.20);
-}}
-.sb-poster-thumb {{
-    width: 40px; height: 56px;
-    border-radius: 6px;
+.result-poster-col img {{
+    width: 130px;
+    height: 200px;
     object-fit: cover;
-    flex-shrink: 0;
-    background: {C["bg_high"]};
+    display: block;
 }}
-.sb-poster-placeholder {{
-    width: 40px; height: 56px;
-    border-radius: 6px;
-    background: {C["bg_high"]};
-    border: 1px solid {C["outline_var"]};
+.result-poster-fade {{
+    position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
+    background: linear-gradient(to right, transparent, {C["bg_container"]});
+    pointer-events: none;
+}}
+.result-no-poster {{
+    width: 130px; height: 200px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0;
+    font-size: 36px; color: {C["text_dim"]};
+    background: {C["bg_high"]};
 }}
-.sb-card-info {{
-    flex: 1; min-width: 0;
+.result-body {{
+    flex: 1; padding: 22px 26px 18px 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
 }}
-.sb-card-title {{
+.result-title {{
     font-family: 'Playfair Display', serif;
-    font-size: 13px; font-weight: 700;
-    color: {C["on_surface"]}; line-height: 1.25;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 3px;
+    font-size: 22px; font-weight: 700;
+    color: {C["on_surface"]}; line-height: 1.18; margin-bottom: 6px;
 }}
-.sb-card-meta {{
-    font-family: 'Outfit', sans-serif; font-size: 10px;
-    color: {C["text_muted"]}; letter-spacing: 0.05em;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.result-meta {{
+    font-family: 'Outfit', sans-serif; font-size: 12px;
+    color: {C["on_surface_var"]}; margin-bottom: 12px;
+    letter-spacing: 0.04em;
 }}
-.sb-card-score {{
-    font-family: 'Playfair Display', serif;
-    font-size: 15px; font-weight: 700;
-    color: {C["primary_container"]};
-    flex-shrink: 0;
+.result-cta {{
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 300;
+    color: rgba(201,176,152,0.65); line-height: 1.65; margin-bottom: 14px;
 }}
-
-/* Sidebar profile section */
-.sb-profile-wrap {{
-    padding: 20px 16px 14px 16px;
-    border-bottom: 1px solid {C["outline_var"]};
-    margin-bottom: 14px;
-}}
-.sb-logo {{
-    font-family: 'Playfair Display', serif;
-    font-size: 15px; font-weight: 800; letter-spacing: 0.03em;
-    color: {C["primary_container"]};
-    margin-bottom: 16px;
-    display: flex; align-items: center; gap: 8px;
-}}
-.sb-logo-dot {{
-    width: 7px; height: 7px; border-radius: 50%;
-    background: {C["primary"]};
-    box-shadow: 0 0 8px {C["primary"]};
+.result-badge {{
     display: inline-block;
-    animation: dotPulse 2s ease-in-out infinite;
-}}
-@keyframes dotPulse {{
-    0%, 100% {{ opacity: 1; transform: scale(1); }}
-    50%       {{ opacity: 0.5; transform: scale(0.7); }}
-}}
-.sb-user-badge {{
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; border-radius: 12px;
-    background: rgba(232,131,58,0.07);
-    border: 1px solid rgba(232,131,58,0.18);
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}}
-.sb-user-badge:hover {{
-    background: rgba(232,131,58,0.12);
-    border-color: rgba(232,131,58,0.30);
-}}
-.sb-avatar {{
-    width: 34px; height: 34px; border-radius: 50%;
-    background: linear-gradient(135deg, {C["primary"]}, {C["secondary"]});
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700;
-    color: {C["on_primary"]}; flex-shrink: 0;
-}}
-.sb-user-info {{ flex: 1; min-width: 0; }}
-.sb-user-name {{
-    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
-    color: {C["on_surface"]}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}}
-.sb-user-label {{
     font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
     letter-spacing: 0.14em; text-transform: uppercase;
-    color: {C["primary"]}; opacity: 0.75;
+    padding: 4px 12px; border-radius: 3px; margin-right: 6px;
+    background: rgba(74,48,32,0.5); color: {C["tertiary"]};
+    border: 1px solid rgba(74,48,32,0.8);
 }}
-.sb-edit-icon {{ font-size: 11px; color: {C["text_muted"]}; }}
-
-.sb-archive-label {{
-    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 600;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: {C["text_muted"]}; padding: 0 4px; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 8px;
-}}
-.sb-archive-label::after {{
-    content: ''; flex: 1; height: 1px;
-    background: {C["outline_var"]};
-}}
-.sb-empty-state {{
-    text-align: center;
-    padding: 28px 16px;
-    font-family: 'Outfit', sans-serif; font-size: 12px;
-    color: {C["text_dim"]}; line-height: 1.7;
-    border: 1px dashed {C["outline_var"]};
-    border-radius: 12px;
-}}
-.sb-empty-icon {{ font-size: 28px; margin-bottom: 8px; opacity: 0.4; }}
-
-/* Sidebar scrollable archive area */
-.sb-archive-scroll {{
-    padding: 0 16px 20px 16px;
-    overflow-y: auto; max-height: calc(100vh - 260px);
+.result-badge.type-badge {{
+    background: rgba(232,131,58,0.10); color: {C["primary"]};
+    border: 1px solid rgba(232,131,58,0.25);
 }}
 
 /* ── MOVIE TITLE / META ── */
@@ -752,11 +507,15 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["on_surface_var"]}; margin-bottom: 20px;
     display: flex; flex-wrap: wrap; gap: 6px 0; align-items: center;
 }}
-.meta-label {{ font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: {C["text_muted"]}; }}
+.meta-label {{
+    font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: {C["text_muted"]};
+}}
 .meta-value {{ font-size: 13px; color: {C["on_surface_var"]}; }}
 .meta-value.accent {{ color: {C["primary_container"]}; font-weight: 600; }}
 .meta-sep {{ color: {C["outline"]}; margin: 0 10px; font-size: 11px; opacity: 0.5; }}
 
+/* ── SECTION HEADING ── */
 .section-heading {{
     font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
     letter-spacing: 0.24em; text-transform: uppercase; color: {C["primary"]};
@@ -767,10 +526,13 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     background: linear-gradient(to right, {C["outline"]}80, transparent);
 }}
 
+/* ── TRAILER ── */
 .trailer-wrapper {{
     position: relative; width: 100%; padding-top: 56.25%;
     border-radius: 14px; overflow: hidden; background: {C["bg_lowest"]};
-    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75), 0 0 0 1px {C["outline"]}, 0 0 60px -20px rgba(232,131,58,0.20);
+    box-shadow: 0 24px 72px -12px rgba(0,0,0,0.75),
+                0 0 0 1px {C["outline"]},
+                0 0 60px -20px rgba(232,131,58,0.20);
 }}
 .trailer-wrapper iframe {{
     position: absolute; top: 0; left: 0;
@@ -778,7 +540,8 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 }}
 .trailer-badge {{
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(232,131,58,0.10); border: 1px solid rgba(232,131,58,0.25);
+    background: rgba(232,131,58,0.10);
+    border: 1px solid rgba(232,131,58,0.25);
     color: {C["primary_container"]};
     font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600;
     letter-spacing: 0.18em; text-transform: uppercase;
@@ -793,6 +556,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["text_muted"]}; letter-spacing: 0.04em;
 }}
 
+/* ── AGENDA STRIP ── */
 .agenda-strip {{
     display: grid; grid-template-columns: repeat(4, 1fr);
     gap: 0; background: {C["bg_container"]};
@@ -806,11 +570,22 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 }}
 .agenda-cell:last-child {{ border-right: none; }}
 .agenda-cell:hover {{ background: rgba(232,131,58,0.05); }}
-.agenda-round {{ font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: {C["primary"]}; margin-bottom: 10px; opacity: 0.70; }}
-.agenda-num {{ font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: {C["bg_highest"]}; line-height: 1; margin-bottom: 14px; }}
-.agenda-text {{ font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400; color: {C["on_surface_var"]}; line-height: 1.6; }}
+.agenda-round {{
+    font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: {C["primary"]}; margin-bottom: 10px; opacity: 0.70;
+}}
+.agenda-num {{
+    font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700;
+    color: {C["bg_highest"]}; line-height: 1; margin-bottom: 14px;
+}}
+.agenda-text {{
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
+    color: {C["on_surface_var"]}; line-height: 1.6;
+}}
 .agenda-text b {{ color: {C["on_surface"]}; font-weight: 600; }}
 
+/* ── SUMMARY BOX ── */
 .summary-box {{
     background: linear-gradient(135deg, {C["bg_container"]} 0%, {C["bg_high"]}80 100%);
     border-left: 3px solid {C["primary"]};
@@ -820,6 +595,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     box-shadow: 0 4px 24px rgba(0,0,0,0.35);
 }}
 
+/* ── THEME CHIPS ── */
 .theme-tag {{
     display: inline-block;
     background: rgba(232,131,58,0.08); border: 1px solid rgba(232,131,58,0.22);
@@ -828,6 +604,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     padding: 5px 14px; border-radius: 9999px; margin: 4px 3px;
 }}
 
+/* ── DEBATE BUBBLES ── */
 .debate-wrap {{ display: flex; flex-direction: column; gap: 18px; margin-top: 10px; }}
 .debate-bubble {{
     padding: 18px 22px; font-family: 'Outfit', sans-serif;
@@ -850,12 +627,14 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     margin: 14px auto 6px auto; text-align: center;
 }}
 
+/* ── DIVIDER ── */
 .fancy-divider {{
     height: 1px;
     background: linear-gradient(to right, transparent, {C["outline"]}70, transparent);
     margin: 32px 0;
 }}
 
+/* ── ERROR BOX ── */
 .err-box {{
     background: rgba(232,131,58,0.06); border: 1px solid rgba(232,131,58,0.18);
     border-radius: 12px; padding: 20px 28px;
@@ -878,239 +657,52 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     color: {C["primary_container"]} !important;
 }}
 
-p, li, div {{ font-size: 15px; }}
+/* ── SIDEBAR STYLING ── */
+[data-testid="stSidebar"] {{
+    background-color: {C["bg_low"]} !important;
+    border-right: 1px solid {C["outline"]} !important;
+}}
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+    padding-top: 2rem !important;
+    gap: 0.5rem !important;
+}}
 
-/* Profile form input overrides in main area */
-div[data-testid="stTextInput"] input {{
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    border-radius: 12px !important;
-    color: {C["on_surface"]} !important;
-    font-family: 'Outfit', sans-serif !important;
-    font-size: 15px !important;
-    padding: 12px 18px !important;
-    caret-color: {C["primary_container"]} !important;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}}
-div[data-testid="stTextInput"] input:focus {{
-    border-color: {C["primary"]} !important;
-    box-shadow: 0 0 0 3px rgba(232,131,58,0.18) !important;
-    outline: none !important;
-}}
+p, li, div {{ font-size: 15px; }}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ================================================================
-# CINEMATIC BACKGROUND — enhanced with grain + particles + scan lines
+# SIDEBAR: DASHBOARD & HISTORY
+# ================================================================
+with st.sidebar:
+    st.markdown(f"<div class='hero-eyebrow' style='text-align:left;'>Collection</div>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color:{C['on_surface']}; margin-top:0;'>Your Archive</h3>", unsafe_allow_html=True)
+
+    if not st.session_state.conversations:
+        st.markdown(f"<div style='color:{C['text_muted']}; font-size:13px;'>Analyzed movies will appear here.</div>", unsafe_allow_html=True)
+
+    for imdb_id, data in st.session_state.conversations.items():
+        if st.button(f"🎬 {data['movie']['title']}", key=f"nav_{imdb_id}", use_container_width=True):
+            st.session_state.active_id = imdb_id
+            st.session_state.search_results = [] 
+            st.rerun()
+
+
+# ================================================================
+# HERO & BACKGROUND
 # ================================================================
 st.markdown("""
     <div class="cinema-bg">
         <div class="glow-orb orb-1"></div>
         <div class="glow-orb orb-2"></div>
         <div class="glow-orb orb-3"></div>
-        <div class="glow-orb orb-4"></div>
-        <div class="scan-lines"></div>
-        <!-- Ember particles injected via JS below -->
     </div>
-    <script>
-    (function() {
-        const bg = document.querySelector('.cinema-bg');
-        if (!bg) return;
-        for (let i = 0; i < 14; i++) {
-            const ember = document.createElement('div');
-            ember.className = 'ember';
-            const size = Math.random() * 3 + 1.5;
-            ember.style.cssText = [
-                'width:'  + size + 'px',
-                'height:' + size + 'px',
-                'left:'   + (Math.random() * 100) + '%',
-                '--drift:' + ((Math.random() - 0.5) * 120) + 'px',
-                'animation-duration:' + (Math.random() * 12 + 8) + 's',
-                'animation-delay:'    + (Math.random() * -18) + 's',
-                'opacity: 0',
-            ].join(';');
-            bg.appendChild(ember);
-        }
-    })();
-    </script>
 """, unsafe_allow_html=True)
 
-
-# ================================================================
-# SIDEBAR — Profile + Archive
-# ================================================================
-with st.sidebar:
-
-    # ── Profile section ──────────────────────────────────────────
-    name = st.session_state.user_name
-    initials = "".join(w[0].upper() for w in name.split() if w)[:2] if name else "?"
-
-    st.markdown(f"""
-    <div class="sb-profile-wrap">
-        <div class="sb-logo">
-            <span class="sb-logo-dot"></span> CineAgent
-        </div>
-    """, unsafe_allow_html=True)
-
-    if name and not st.session_state.show_profile_form:
-        # Show user badge
-        st.markdown(f"""
-        <div class="sb-user-badge" title="Click Edit to update your name">
-            <div class="sb-avatar">{initials}</div>
-            <div class="sb-user-info">
-                <div class="sb-user-name">{name}</div>
-                <div class="sb-user-label">Viewer Profile</div>
-            </div>
-            <div class="sb-edit-icon">✎</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        col_edit, _ = st.columns([1, 2])
-        with col_edit:
-            if st.button("Edit Name", key="btn_edit_profile"):
-                st.session_state.show_profile_form = True
-                st.rerun()
-    else:
-        # Show name input form
-        st.markdown(
-            f"<div style='font-family:Outfit,sans-serif;font-size:11px;font-weight:600;"
-            f"letter-spacing:0.18em;text-transform:uppercase;color:{C['text_muted']};margin-bottom:8px;'>"
-            f"{'Update' if name else 'Set up'} your profile</div>",
-            unsafe_allow_html=True,
-        )
-        new_name = st.text_input(
-            "Your name",
-            value=name,
-            placeholder="Enter your name…",
-            key="profile_name_input",
-            label_visibility="collapsed",
-        )
-        col_s, col_c = st.columns([1, 1])
-        with col_s:
-            if st.button("Save", key="btn_save_profile", type="primary"):
-                if new_name.strip():
-                    st.session_state.user_name = new_name.strip()
-                    st.session_state.profile_saved = True
-                    st.session_state.show_profile_form = False
-                    st.rerun()
-        if name:
-            with col_c:
-                if st.button("Cancel", key="btn_cancel_profile"):
-                    st.session_state.show_profile_form = False
-                    st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ── Archive section ───────────────────────────────────────────
-    st.markdown(f"""
-    <div class="sb-archive-scroll">
-        <div class="sb-archive-label">Archive &nbsp;·&nbsp; {len(st.session_state.conversations)} film{"s" if len(st.session_state.conversations) != 1 else ""}</div>
-    """, unsafe_allow_html=True)
-
-    if not st.session_state.conversations:
-        st.markdown("""
-        <div class="sb-empty-state">
-            <div class="sb-empty-icon">🎬</div>
-            Analyzed films will appear here.<br>
-            Search a title to begin.
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        for imdb_id, data in st.session_state.conversations.items():
-            m = data["movie"]
-            r = data.get("result", {})
-            score = r.get("final_score", "—")
-            poster = m.get("poster", "N/A")
-            year   = m.get("year", "")
-            genre_raw = m.get("genre", "") or ""
-            genre  = genre_raw.split(",")[0].strip() if genre_raw else "Film"
-            is_active = st.session_state.active_id == imdb_id
-
-            has_poster = poster and poster != "N/A" and poster.startswith("http")
-            poster_html = (
-                f'<img class="sb-poster-thumb" src="{poster}" alt="" />'
-                if has_poster
-                else '<div class="sb-poster-placeholder">🎬</div>'
-            )
-
-            active_class = "active" if is_active else ""
-
-            card_html = f"""
-            <div class="sb-archive-card {active_class}">
-                {poster_html}
-                <div class="sb-card-info">
-                    <div class="sb-card-title">{m["title"]}</div>
-                    <div class="sb-card-meta">{year} · {genre}</div>
-                </div>
-                <div class="sb-card-score">{score}</div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-
-            # Invisible full-width button over the card for click handling
-            if st.button(
-                f"{m['title']}",
-                key=f"nav_{imdb_id}",
-                use_container_width=True,
-            ):
-                st.session_state.active_id = imdb_id
-                st.session_state.search_results = []
-                st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ================================================================
-# HERO HEADER — with dynamic greeting
-# ================================================================
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
-
-# Greeting logic (JS-driven, so it reads browser local time)
-name_js = st.session_state.user_name.strip() if st.session_state.user_name else ""
-
-greeting_html = f"""
-<div class="greeting-block">
-    <div class="greeting-time" id="greeting-eyebrow">⬡ Curated by AI · Two Models · One Verdict</div>
-    <div class="hero-title" id="greeting-title">Movie Review <em>Agent</em></div>
-</div>
-<script>
-(function() {{
-    const name = {repr(name_js)};
-    const h = new Date().getHours();
-    let timeLabel, timeEmoji;
-    if (h >= 5 && h < 12)  {{ timeLabel = 'Good morning';   timeEmoji = '☀️'; }}
-    else if (h < 17)        {{ timeLabel = 'Good afternoon'; timeEmoji = '🌤️'; }}
-    else if (h < 21)        {{ timeLabel = 'Good evening';   timeEmoji = '🌆'; }}
-    else                    {{ timeLabel = 'Good night';     timeEmoji = '🌙'; }}
-
-    const eyebrow = document.getElementById('greeting-eyebrow');
-    const title   = document.getElementById('greeting-title');
-    if (!eyebrow || !title) return;
-
-    if (name) {{
-        eyebrow.textContent = timeEmoji + '  ' + timeLabel;
-        eyebrow.style.fontSize = '12px';
-        title.innerHTML = timeLabel + ', <em>' + name + '</em>';
-    }} else {{
-        eyebrow.textContent = '⬡ Curated by AI · Two Models · One Verdict';
-        title.innerHTML = 'Movie Review <em>Agent</em>';
-    }}
-}})();
-</script>
-"""
-
-st.markdown(greeting_html, unsafe_allow_html=True)
-
-# Show "set your name" prompt if no name yet
-if not st.session_state.user_name:
-    st.markdown(
-        f"<div style='text-align:center;font-family:Outfit,sans-serif;font-size:12px;"
-        f"color:{C['text_muted']};letter-spacing:0.08em;margin-bottom:4px;'>"
-        f"Set your name in the sidebar for a personalised greeting ↖</div>",
-        unsafe_allow_html=True,
-    )
-
+st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-title'>Movie Review <em>Agent</em></div>", unsafe_allow_html=True)
 st.markdown(
     "<div class='hero-sub'>Search any film or series — a Critic and an Advocate debate it across four rounds, then deliver a calibrated verdict.</div>",
     unsafe_allow_html=True,
@@ -1122,9 +714,13 @@ st.markdown("<div class='hero-ornament'>— ✦ —</div>", unsafe_allow_html=Tr
 # SEARCH UI: Type Toggle → Search Bar
 # ================================================================
 show_search_ui = not st.session_state.active_id
+
 active_type = st.session_state.media_type
 
 if show_search_ui:
+    # ── Type toggle: inject active style onto the correct button via CSS ──
+    # We give the toggle wrapper a unique id, then target nth-child to highlight
+    # whichever button matches the current active_type.
     active_idx = 1 if active_type == "Movie" else 2
     st.markdown(f"""
     <style>
@@ -1149,6 +745,7 @@ if show_search_ui:
             st.session_state.media_type = "Series"
             st.rerun()
 
+    # Underline indicator
     st.markdown(f"""
     <div style="display:flex;justify-content:center;margin:-4px 0 22px 0;">
         <div style="display:flex;width:280px;gap:10px;">
@@ -1160,7 +757,7 @@ if show_search_ui:
     </div>
     """, unsafe_allow_html=True)
 
-# ── Search bar ─────────────────────────────────────────────────
+# ── Search bar (always rendered, centered) ─────────────────
 c1, c2, c3 = st.columns([1, 2.6, 1])
 with c2:
     if show_search_ui:
@@ -1177,8 +774,8 @@ st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 # ================================================================
 if user_input and user_input.strip():
     if user_input != st.session_state.last_typed:
-        st.session_state.last_typed        = user_input
-        st.session_state.active_id          = None
+        st.session_state.last_typed       = user_input
+        st.session_state.active_id         = None
         with st.spinner("Searching the archive…"):
             results, err = search_movies(user_input, st.session_state.media_type)
             st.session_state.search_results = results
@@ -1187,7 +784,7 @@ if user_input and user_input.strip():
 
 
 # ================================================================
-# RESULTS CARDS
+# RESULTS — CARDS WITH NATIVE st.image FOR POSTER
 # ================================================================
 search_results = st.session_state.search_results
 
@@ -1206,13 +803,15 @@ if search_results and not st.session_state.active_id:
         itype   = item.get("Type", "movie").title()
         has_poster = poster and poster != "N/A" and poster.startswith("http")
 
-        poster_bg   = f"url('{poster}')" if has_poster else "none"
+        poster_bg = f"url('{poster}')" if has_poster else "none"
         placeholder = "" if has_poster else "<div style=\"font-size:34px;opacity:0.18;\">🎬</div>"
 
         desc_text = item.get("Plot") or "A Critic and an Advocate will debate this title across four rounds and deliver a calibrated verdict."
         if len(desc_text) > 135:
             desc_text = desc_text[:132] + "..."
 
+        # Use components.html — renders in a sandboxed iframe, bypasses Streamlit's
+        # HTML sanitizer entirely so background-image, gradients, custom fonts all work.
         card_html = f"""
 <!DOCTYPE html>
 <html>
@@ -1231,27 +830,68 @@ if search_results and not st.session_state.active_id:
     box-shadow:0 4px 24px rgba(0,0,0,0.5);
   }}
   .poster {{
-    width:140px; min-width:140px; min-height:200px; flex-shrink:0; position:relative;
+    width:140px;
+    min-width:140px;
+    min-height:200px;
+    flex-shrink:0;
+    position:relative;
     background-image:{poster_bg};
-    background-size:cover; background-position:center top; background-repeat:no-repeat;
+    background-size:cover;
+    background-position:center top;
+    background-repeat:no-repeat;
     background-color:{C['bg_high']};
-    display:flex; align-items:center; justify-content:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }}
   .poster-fade {{
-    position:absolute; top:0; left:0; right:0; bottom:0;
+    position:absolute;
+    top:0; left:0; right:0; bottom:0;
     background:linear-gradient(to right, transparent 60%, {C['bg_container']} 100%);
   }}
-  .body {{ flex:1; padding:20px 24px 18px 18px; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }}
-  .title {{ font-family:'Playfair Display',serif; font-size:21px; font-weight:700; color:{C['on_surface']}; line-height:1.2; margin-bottom:8px; }}
-  .desc {{ font-size:13px; font-weight:300; color:rgba(201,176,152,0.60); line-height:1.65; margin-bottom:12px; }}
-  .badge {{ display:inline-block; font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; padding:4px 11px; border-radius:3px; margin-right:5px; }}
+  .body {{
+    flex:1;
+    padding:20px 24px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    min-width:0;
+  }}
+  .title {{
+    font-family:'Playfair Display',serif;
+    font-size:21px;
+    font-weight:700;
+    color:{C['on_surface']};
+    line-height:1.2;
+    margin-bottom:8px;
+  }}
+  .desc {{
+    font-size:13px;
+    font-weight:300;
+    color:rgba(201,176,152,0.60);
+    line-height:1.65;
+    margin-bottom:12px;
+  }}
+  .badge {{
+    display:inline-block;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    padding:4px 11px;
+    border-radius:3px;
+    margin-right:5px;
+  }}
   .badge-type {{ background:rgba(232,131,58,0.12); color:{C['primary']}; border:1px solid rgba(232,131,58,0.28); }}
   .badge-year {{ background:rgba(74,48,32,0.5); color:{C['tertiary']}; border:1px solid rgba(74,48,32,0.8); }}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="poster">{placeholder}<div class="poster-fade"></div></div>
+  <div class="poster">
+    {placeholder}
+    <div class="poster-fade"></div>
+  </div>
   <div class="body">
     <div>
       <div class="title">{title}</div>
@@ -1270,22 +910,33 @@ if search_results and not st.session_state.active_id:
 
         if st.button(f"▶  Analyse · {title}", key=f"sel_{imdb_id}_{i}", use_container_width=True, type="primary"):
             with st.spinner("Generating AI Debate..."):
+                # 1. Fetch all data immediately upon selection
                 movie_data = fetch_movie_by_id(imdb_id)
                 trailer_id = fetch_trailer(movie_data["title"], movie_data.get("year", ""))
+                
+                # Prepare data for the AI models
                 raw_reviews = {
                     "title":              movie_data["title"],
                     "critic_reviews":     movie_data["plot"],
                     "audience_reactions": movie_data["actors"],
                     "discussion_points":  movie_data["genre"],
                 }
+                
+                # Run the AI Analysis
                 debate_result = analyze_movie(raw_reviews)
+                
+                # 2. Save to global history (This enables your Sidebar Archive)
                 st.session_state.conversations[imdb_id] = {
                     "movie":   movie_data,
                     "result":  debate_result,
-                    "trailer": trailer_id,
+                    "trailer": trailer_id
                 }
+                
+                # 3. Add to search history for the suggestions feature
                 if title not in st.session_state.search_history:
                     st.session_state.search_history.insert(0, title)
+                    
+                # 4. Set as active view and clear current search results
                 st.session_state.active_id = imdb_id
                 st.session_state.search_results = []
                 st.rerun()
@@ -1296,7 +947,7 @@ if search_results and not st.session_state.active_id:
 
 
 # ================================================================
-# LOAD ACTIVE ANALYSIS
+# RUN ANALYSIS
 # ================================================================
 if st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
     active_data = st.session_state.conversations[st.session_state.active_id]
@@ -1325,6 +976,7 @@ if (
 # ================================================================
 elif st.session_state.active_id and st.session_state.active_id in st.session_state.conversations:
 
+    # ── MOVIE HEADER ─────────────────────────────────────────────
     col_poster, col_info = st.columns([1, 2.8], gap="large")
 
     with col_poster:
@@ -1375,21 +1027,31 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             unsafe_allow_html=True,
         )
 
+    # ── TRAILER ──────────────────────────────────────────────────
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
     st.markdown("<div class='section-heading'>Official Trailer</div>", unsafe_allow_html=True)
     st.markdown("<div class='trailer-badge'>Watch Trailer</div>", unsafe_allow_html=True)
 
     if trailer:
         st.markdown(
-            f'<div class="trailer-wrapper"><iframe '
-            f'src="https://www.youtube.com/embed/{trailer}?rel=0&modestbranding=1&color=white" '
-            f'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '
-            f'allowfullscreen></iframe></div>',
+            f"""
+            <div class="trailer-wrapper">
+                <iframe
+                    src="https://www.youtube.com/embed/{trailer}?rel=0&modestbranding=1&color=white"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
     else:
-        st.markdown("<div class='trailer-no-result'>🎬 &nbsp; Trailer not available for this title</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='trailer-no-result'>🎬 &nbsp; Trailer not available for this title</div>",
+            unsafe_allow_html=True,
+        )
 
+    # ── DEBATE AGENDA ─────────────────────────────────────────────
     st.markdown("<div class='section-heading'>The Debate Agenda</div>", unsafe_allow_html=True)
     st.markdown(f"""
     <div class="agenda-strip">
@@ -1418,11 +1080,16 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
+    # ── DEBATE SUMMARY ────────────────────────────────────────────
     st.markdown("<div class='section-heading'>Debate Summary</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='summary-box'>{result.get('debate_summary', 'Summary unavailable.')}</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
+    # ── SCORES ────────────────────────────────────────────────────
     st.markdown("<div class='section-heading'>Scores</div>", unsafe_allow_html=True)
 
     raw_ai_score = str(result.get("final_score", "N/A"))
@@ -1503,6 +1170,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
+    # ── DEBATE TRANSCRIPT ─────────────────────────────────────────
     debate = result.get("debate_transcript", [])
     if debate:
         st.markdown("<div class='section-heading'>Live Debate Transcript</div>", unsafe_allow_html=True)
@@ -1535,6 +1203,7 @@ elif st.session_state.active_id and st.session_state.active_id in st.session_sta
             bubbles_html += "</div>"
             st.markdown(bubbles_html, unsafe_allow_html=True)
 
+    # ── SCORING BASIS ─────────────────────────────────────────────
     basis = result.get("scoring_basis")
     if basis:
         st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
