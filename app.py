@@ -358,9 +358,10 @@ div[data-testid="collapsedControl"] > div {{
    absolutely positioned via CSS to top-right corner.
 ================================================================ */
 /* Hide the column spacer approach entirely */
+/* Hide the column spacer approach entirely */
 .ncr-theme-toggle-col {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important;
     right: 20px !important;
     z-index: 999999 !important;
     width: auto !important;
@@ -370,7 +371,7 @@ div[data-testid="collapsedControl"] > div {{
 div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
 .ncr-theme-btn-wrap {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important;
     right: 20px !important;
     z-index: 999999 !important;
 }}
@@ -378,7 +379,7 @@ div[data-testid="stButton"]:has(button[kind="secondary"]#theme_toggle_btn),
 /* Style the toggle button — small pill */
 #ncr-theme-toggle-fixed {{
     position: fixed;
-    top: 14px;
+    top: 6px;
     right: 20px;
     z-index: 999999;
 }}
@@ -843,9 +844,10 @@ next_theme   = "light" if current_theme == "dark" else "dark"
 st.markdown(f"""
 <style>
 /* Wrap the very next stButton inside a fixed top-right box */
+/* Wrap the very next stButton inside a fixed top-right box */
 .ncr-toggle-container {{
     position: fixed !important;
-    top: 14px !important;
+    top: 6px !important; /* Decreased from 14px */
     right: 20px !important;
     z-index: 999999 !important;
     width: auto !important;
