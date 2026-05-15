@@ -358,7 +358,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 
 /* ================================================================
    SIDEBAR TOGGLE ARROWS — visible in both themes
-   Dark: #f0f0f0 (white)   •   Light: #2a1a0e (near-black)
 ================================================================ */
 
 /* — Collapsed sidebar expand pill (>> at left edge) — */
@@ -367,22 +366,22 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
+    background: {C['bg_high'] if current_theme == 'light' else C['bg_container']} !important;
+    border: 1px solid {C['outline']} !important;
     border-radius: 0 8px 8px 0 !important;
-    box-shadow: 2px 0 12px {C["glow_copper"]} !important;
+    box-shadow: 2px 0 12px {C['glow_copper']},
+               4px 0 20px rgba(0,0,0,0.08) !important;
 }}
 
 /* Force EVERY descendant inside the collapsed-control to use
-   the correct icon color — wildcard covers button, div, svg,
-   path, line, polyline, circle, rect, span, etc. */
+   the correct icon color */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="stSidebarCollapsedControl"] *,
 [data-testid="collapsedControl"],
 [data-testid="collapsedControl"] * {{
-    color:      {C["on_surface"]} !important;
-    fill:       {C["on_surface"]} !important;
-    stroke:     {C["on_surface"]} !important;
+    color:      {C['on_surface']} !important;
+    fill:       {C['on_surface']} !important;
+    stroke:     {C['on_surface']} !important;
     opacity:    1 !important;
     visibility: visible !important;
 }}
@@ -394,7 +393,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 div[data-testid="stSidebarCollapsedControl"] > div,
 div[data-testid="collapsedControl"] > div {{
-    background: {C["bg_container"]} !important;
+    background: {C['bg_high'] if current_theme == 'light' else C['bg_container']} !important;
     border-radius: 0 8px 8px 0 !important;
 }}
 
@@ -469,6 +468,17 @@ div[data-testid="column"]:last-child button:hover {{
 }}
 button, a {{ transition: all 0.22s ease !important; }}
 .glow-orb {{ transition: background 0.5s ease, opacity 0.5s ease !important; }}
+
+/* ── THEME MORPH REVEAL animation ──
+   Circular wipe that expands from the toggle button position */
+@keyframes themeMorph {{
+    0%   {{ clip-path: circle(0% at 68px 32px);  opacity: 0.6; }}
+    40%  {{ clip-path: circle(30% at 68px 32px); opacity: 0.85; }}
+    100% {{ clip-path: circle(150% at 68px 32px); opacity: 1; }}
+}}
+.stApp {{
+    animation: themeMorph 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}}
 
 /* ── ANIMATED BG ── */
 .cinema-bg {{
