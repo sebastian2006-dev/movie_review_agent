@@ -89,7 +89,7 @@ LIGHT = {
 }
 
 # ================================================================
-# TOP-LEFT THEME TOGGLE (SNAP TO ARROW)
+# TOP-RIGHT THEME TOGGLE
 # ================================================================
 # Check theme state
 if "theme" not in st.session_state:
@@ -100,7 +100,7 @@ C = DARK if current_theme == "dark" else LIGHT
 toggle_icon = "☀️" if current_theme == "dark" else "🌙"
 next_theme = "light" if current_theme == "dark" else "dark"
 
-# CSS to force the button to the top-left regardless of layout
+# CSS to fix the theme button to the top-right corner
 st.markdown(f"""
 <style>
     /* 1. Remove the default header background so the button is visible */
@@ -109,39 +109,56 @@ st.markdown(f"""
         z-index: 1 !important;
     }}
 
-    /* 2. Target the specific button by its key */
-    div[data-testid="stButton"]:has(button[key="THEME_FIXED_TOP_LEFT"]) {{
+    /* 2. Position the theme toggle at top-right */
+    div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) {{
         position: fixed !important;
-        top: 12px !important;
-        left: 60px !important; /* This aligns it perfectly with the sidebar arrow */
+        top: 14px !important;
+        right: 24px !important;
         z-index: 9999999 !important;
         width: auto !important;
     }}
 
-    /* 3. Style the button */
-    button[key="THEME_FIXED_TOP_LEFT"] {{
-        height: 38px !important;
-        width: 38px !important;
+    /* 3. Style the button – full circle, fully clickable */
+    button[key="THEME_TOGGLE_BTN"] {{
+        height: 40px !important;
+        width: 40px !important;
+        min-height: 40px !important;
+        min-width: 40px !important;
         border-radius: 50% !important;
         padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        display: grid !important;
+        place-items: center !important;
         background: {C["bg_container"]} !important;
         border: 1px solid {C["outline"]} !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
-        transition: all 0.2s ease !important;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
+        transition: all 0.25s ease !important;
+        cursor: pointer !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
     }}
 
-    button[key="THEME_FIXED_TOP_LEFT"]:hover {{
+    /* Make inner elements fill the button for full click area */
+    button[key="THEME_TOGGLE_BTN"] p,
+    button[key="THEME_TOGGLE_BTN"] span,
+    button[key="THEME_TOGGLE_BTN"] div {{
+        pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+    }}
+
+    button[key="THEME_TOGGLE_BTN"]:hover {{
         border-color: {C["primary"]} !important;
         transform: scale(1.1) !important;
+        box-shadow: 0 6px 24px {C["glow_copper_md"]} !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
-# 4. Create the button (NOT inside any column)
-if st.button(toggle_icon, key="THEME_FIXED_TOP_LEFT"):
+# Create the button (NOT inside any column)
+if st.button(toggle_icon, key="THEME_TOGGLE_BTN"):
     st.session_state.theme = next_theme
     st.rerun()
 
@@ -354,11 +371,13 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 /* ================================================================
-   FIX 1 — SIDEBAR COLLAPSE ARROW
-   Uses baked-in sidebar_icon_color (black in light, white in dark)
-   so the icon is always visible regardless of theme.
+   FIX 1 — SIDEBAR COLLAPSE / EXPAND ARROW
+   Ensures the sidebar toggle arrow is visible in BOTH themes.
+   - Dark mode: near-white icon on dark container
+   - Light mode: near-black icon on light container
 ================================================================ */
-/* FIX — SIDEBAR COLLAPSE ARROW: black in light, white in dark */
+
+/* — Collapsed sidebar opener (left edge pill) — */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {{
     display: flex !important;
@@ -386,12 +405,8 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 
 [data-testid="stSidebarCollapsedControl"] svg,
 [data-testid="stSidebarCollapsedControl"] svg *,
-[data-testid="stSidebarCollapsedControl"] button svg,
-[data-testid="stSidebarCollapsedControl"] button svg *,
 [data-testid="collapsedControl"] svg,
-[data-testid="collapsedControl"] svg *,
-[data-testid="collapsedControl"] button svg,
-[data-testid="collapsedControl"] button svg * {{
+[data-testid="collapsedControl"] svg * {{
     fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
@@ -405,6 +420,34 @@ div[data-testid="collapsedControl"] > div {{
     border-radius: 0 8px 8px 0 !important;
     opacity: 1 !important;
     visibility: visible !important;
+}}
+
+/* — Close/collapse button INSIDE the open sidebar — */
+[data-testid="stSidebar"] button[data-testid="baseButton-header"],
+[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"],
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebar"] header button {{
+    color: {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    background: {C["bg_container"]} !important;
+    border: 1px solid {C["outline"]} !important;
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    box-shadow: 0 2px 8px {C["glow_copper"]} !important;
+}}
+
+[data-testid="stSidebar"] button[data-testid="baseButton-header"] svg,
+[data-testid="stSidebar"] button[data-testid="baseButton-header"] svg *,
+[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] svg,
+[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] svg *,
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg *,
+[data-testid="stSidebar"] header button svg,
+[data-testid="stSidebar"] header button svg * {{
+    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    opacity: 1 !important;
 }}
 
 
@@ -562,17 +605,21 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {{
     background: linear-gradient(135deg, var(--ncr-primary-container), var(--ncr-primary)) !important;
 }}
 
-/* Override global button style for the theme toggle — stays small */
-.ncr-toggle-container div[data-testid="stButton"] > button {{
-    padding: 3px 10px !important;
-    font-size: 9px !important;
-    height: 22px !important;
-    min-height: 22px !important;
-    letter-spacing: 0.13em !important;
+/* Override global button style for the theme toggle — stays circular */
+div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) > button {{
+    padding: 0 !important;
+    font-size: 18px !important;
+    height: 40px !important;
+    width: 40px !important;
+    min-height: 40px !important;
+    min-width: 40px !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
-    color: {C["text_muted"]} !important;
-    box-shadow: 0 2px 10px {C["glow_copper"]} !important;
+    color: {C["on_surface"]} !important;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
+    border-radius: 50% !important;
 }}
 
 /* ── CHAT INPUT ── */
