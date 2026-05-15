@@ -89,7 +89,7 @@ LIGHT = {
 }
 
 # ================================================================
-# TOP-RIGHT THEME TOGGLE
+# THEME TOGGLE — sits beside the sidebar arrow
 # ================================================================
 # Check theme state
 if "theme" not in st.session_state:
@@ -100,25 +100,34 @@ C = DARK if current_theme == "dark" else LIGHT
 toggle_icon = "☀️" if current_theme == "dark" else "🌙"
 next_theme = "light" if current_theme == "dark" else "dark"
 
-# CSS to fix the theme button to the top-right corner
+# CSS — positions the toggle right beside the sidebar expand/collapse arrow
 st.markdown(f"""
 <style>
-    /* 1. Remove the default header background so the button is visible */
+    /* 1. Transparent header */
     header[data-testid="stHeader"] {{
         background: transparent !important;
         z-index: 1 !important;
     }}
 
-    /* 2. Position the theme toggle at top-right */
+    /* 2. Position theme toggle beside the sidebar arrow.
+       Default (sidebar collapsed): left ~48px (just right of the >> pill).
+       When sidebar opens, shift rightward to sit at the sidebar edge. */
     div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) {{
         position: fixed !important;
-        top: 14px !important;
-        right: 24px !important;
+        top: 12px !important;
+        left: 48px !important;
         z-index: 9999999 !important;
         width: auto !important;
+        transition: left 0.3s cubic-bezier(.4,0,.2,1) !important;
     }}
 
-    /* 3. Style the button – full circle, fully clickable */
+    /* When sidebar is expanded, push the toggle to the right of the sidebar */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ div div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]),
+    [data-testid="stSidebar"][aria-expanded="true"] ~ section div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) {{
+        left: calc(21rem + 12px) !important;
+    }}
+
+    /* 3. Fully clickable circular button */
     button[key="THEME_TOGGLE_BTN"] {{
         height: 40px !important;
         width: 40px !important;
@@ -126,8 +135,11 @@ st.markdown(f"""
         min-width: 40px !important;
         border-radius: 50% !important;
         padding: 0 !important;
-        display: grid !important;
-        place-items: center !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         background: {C["bg_container"]} !important;
         border: 1px solid {C["outline"]} !important;
         box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
@@ -139,14 +151,13 @@ st.markdown(f"""
         text-transform: none !important;
     }}
 
-    /* Make inner elements fill the button for full click area */
-    button[key="THEME_TOGGLE_BTN"] p,
-    button[key="THEME_TOGGLE_BTN"] span,
-    button[key="THEME_TOGGLE_BTN"] div {{
+    /* Inner <p>/<span> must not block clicks and must fill the button */
+    button[key="THEME_TOGGLE_BTN"] * {{
         pointer-events: none !important;
         margin: 0 !important;
         padding: 0 !important;
         line-height: 1 !important;
+        font-size: 18px !important;
     }}
 
     button[key="THEME_TOGGLE_BTN"]:hover {{
@@ -371,13 +382,11 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 /* ================================================================
-   FIX 1 — SIDEBAR COLLAPSE / EXPAND ARROW
-   Ensures the sidebar toggle arrow is visible in BOTH themes.
-   - Dark mode: near-white icon on dark container
-   - Light mode: near-black icon on light container
+   SIDEBAR TOGGLE ARROW — always visible in both themes
+   Dark: white icon   •   Light: dark icon
 ================================================================ */
 
-/* — Collapsed sidebar opener (left edge pill) — */
+/* — Collapsed sidebar expand button (>> pill at left edge) — */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {{
     display: flex !important;
@@ -389,40 +398,30 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     box-shadow: 2px 0 12px {C["glow_copper"]} !important;
 }}
 
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] button:hover,
-[data-testid="stSidebarCollapsedControl"] button:focus,
-[data-testid="collapsedControl"] button,
-[data-testid="collapsedControl"] button:hover,
-[data-testid="collapsedControl"] button:focus {{
-    color: {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+/* Force icon color on the collapsed-control (>> arrow) — covers
+   button, svg, path, line, polyline, circle, rect, and any child */
+[data-testid="stSidebarCollapsedControl"] *,
+[data-testid="collapsedControl"] * {{
+    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     opacity: 1 !important;
     visibility: visible !important;
 }}
-
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="stSidebarCollapsedControl"] svg *,
-[data-testid="collapsedControl"] svg,
-[data-testid="collapsedControl"] svg * {{
-    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 
 div[data-testid="stSidebarCollapsedControl"] > div,
 div[data-testid="collapsedControl"] > div {{
     background: {C["bg_container"]} !important;
     border-radius: 0 8px 8px 0 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
 }}
 
-/* — Close/collapse button INSIDE the open sidebar — */
+/* — Close / collapse arrow INSIDE the open sidebar — */
 [data-testid="stSidebar"] button[data-testid="baseButton-header"],
 [data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"],
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button,
@@ -436,14 +435,11 @@ div[data-testid="collapsedControl"] > div {{
     box-shadow: 0 2px 8px {C["glow_copper"]} !important;
 }}
 
-[data-testid="stSidebar"] button[data-testid="baseButton-header"] svg,
-[data-testid="stSidebar"] button[data-testid="baseButton-header"] svg *,
-[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] svg,
-[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] svg *,
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg,
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg *,
-[data-testid="stSidebar"] header button svg,
-[data-testid="stSidebar"] header button svg * {{
+/* Force SVG color on the sidebar close button */
+[data-testid="stSidebar"] button[data-testid="baseButton-header"] *,
+[data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] *,
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] *,
+[data-testid="stSidebar"] header button * {{
     fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
     color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
