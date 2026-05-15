@@ -89,89 +89,20 @@ LIGHT = {
 }
 
 # ================================================================
-# THEME TOGGLE — sits beside the sidebar arrow
+# THEME TOGGLE — state & query-param handler (runs before page config)
 # ================================================================
-# Check theme state
 if "theme" not in st.session_state:
     st.session_state.theme = "dark"
+
+# Handle toggle click from the HTML <a> button (sets ?toggle_theme=1)
+if st.query_params.get("toggle_theme"):
+    st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
+    st.query_params.clear()
+    st.rerun()
 
 current_theme = st.session_state.theme
 C = DARK if current_theme == "dark" else LIGHT
 toggle_icon = "☀️" if current_theme == "dark" else "🌙"
-next_theme = "light" if current_theme == "dark" else "dark"
-
-# CSS — positions the toggle right beside the sidebar expand/collapse arrow
-st.markdown(f"""
-<style>
-    /* 1. Transparent header */
-    header[data-testid="stHeader"] {{
-        background: transparent !important;
-        z-index: 1 !important;
-    }}
-
-    /* 2. Position theme toggle beside the sidebar arrow.
-       Default (sidebar collapsed): left ~48px (just right of the >> pill).
-       When sidebar opens, shift rightward to sit at the sidebar edge. */
-    div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) {{
-        position: fixed !important;
-        top: 12px !important;
-        left: 48px !important;
-        z-index: 9999999 !important;
-        width: auto !important;
-        transition: left 0.3s cubic-bezier(.4,0,.2,1) !important;
-    }}
-
-    /* When sidebar is expanded, push the toggle to the right of the sidebar */
-    [data-testid="stSidebar"][aria-expanded="true"] ~ div div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]),
-    [data-testid="stSidebar"][aria-expanded="true"] ~ section div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) {{
-        left: calc(21rem + 12px) !important;
-    }}
-
-    /* 3. Fully clickable circular button */
-    button[key="THEME_TOGGLE_BTN"] {{
-        height: 40px !important;
-        width: 40px !important;
-        min-height: 40px !important;
-        min-width: 40px !important;
-        border-radius: 50% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        background: {C["bg_container"]} !important;
-        border: 1px solid {C["outline"]} !important;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
-        transition: all 0.25s ease !important;
-        cursor: pointer !important;
-        font-size: 18px !important;
-        line-height: 1 !important;
-        letter-spacing: 0 !important;
-        text-transform: none !important;
-    }}
-
-    /* Inner <p>/<span> must not block clicks and must fill the button */
-    button[key="THEME_TOGGLE_BTN"] * {{
-        pointer-events: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1 !important;
-        font-size: 18px !important;
-    }}
-
-    button[key="THEME_TOGGLE_BTN"]:hover {{
-        border-color: {C["primary"]} !important;
-        transform: scale(1.1) !important;
-        box-shadow: 0 6px 24px {C["glow_copper_md"]} !important;
-    }}
-</style>
-""", unsafe_allow_html=True)
-
-# Create the button (NOT inside any column)
-if st.button(toggle_icon, key="THEME_TOGGLE_BTN"):
-    st.session_state.theme = next_theme
-    st.rerun()
 
 # ================================================================
 # SEARCH MOVIES
@@ -337,6 +268,50 @@ C = DARK if current_theme == "dark" else LIGHT
 # ── resolve sidebar icon color: near-black in light, near-white in dark ──
 sidebar_icon_color = "#1a1a1a" if current_theme == "light" else "#f0f0f0"
 
+# ── Render the theme toggle as pure HTML (after page config) ──
+st.markdown(f"""
+<style>
+    header[data-testid="stHeader"] {{
+        background: transparent !important;
+        z-index: 1 !important;
+    }}
+
+    /* ── Theme toggle circle ── */
+    #ncr-theme-toggle {{
+        position: fixed;
+        top: 12px;
+        left: 48px;
+        z-index: 9999999;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: {C['bg_container']};
+        border: 1px solid {C['outline']};
+        text-decoration: none;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+        transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    }}
+    #ncr-theme-toggle:hover {{
+        border-color: {C['primary']};
+        transform: scale(1.1);
+        box-shadow: 0 6px 24px {C['glow_copper_md']};
+    }}
+
+    /* Shift toggle rightward when sidebar is expanded */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ div #ncr-theme-toggle,
+    [data-testid="stSidebar"][aria-expanded="true"] ~ section #ncr-theme-toggle,
+    [data-testid="stSidebar"][aria-expanded="true"] ~ [data-testid="stAppViewContainer"] #ncr-theme-toggle {{
+        left: calc(21rem + 12px) !important;
+    }}
+</style>
+<a href="?toggle_theme=1" target="_self" id="ncr-theme-toggle">{toggle_icon}</a>
+""", unsafe_allow_html=True)
+
 
 # ================================================================
 # GLOBAL CSS  (uses C tokens for SSR)
@@ -382,11 +357,11 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 .stApp > header {{ display: none !important; }}
 
 /* ================================================================
-   SIDEBAR TOGGLE ARROW — always visible in both themes
-   Dark: white icon   •   Light: dark icon
+   SIDEBAR TOGGLE ARROWS — visible in both themes
+   Dark: #f0f0f0 (white)   •   Light: #2a1a0e (near-black)
 ================================================================ */
 
-/* — Collapsed sidebar expand button (>> pill at left edge) — */
+/* — Collapsed sidebar expand pill (>> at left edge) — */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {{
     display: flex !important;
@@ -398,14 +373,17 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     box-shadow: 2px 0 12px {C["glow_copper"]} !important;
 }}
 
-/* Force icon color on the collapsed-control (>> arrow) — covers
-   button, svg, path, line, polyline, circle, rect, and any child */
+/* Force EVERY descendant inside the collapsed-control to use
+   the correct icon color — wildcard covers button, div, svg,
+   path, line, polyline, circle, rect, span, etc. */
+[data-testid="stSidebarCollapsedControl"],
 [data-testid="stSidebarCollapsedControl"] *,
+[data-testid="collapsedControl"],
 [data-testid="collapsedControl"] * {{
-    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    opacity: 1 !important;
+    color:      {C["on_surface"]} !important;
+    fill:       {C["on_surface"]} !important;
+    stroke:     {C["on_surface"]} !important;
+    opacity:    1 !important;
     visibility: visible !important;
 }}
 [data-testid="stSidebarCollapsedControl"] button,
@@ -414,7 +392,6 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     border: none !important;
     box-shadow: none !important;
 }}
-
 div[data-testid="stSidebarCollapsedControl"] > div,
 div[data-testid="collapsedControl"] > div {{
     background: {C["bg_container"]} !important;
@@ -426,7 +403,7 @@ div[data-testid="collapsedControl"] > div {{
 [data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"],
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button,
 [data-testid="stSidebar"] header button {{
-    color: {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    color: {C["on_surface"]} !important;
     background: {C["bg_container"]} !important;
     border: 1px solid {C["outline"]} !important;
     border-radius: 8px !important;
@@ -434,15 +411,13 @@ div[data-testid="collapsedControl"] > div {{
     visibility: visible !important;
     box-shadow: 0 2px 8px {C["glow_copper"]} !important;
 }}
-
-/* Force SVG color on the sidebar close button */
 [data-testid="stSidebar"] button[data-testid="baseButton-header"] *,
 [data-testid="stSidebar"] button[data-testid="baseButton-headerNoPadding"] *,
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] *,
 [data-testid="stSidebar"] header button * {{
-    fill:    {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    stroke:  {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
-    color:   {"#1a1a1a" if current_theme == "light" else "#f0f0f0"} !important;
+    fill:   {C["on_surface"]} !important;
+    stroke: {C["on_surface"]} !important;
+    color:  {C["on_surface"]} !important;
     opacity: 1 !important;
 }}
 
@@ -601,22 +576,6 @@ div[data-testid="stButton"] > button[kind="primary"]:hover {{
     background: linear-gradient(135deg, var(--ncr-primary-container), var(--ncr-primary)) !important;
 }}
 
-/* Override global button style for the theme toggle — stays circular */
-div[data-testid="stButton"]:has(button[key="THEME_TOGGLE_BTN"]) > button {{
-    padding: 0 !important;
-    font-size: 18px !important;
-    height: 40px !important;
-    width: 40px !important;
-    min-height: 40px !important;
-    min-width: 40px !important;
-    letter-spacing: 0 !important;
-    text-transform: none !important;
-    background: {C["bg_container"]} !important;
-    border: 1px solid {C["outline"]} !important;
-    color: {C["on_surface"]} !important;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.25) !important;
-    border-radius: 50% !important;
-}}
 
 /* ── CHAT INPUT ── */
 div[data-testid="stChatInput"] {{
