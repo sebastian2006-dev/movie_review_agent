@@ -111,6 +111,291 @@ def generate_css_vars():
     css += "}\n"
     return css
 
+def generate_animation_css():
+    return """
+/* ================================================================
+   ENHANCED BACKGROUND — Film Grain + Particle Drift + Orb Pulse
+================================================================ */
+
+/* Film grain overlay — SVG noise baked as data URI */
+.cinema-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.038;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 180px 180px;
+    mix-blend-mode: overlay;
+    animation: grainShift 0.08s steps(1) infinite;
+    z-index: 1;
+}
+
+@keyframes grainShift {
+    0%  { background-position: 0px   0px;  }
+    10% { background-position: -8px  -4px; }
+    20% { background-position: 4px   12px; }
+    30% { background-position: -12px 6px;  }
+    40% { background-position: 8px   -8px; }
+    50% { background-position: -6px  16px; }
+    60% { background-position: 14px  -2px; }
+    70% { background-position: -4px  -14px;}
+    80% { background-position: 10px  8px;  }
+    90% { background-position: -16px -6px; }
+}
+
+/* Light mode — grain slightly stronger to add texture on pale bg */
+:root[data-theme='light'] .cinema-bg::after {
+    opacity: 0.055;
+    mix-blend-mode: multiply;
+}
+
+/* ── ORB REWORK — pulse + shimmer on top of drift ── */
+.glow-orb {
+    animation: orbDrift 18s ease-in-out infinite alternate,
+               orbPulse  6s ease-in-out infinite alternate !important;
+}
+.orb-1 { animation-duration: 20s, 7s !important; }
+.orb-2 { animation-duration: 16s, 5s !important; animation-delay: -5s, -2s !important; }
+.orb-3 { animation-duration: 24s, 9s !important; animation-delay: -8s, -4s !important; }
+
+@keyframes orbDrift {
+    0%   { transform: translate(0,   0)   scale(1);    }
+    25%  { transform: translate(8%,  12%) scale(1.08); }
+    50%  { transform: translate(16%, 6%)  scale(1.18); }
+    75%  { transform: translate(6%,  18%) scale(0.95); }
+    100% { transform: translate(-8%, 10%) scale(1.12); }
+}
+@keyframes orbPulse {
+    0%   { opacity: var(--orb-base-opacity, 0.45); filter: blur(80px);  }
+    50%  { opacity: calc(var(--orb-base-opacity, 0.45) * 1.5); filter: blur(65px); }
+    100% { opacity: var(--orb-base-opacity, 0.45); filter: blur(90px);  }
+}
+
+/* Light theme — orbs use color burn so they show on pale bg */
+:root[data-theme='light'] .glow-orb {
+    mix-blend-mode: color-burn !important;
+    --orb-base-opacity: 0.18;
+}
+:root[data-theme='light'] .orb-1 { background: radial-gradient(circle, #f0a060 0%, transparent 70%) !important; }
+:root[data-theme='light'] .orb-2 { background: radial-gradient(circle, #e07040 0%, transparent 70%) !important; }
+:root[data-theme='light'] .orb-3 { background: radial-gradient(circle, #f8c080 0%, transparent 70%) !important; }
+
+/* ── FLOATING PARTICLES (CSS-only, no JS) ── */
+.cinema-bg .particles { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; }
+.cinema-bg .particle  {
+    position: absolute; border-radius: 50%;
+    background: var(--ncr-primary);
+    opacity: 0;
+    animation: particleFly linear infinite;
+}
+.p1  { width:2px; height:2px; left:12%;  animation-duration:22s; animation-delay:0s;    }
+.p2  { width:3px; height:3px; left:28%;  animation-duration:18s; animation-delay:-4s;   }
+.p3  { width:1px; height:1px; left:45%;  animation-duration:26s; animation-delay:-8s;   }
+.p4  { width:2px; height:2px; left:62%;  animation-duration:20s; animation-delay:-2s;   }
+.p5  { width:3px; height:3px; left:75%;  animation-duration:16s; animation-delay:-6s;   }
+.p6  { width:1px; height:1px; left:88%;  animation-duration:30s; animation-delay:-10s;  }
+.p7  { width:2px; height:2px; left:8%;   animation-duration:24s; animation-delay:-14s;  }
+.p8  { width:2px; height:2px; left:52%;  animation-duration:19s; animation-delay:-3s;   }
+.p9  { width:1px; height:1px; left:36%;  animation-duration:28s; animation-delay:-7s;   }
+.p10 { width:3px; height:3px; left:91%;  animation-duration:21s; animation-delay:-11s;  }
+.p11 { width:1px; height:1px; left:22%;  animation-duration:17s; animation-delay:-5s;   }
+.p12 { width:2px; height:2px; left:68%;  animation-duration:23s; animation-delay:-9s;   }
+
+@keyframes particleFly {
+    0%   { bottom: -10px; opacity: 0;    transform: translateX(0)   scale(1);   }
+    10%  { opacity: 0.6; }
+    50%  { opacity: 0.3;                 transform: translateX(30px) scale(1.3); }
+    90%  { opacity: 0.5; }
+    100% { bottom: 110%;  opacity: 0;    transform: translateX(-20px) scale(0.8); }
+}
+
+/* Light theme — particles use darker tone for visibility */
+:root[data-theme='light'] .particle { background: var(--ncr-primary-dim); opacity: 0; }
+
+/* ================================================================
+   CARD ENTRANCE ANIMATIONS
+================================================================ */
+@keyframes cardReveal {
+    from { opacity: 0; transform: translateY(22px) scale(0.97); filter: blur(4px); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);   }
+}
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Result cards appear with staggered entrance */
+.result-card          { animation: cardReveal 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.movie-title-display  { animation: fadeSlideUp 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+.movie-meta-inline    { animation: fadeSlideUp 0.5s 0.18s cubic-bezier(0.22,1,0.36,1) both; }
+.agenda-strip         { animation: fadeSlideUp 0.55s 0.08s cubic-bezier(0.22,1,0.36,1) both; }
+.summary-box          { animation: fadeSlideUp 0.55s 0.12s cubic-bezier(0.22,1,0.36,1) both; }
+.trailer-wrapper      { animation: fadeSlideUp 0.6s 0.06s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ================================================================
+   HERO ENTRANCE
+================================================================ */
+.hero-eyebrow { animation: fadeSlideUp 0.6s 0.0s both; }
+.hero-title   { animation: fadeSlideUp 0.7s 0.12s both; }
+.hero-sub     { animation: fadeSlideUp 0.7s 0.24s both; }
+.hero-ornament{ animation: fadeSlideUp 0.6s 0.32s both; }
+
+/* ================================================================
+   INTERACTIVITY UPGRADES
+================================================================ */
+
+/* ── Result card: shimmer sweep on hover ── */
+.result-card { position: relative; overflow: hidden; }
+.result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(232,131,58,0.07) 50%,
+        transparent 100%
+    );
+    transform: skewX(-20deg);
+    transition: none;
+    pointer-events: none;
+    z-index: 1;
+}
+.result-card:hover::before {
+    left: 130%;
+    transition: left 0.65s ease;
+}
+
+/* ── Agenda cells: left-border accent on hover ── */
+.agenda-cell {
+    border-left: 3px solid transparent !important;
+    transition: background 0.25s ease, border-color 0.25s ease !important;
+}
+.agenda-cell:hover {
+    border-left-color: var(--ncr-primary) !important;
+}
+
+/* ── Button: press scale ── */
+div[data-testid="stButton"] > button:active {
+    transform: scale(0.96) !important;
+    box-shadow: 0 2px 8px var(--ncr-glow-copper) !important;
+}
+div[data-testid="stButton"] > button[kind="primary"]:active {
+    transform: scale(0.95) translateY(0) !important;
+}
+
+/* ── Chat input: focus glow ring ── */
+div[data-testid="stChatInput"]:focus-within {
+    border-color: var(--ncr-primary) !important;
+    box-shadow: 0 0 0 3px var(--ncr-glow-copper-md),
+                inset 0 2px 10px rgba(0,0,0,0.15) !important;
+}
+
+/* ── Score ring card: lift on hover ── */
+div[style*="display:flex"][style*="gap:52px"] > div {
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+    cursor: default;
+}
+div[style*="display:flex"][style*="gap:52px"] > div:hover {
+    transform: translateY(-6px) scale(1.05);
+}
+
+/* ── Debate bubbles: subtle slide-in ── */
+.bubble-critic   { animation: slideInLeft  0.45s cubic-bezier(0.22,1,0.36,1) both; }
+.bubble-advocate { animation: slideInRight 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes slideInLeft  {
+    from { opacity:0; transform: translateX(-18px); }
+    to   { opacity:1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+    from { opacity:0; transform: translateX(18px); }
+    to   { opacity:1; transform: translateX(0); }
+}
+
+/* ── Sidebar nav buttons: copper underline sweep ── */
+[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+    position: relative; overflow: hidden;
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] > button::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 0%; height: 2px;
+    background: linear-gradient(90deg, var(--ncr-primary), var(--ncr-secondary));
+    transition: width 0.35s cubic-bezier(0.22,1,0.36,1);
+    border-radius: 2px;
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover::after {
+    width: 100%;
+}
+
+/* ── Theme toggle: spin on click ── */
+#ncr-theme-toggle:active {
+    transform: scale(0.92) rotate(30deg) !important;
+}
+
+/* ── Poster image: parallax-lite zoom on card hover ── */
+[data-testid="stImage"] img {
+    transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),
+                box-shadow 0.4s ease !important;
+}
+[data-testid="stImage"] img:hover {
+    transform: scale(1.03) !important;
+}
+
+/* ── Trailer wrapper: glow intensify on hover ── */
+.trailer-wrapper {
+    transition: box-shadow 0.4s ease, transform 0.3s ease !important;
+}
+.trailer-wrapper:hover {
+    transform: scale(1.005);
+    box-shadow: 0 32px 90px -12px rgba(0,0,0,0.25),
+                0 0 0 1px var(--ncr-outline),
+                0 0 80px -16px var(--ncr-glow-copper-md) !important;
+}
+
+/* ── Expander: slide-open feel (Streamlit constraint workaround) ── */
+[data-testid="stExpander"] {
+    transition: background 0.3s ease, border-color 0.3s ease,
+                box-shadow 0.3s ease !important;
+}
+[data-testid="stExpander"]:hover {
+    border-color: var(--ncr-outline) !important;
+    box-shadow: 0 4px 24px var(--ncr-glow-copper) !important;
+}
+
+/* ── Theme chip tags: pop on hover ── */
+.theme-tag {
+    transition: transform 0.2s ease, background 0.2s ease,
+                box-shadow 0.2s ease !important;
+    cursor: default;
+}
+.theme-tag:hover {
+    transform: translateY(-3px) scale(1.05);
+    background: var(--ncr-critic-border) !important;
+    box-shadow: 0 4px 14px var(--ncr-glow-copper) !important;
+}
+
+/* ── Section headings: left bar animate in ── */
+.section-heading {
+    animation: fadeSlideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ================================================================
+   REDUCED MOTION SAFETY — WCAG 2.1 AA
+================================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .cinema-bg::after { animation: none !important; }
+}
+"""
+
 # ================================================================
 # SEARCH MOVIES
 # ================================================================
@@ -810,6 +1095,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
 }}
 
 p, li, div {{ font-size: 15px; }}
+{generate_animation_css()}
 </style>
 """, unsafe_allow_html=True)
 
@@ -839,6 +1125,14 @@ st.markdown(f"""
         <div class="glow-orb orb-1"></div>
         <div class="glow-orb orb-2"></div>
         <div class="glow-orb orb-3"></div>
+        <div class="particles">
+            <div class="particle p1"></div><div class="particle p2"></div>
+            <div class="particle p3"></div><div class="particle p4"></div>
+            <div class="particle p5"></div><div class="particle p6"></div>
+            <div class="particle p7"></div><div class="particle p8"></div>
+            <div class="particle p9"></div><div class="particle p10"></div>
+            <div class="particle p11"></div><div class="particle p12"></div>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
