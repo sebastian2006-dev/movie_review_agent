@@ -896,6 +896,7 @@ textarea[data-testid="stChatInputTextArea"]::placeholder {{
 button[data-testid="stChatInputSubmitButton"] {{
     background: linear-gradient(135deg, var(--ncr-primary), var(--ncr-secondary)) !important;
     border-radius: 9999px !important;
+    border: none !important;
     box-shadow: 0 4px 20px var(--ncr-glow-copper-btn) !important;
     margin-top: 5px !important;
 }}
