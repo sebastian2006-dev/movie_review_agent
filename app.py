@@ -145,10 +145,10 @@ def generate_animation_css():
     90% { background-position: -16px -6px; }
 }
 
-/* ── LIGHT THEME GRAIN ── */
+/* Light mode — grain slightly stronger to add texture on pale bg */
 :root[data-theme='light'] .cinema-bg::after {
-    opacity: 0.07 !important;
-    mix-blend-mode: multiply !important;
+    opacity: 0.055;
+    mix-blend-mode: multiply;
 }
 
 /* ── ORB REWORK — pulse + shimmer on top of drift ── */
@@ -173,31 +173,14 @@ def generate_animation_css():
     100% { opacity: var(--orb-base-opacity, 0.45); filter: blur(90px);  }
 }
 
-/* ── LIGHT THEME ORB OVERRIDES ── */
-:root[data-theme='light'] .orb-1 {
-    background: radial-gradient(circle, #c8601a 0%, transparent 65%) !important;
-    opacity: 0.55 !important;
+/* Light theme — orbs use color burn so they show on pale bg */
+:root[data-theme='light'] .glow-orb {
     mix-blend-mode: color-burn !important;
-    filter: blur(44px) !important;
-    width: 640px !important;
-    height: 640px !important;
+    --orb-base-opacity: 0.18;
 }
-:root[data-theme='light'] .orb-2 {
-    background: radial-gradient(circle, #a84010 0%, transparent 65%) !important;
-    opacity: 0.45 !important;
-    mix-blend-mode: color-burn !important;
-    filter: blur(38px) !important;
-    width: 520px !important;
-    height: 520px !important;
-}
-:root[data-theme='light'] .orb-3 {
-    background: radial-gradient(circle, #b85818 0%, transparent 65%) !important;
-    opacity: 0.38 !important;
-    mix-blend-mode: color-burn !important;
-    filter: blur(50px) !important;
-    width: 440px !important;
-    height: 440px !important;
-}
+:root[data-theme='light'] .orb-1 { background: radial-gradient(circle, #f0a060 0%, transparent 70%) !important; }
+:root[data-theme='light'] .orb-2 { background: radial-gradient(circle, #e07040 0%, transparent 70%) !important; }
+:root[data-theme='light'] .orb-3 { background: radial-gradient(circle, #f8c080 0%, transparent 70%) !important; }
 
 /* ── FLOATING PARTICLES (CSS-only, no JS) ── */
 .cinema-bg .particles { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; }
@@ -228,10 +211,8 @@ def generate_animation_css():
     100% { bottom: 110%;  opacity: 0;    transform: translateX(-20px) scale(0.8); }
 }
 
-/* ── LIGHT THEME PARTICLES ── */
-:root[data-theme='light'] .particle {
-    background: #9a3a08 !important;
-}
+/* Light theme — particles use darker tone for visibility */
+:root[data-theme='light'] .particle { background: var(--ncr-primary-dim); opacity: 0; }
 
 /* ================================================================
    CARD ENTRANCE ANIMATIONS
