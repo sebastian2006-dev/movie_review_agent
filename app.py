@@ -916,6 +916,15 @@ div[data-testid="stChatInput"] button:active {{
     box-shadow: none !important;
     border-radius: 9999px !important;
 }}
+div[data-testid="stChatInput"] button > div,
+div[data-testid="stChatInput"] button span,
+div[data-testid="stChatInput"] > div > div:last-child {{
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 9999px !important;
+    background: transparent !important;
+}}
 
 /* ── SEARCH LABEL ── */
 .search-label {{
