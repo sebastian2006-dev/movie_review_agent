@@ -52,7 +52,7 @@ DARK = {
 }
 
 LIGHT = {
-    "bg":               "#fdf6ee",
+    "bg":               "#f5ede0",
     "bg_lowest":        "#f5ece0",
     "bg_low":           "#faf2e8",
     "bg_container":     "#fff8f0",
@@ -86,7 +86,7 @@ LIGHT = {
     "orb3":             "#ffd8a0",
     "orb_opacity":      "0.30",
     "orb_blend":        "multiply",
-    "bg_base":          "#fdf6ee",
+    "bg_base":          "#f5ede0",
     "sidebar_bg":       "#f5e8d8",
 }
 
@@ -1118,23 +1118,234 @@ with st.sidebar:
 
 
 # ================================================================
-# BACKGROUND ORBS
+# BACKGROUND ORBS (Canvas)
 # ================================================================
-st.markdown(f"""
-    <div class="cinema-bg">
-        <div class="glow-orb orb-1"></div>
-        <div class="glow-orb orb-2"></div>
-        <div class="glow-orb orb-3"></div>
-        <div class="particles">
-            <div class="particle p1"></div><div class="particle p2"></div>
-            <div class="particle p3"></div><div class="particle p4"></div>
-            <div class="particle p5"></div><div class="particle p6"></div>
-            <div class="particle p7"></div><div class="particle p8"></div>
-            <div class="particle p9"></div><div class="particle p10"></div>
-            <div class="particle p11"></div><div class="particle p12"></div>
-        </div>
-    </div>
+st.markdown("""
+<style>
+.cinema-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -999;
+    background-color: var(--ncr-bg-base);
+    overflow: hidden;
+    transition: background-color 0.5s ease;
+}
+#cinema-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+</style>
+
+<div class="cinema-bg">
+    <canvas id="cinema-canvas"></canvas>
+</div>
 """, unsafe_allow_html=True)
+
+components.html("""
+<script>
+(function() {
+    const doc   = parent.document;
+    const root  = doc.documentElement;
+
+    function getTheme() {
+        return root.getAttribute('data-theme') || 'dark';
+    }
+
+    const canvas = doc.getElementById('cinema-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width  = parent.window.innerWidth;
+        canvas.height = parent.window.innerHeight;
+    }
+    resize();
+    parent.window.addEventListener('resize', resize);
+
+    /* ── THEME CONFIGS ── */
+    const THEMES = {
+        dark: {
+            bg:       '#120c09',
+            orbs:     ['#e8833a','#c8603a','#f0b87a'],
+            orbAlpha: [0.52, 0.44, 0.40],
+            orbR:     [0.42, 0.36, 0.30],
+            orbPos:   [[0.12,0.18],[0.78,0.72],[0.48,0.45]],
+            pColors:  ['#e8833a','#f0b87a','#c8603a','#f5c890'],
+            pCount:   32,
+            pAlpha:   0.70,
+            orbMode:  'screen',
+            grainAlpha: 0.32,
+            grainMode:  'overlay',
+        },
+        light: {
+            bg:       '#f5ede0',
+            orbs:     ['#c8601a','#a84010','#d06828'],
+            orbAlpha: [0.38, 0.30, 0.26],
+            orbR:     [0.50, 0.42, 0.36],
+            orbPos:   [[0.10,0.15],[0.80,0.75],[0.50,0.48]],
+            pColors:  ['#c8601a','#a84010','#e07030','#b85018'],
+            pCount:   28,
+            pAlpha:   0.55,
+            orbMode:  'multiply',
+            grainAlpha: 0.22,
+            grainMode:  'multiply',
+        }
+    };
+
+    /* ── BUILD STATE ── */
+    let cfg     = THEMES[getTheme()];
+    let orbs    = [];
+    let parts   = [];
+    let frame   = 0;
+
+    function hexRgb(hex) {
+        return [
+            parseInt(hex.slice(1,3),16),
+            parseInt(hex.slice(3,5),16),
+            parseInt(hex.slice(5,7),16)
+        ];
+    }
+
+    function buildOrbs(c) {
+        return c.orbs.map((col, i) => ({
+            col, rgb: hexRgb(col),
+            x:  c.orbPos[i][0],
+            y:  c.orbPos[i][1],
+            r:  c.orbR[i],
+            a:  c.orbAlpha[i],
+            dx: (Math.random()-0.5) * 0.00035,
+            dy: (Math.random()-0.5) * 0.00035,
+            phase: i * 2.09,
+        }));
+    }
+
+    function buildParticles(c) {
+        return Array.from({length: c.pCount}, () => ({
+            x:    Math.random(),
+            y:    1 + Math.random() * 0.3,
+            size: 0.8 + Math.random() * 2.2,
+            spd:  0.00010 + Math.random() * 0.00016,
+            drft: (Math.random()-0.5) * 0.00007,
+            op:   0,
+            maxOp: c.pAlpha * (0.5 + Math.random() * 0.5),
+            phase: Math.random() * Math.PI * 2,
+            col:  c.pColors[Math.floor(Math.random()*c.pColors.length)],
+            rgb:  null,
+        }));
+    }
+    function assignRgb(ps) { ps.forEach(p => { p.rgb = hexRgb(p.col); }); }
+
+    function initState() {
+        cfg   = THEMES[getTheme()];
+        orbs  = buildOrbs(cfg);
+        parts = buildParticles(cfg);
+        assignRgb(parts);
+    }
+    initState();
+
+    /* watch for theme changes */
+    const observer = new MutationObserver(() => { initState(); });
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+    /* ── DRAW LOOP ── */
+    let t = 0;
+    function draw() {
+        t += 0.008;
+        frame++;
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.fillStyle = cfg.bg;
+        ctx.fillRect(0, 0, w, h);
+
+        /* orbs */
+        ctx.globalCompositeOperation = cfg.orbMode;
+        orbs.forEach((o, i) => {
+            o.phase += 0.003;
+            o.x += o.dx + Math.sin(o.phase * 0.6 + i*1.1) * 0.00015;
+            o.y += o.dy + Math.cos(o.phase * 0.5 + i*0.9) * 0.00015;
+            if (o.x < -0.05 || o.x > 1.05) o.dx *= -1;
+            if (o.y < -0.05 || o.y > 1.05) o.dy *= -1;
+
+            const pulse = 0.88 + Math.sin(o.phase * 1.2) * 0.12;
+            const rPx   = o.r * Math.min(w, h) * pulse;
+            const cx    = o.x * w, cy = o.y * h;
+            const gr    = ctx.createRadialGradient(cx, cy, 0, cx, cy, rPx);
+            const [r,g,b] = o.rgb;
+            gr.addColorStop(0,    `rgba(${r},${g},${b},${o.a})`);
+            gr.addColorStop(0.35, `rgba(${r},${g},${b},${(o.a*0.5).toFixed(2)})`);
+            gr.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+            ctx.beginPath();
+            ctx.arc(cx, cy, rPx, 0, Math.PI*2);
+            ctx.fillStyle = gr;
+            ctx.fill();
+        });
+        ctx.globalCompositeOperation = 'source-over';
+
+        /* particles */
+        parts.forEach(p => {
+            p.y     -= p.spd;
+            p.x     += p.drft + Math.sin(p.phase + t*1.8) * 0.00010;
+            p.phase += 0.020;
+
+            const life = 1 - p.y;
+            if (life < 0.12)       p.op = (life/0.12) * p.maxOp;
+            else if (life > 0.82)  p.op = ((1-life)/0.18) * p.maxOp;
+            else                   p.op = p.maxOp * (0.75 + Math.sin(p.phase*2.5)*0.25);
+
+            if (p.y < -0.04) {
+                p.y = 1.04 + Math.random()*0.08;
+                p.x = Math.random();
+                p.op = 0;
+            }
+
+            const [r,g,b] = p.rgb;
+            const op = Math.max(0, Math.min(1, p.op));
+
+            /* glow halo behind particle */
+            if (p.size > 1.4) {
+                const glow = ctx.createRadialGradient(p.x*w, p.y*h, 0, p.x*w, p.y*h, p.size*5);
+                glow.addColorStop(0, `rgba(${r},${g},${b},${(op*0.28).toFixed(2)})`);
+                glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                ctx.beginPath();
+                ctx.arc(p.x*w, p.y*h, p.size*5, 0, Math.PI*2);
+                ctx.fillStyle = glow;
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x*w, p.y*h, p.size, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(${r},${g},${b},${op.toFixed(2)})`;
+            ctx.fill();
+        });
+
+        /* film grain — every 2 frames to save GPU */
+        if (frame % 2 === 0) {
+            const iw = Math.ceil(w/3), ih = Math.ceil(h/3);
+            const id = ctx.createImageData(iw, ih);
+            for (let i = 0; i < id.data.length; i += 4) {
+                const v = (Math.random()*2-1)*22;
+                id.data[i]=id.data[i+1]=id.data[i+2]=128+v;
+                id.data[i+3] = 14;
+            }
+            const tmp = parent.document.createElement('canvas');
+            tmp.width=iw; tmp.height=ih;
+            tmp.getContext('2d').putImageData(id,0,0);
+            ctx.globalCompositeOperation = cfg.grainMode;
+            ctx.globalAlpha = cfg.grainAlpha;
+            ctx.drawImage(tmp, 0, 0, w, h);
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+</script>
+""", height=0, width=0)
 
 st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-eyebrow'>⬡ Curated by AI · Two Models · One Verdict</div>", unsafe_allow_html=True)
