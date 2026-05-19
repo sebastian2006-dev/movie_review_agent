@@ -908,14 +908,7 @@ button[data-testid="stChatInputSubmitButton"] svg {{
     stroke: var(--ncr-on-primary) !important; fill: none !important;
     width: 16px !important; height: 16px !important;
 }}
-div[data-testid="stChatInput"] button,
-div[data-testid="stChatInput"] button:focus,
-div[data-testid="stChatInput"] button:active {{
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    border-radius: 9999px !important;
-}}
+
 div[data-testid="stChatInput"] button > div,
 div[data-testid="stChatInput"] button span,
 div[data-testid="stChatInput"] > div > div:last-child {{
