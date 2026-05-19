@@ -1145,204 +1145,288 @@ st.markdown("""
 
 components.html("""
 <script>
-(function() {
-    const doc   = parent.document;
-    const root  = doc.documentElement;
+(function () {
+  const doc  = parent.document;
+  const root = doc.documentElement;
 
-    function getTheme() {
-        return root.getAttribute('data-theme') || 'dark';
-    }
+  function getTheme() { return root.getAttribute('data-theme') || 'dark'; }
 
-    const canvas = doc.getElementById('cinema-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  const canvas = doc.getElementById('cinema-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
 
-    function resize() {
-        canvas.width  = parent.window.innerWidth;
-        canvas.height = parent.window.innerHeight;
-    }
-    resize();
-    parent.window.addEventListener('resize', resize);
+  function resize() {
+    canvas.width  = parent.window.innerWidth;
+    canvas.height = parent.window.innerHeight;
+  }
+  resize();
+  parent.window.addEventListener('resize', resize);
+  const W = () => canvas.width, H = () => canvas.height;
 
-    /* ── THEME CONFIGS ── */
-    const THEMES = {
-        dark: {
-            bg:       '#120c09',
-            orbs:     ['#e8833a','#c8603a','#f0b87a'],
-            orbAlpha: [0.52, 0.44, 0.40],
-            orbR:     [0.42, 0.36, 0.30],
-            orbPos:   [[0.12,0.18],[0.78,0.72],[0.48,0.45]],
-            pColors:  ['#e8833a','#f0b87a','#c8603a','#f5c890'],
-            pCount:   32,
-            pAlpha:   0.70,
-            orbMode:  'screen',
-            grainAlpha: 0.32,
-            grainMode:  'overlay',
-        },
-        light: {
-            bg:       '#f5ede0',
-            orbs:     ['#c8601a','#a84010','#d06828'],
-            orbAlpha: [0.38, 0.30, 0.26],
-            orbR:     [0.50, 0.42, 0.36],
-            orbPos:   [[0.10,0.15],[0.80,0.75],[0.50,0.48]],
-            pColors:  ['#c8601a','#a84010','#e07030','#b85018'],
-            pCount:   28,
-            pAlpha:   0.55,
-            orbMode:  'multiply',
-            grainAlpha: 0.22,
-            grainMode:  'multiply',
-        }
+  /* ── DARK CONFIG — unchanged ── */
+  const DARK_CFG = {
+    bg:      '#120c09',
+    orbs:    [['#e8833a',0.52,0.42,[0.12,0.18]],
+              ['#c8603a',0.44,0.36,[0.78,0.72]],
+              ['#f0b87a',0.40,0.30,[0.48,0.45]]],
+    pColors: [[232,131,58],[240,184,122],[200,96,58],[245,200,144]],
+    pCount:  32, pAlpha: 0.70,
+    grainAlpha: 0.32, grainMode: 'overlay',
+  };
+
+  /* ── LIGHT PALETTE ── */
+  const WARM = [
+    [200,96,26],[168,64,16],[220,130,50],[185,100,35],[240,180,100],[160,80,20]
+  ];
+  const EMBER_WARM = [[200,96,26],[168,64,16],[220,130,50]];
+
+  function hexRgb(h) {
+    return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  }
+
+  /* ─────────────────────────────────────────────────────
+     DARK STATE
+  ───────────────────────────────────────────────────── */
+  let darkOrbs = [], darkParts = [];
+
+  function buildDark() {
+    darkOrbs = DARK_CFG.orbs.map(([col,a,r,pos]) => ({
+      rgb: hexRgb(col), a, r, x: pos[0], y: pos[1],
+      dx: (Math.random()-0.5)*0.00035, dy: (Math.random()-0.5)*0.00035,
+      phase: Math.random()*Math.PI*2,
+    }));
+    darkParts = Array.from({length: DARK_CFG.pCount}, () => spawnDarkParticle(true));
+  }
+
+  function spawnDarkParticle(anywhere) {
+    const rgb = DARK_CFG.pColors[Math.floor(Math.random()*DARK_CFG.pColors.length)];
+    return {
+      x: Math.random(), y: anywhere ? Math.random() : 1.04,
+      size: 0.8 + Math.random()*2.2,
+      spd:  0.00010 + Math.random()*0.00016,
+      drft: (Math.random()-0.5)*0.00007,
+      sway: Math.random()*Math.PI*2, swaySpd: 0.018, swayAmp: 0.00010,
+      maxOp: DARK_CFG.pAlpha*(0.5+Math.random()*0.5), op: 0, rgb,
     };
+  }
 
-    /* ── BUILD STATE ── */
-    let cfg     = THEMES[getTheme()];
-    let orbs    = [];
-    let parts   = [];
-    let frame   = 0;
+  /* ─────────────────────────────────────────────────────
+     LIGHT STATE
+  ───────────────────────────────────────────────────── */
+  let motes = [], embers = [], rays = [];
 
-    function hexRgb(hex) {
-        return [
-            parseInt(hex.slice(1,3),16),
-            parseInt(hex.slice(3,5),16),
-            parseInt(hex.slice(5,7),16)
-        ];
-    }
+  function spawnMote(anywhere) {
+    const col = WARM[Math.floor(Math.random()*WARM.length)];
+    return {
+      x: Math.random(), y: anywhere ? Math.random() : 1.03,
+      size: 0.6 + Math.random()*1.6,
+      spd:  0.000055 + Math.random()*0.00008,
+      drft: (Math.random()-0.5)*0.000055,
+      sway: Math.random()*Math.PI*2,
+      swaySpd: 0.008 + Math.random()*0.012,
+      swayAmp: 0.00008 + Math.random()*0.00014,
+      maxOp: 0.12 + Math.random()*0.22, op: 0, col,
+    };
+  }
 
-    function buildOrbs(c) {
-        return c.orbs.map((col, i) => ({
-            col, rgb: hexRgb(col),
-            x:  c.orbPos[i][0],
-            y:  c.orbPos[i][1],
-            r:  c.orbR[i],
-            a:  c.orbAlpha[i],
-            dx: (Math.random()-0.5) * 0.00035,
-            dy: (Math.random()-0.5) * 0.00035,
-            phase: i * 2.09,
-        }));
-    }
+  function spawnEmber(anywhere) {
+    const col = EMBER_WARM[Math.floor(Math.random()*EMBER_WARM.length)];
+    return {
+      x: 0.1 + Math.random()*0.8, y: anywhere ? Math.random() : 1.04,
+      size: 1.2 + Math.random()*2.0,
+      spd:  0.00018 + Math.random()*0.00025,
+      drft: (Math.random()-0.5)*0.00010,
+      sway: Math.random()*Math.PI*2,
+      swaySpd: 0.015 + Math.random()*0.022,
+      swayAmp: 0.00018 + Math.random()*0.00030,
+      maxOp: 0.35 + Math.random()*0.40, op: 0, tail: [], col,
+    };
+  }
 
-    function buildParticles(c) {
-        return Array.from({length: c.pCount}, () => ({
-            x:    Math.random(),
-            y:    1 + Math.random() * 0.3,
-            size: 0.8 + Math.random() * 2.2,
-            spd:  0.00010 + Math.random() * 0.00016,
-            drft: (Math.random()-0.5) * 0.00007,
-            op:   0,
-            maxOp: c.pAlpha * (0.5 + Math.random() * 0.5),
-            phase: Math.random() * Math.PI * 2,
-            col:  c.pColors[Math.floor(Math.random()*c.pColors.length)],
-            rgb:  null,
-        }));
-    }
-    function assignRgb(ps) { ps.forEach(p => { p.rgb = hexRgb(p.col); }); }
+  function buildLight() {
+    motes   = Array.from({length: 55}, () => spawnMote(true));
+    embers  = Array.from({length: 18}, () => spawnEmber(true));
+    rays    = Array.from({length: 4},  (_, i) => ({
+      x:       0.05 + i*0.28 + Math.random()*0.08,
+      width:   18 + Math.random()*30,
+      angle:   -0.18 + Math.random()*0.08,
+      op:      0,
+      targetOp: 0.028 + Math.random()*0.030,
+      phase:   Math.random()*Math.PI*2,
+    }));
+  }
 
-    function initState() {
-        cfg   = THEMES[getTheme()];
-        orbs  = buildOrbs(cfg);
-        parts = buildParticles(cfg);
-        assignRgb(parts);
-    }
-    initState();
+  /* init */
+  buildDark(); buildLight();
+  const observer = new MutationObserver(() => { buildDark(); buildLight(); });
+  observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
-    /* watch for theme changes */
-    const observer = new MutationObserver(() => { initState(); });
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  /* ─────────────────────────────────────────────────────
+     DRAW — DARK
+  ───────────────────────────────────────────────────── */
+  let t = 0, frame = 0;
 
-    /* ── DRAW LOOP ── */
-    let t = 0;
-    function draw() {
-        t += 0.008;
-        frame++;
-        const w = canvas.width, h = canvas.height;
-        ctx.clearRect(0, 0, w, h);
+  function drawDark(w, h) {
+    ctx.fillStyle = '#120c09';
+    ctx.fillRect(0, 0, w, h);
 
-        ctx.fillStyle = cfg.bg;
-        ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'screen';
+    darkOrbs.forEach((o, i) => {
+      o.phase += 0.003;
+      o.x += o.dx + Math.sin(o.phase*0.6+i*1.1)*0.00015;
+      o.y += o.dy + Math.cos(o.phase*0.5+i*0.9)*0.00015;
+      if (o.x<-0.05||o.x>1.05) o.dx*=-1;
+      if (o.y<-0.05||o.y>1.05) o.dy*=-1;
+      const pulse = 0.88 + Math.sin(o.phase*1.2)*0.12;
+      const rPx = o.r * Math.min(w,h) * pulse;
+      const cx = o.x*w, cy = o.y*h;
+      const [r,g,b] = o.rgb;
+      const gr = ctx.createRadialGradient(cx,cy,0,cx,cy,rPx);
+      gr.addColorStop(0,    `rgba(${r},${g},${b},${o.a})`);
+      gr.addColorStop(0.35, `rgba(${r},${g},${b},${(o.a*0.5).toFixed(2)})`);
+      gr.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+      ctx.beginPath(); ctx.arc(cx,cy,rPx,0,Math.PI*2);
+      ctx.fillStyle = gr; ctx.fill();
+    });
+    ctx.globalCompositeOperation = 'source-over';
 
-        /* orbs */
-        ctx.globalCompositeOperation = cfg.orbMode;
-        orbs.forEach((o, i) => {
-            o.phase += 0.003;
-            o.x += o.dx + Math.sin(o.phase * 0.6 + i*1.1) * 0.00015;
-            o.y += o.dy + Math.cos(o.phase * 0.5 + i*0.9) * 0.00015;
-            if (o.x < -0.05 || o.x > 1.05) o.dx *= -1;
-            if (o.y < -0.05 || o.y > 1.05) o.dy *= -1;
+    darkParts.forEach((p, idx) => {
+      p.sway += p.swaySpd; p.y -= p.spd;
+      p.x += p.drft + Math.sin(p.sway)*p.swayAmp;
+      const life = 1-p.y;
+      if      (life<0.12) p.op=(life/0.12)*p.maxOp;
+      else if (life>0.82) p.op=((1-life)/0.18)*p.maxOp;
+      else                p.op=p.maxOp*(0.75+Math.sin(p.sway*2.5)*0.25);
+      if (p.y<-0.04) { darkParts[idx]=spawnDarkParticle(false); return; }
+      const [r,g,b]=p.rgb, op=Math.max(0,Math.min(1,p.op));
+      if (p.size>1.4) {
+        const glow=ctx.createRadialGradient(p.x*w,p.y*h,0,p.x*w,p.y*h,p.size*5);
+        glow.addColorStop(0,`rgba(${r},${g},${b},${(op*0.28).toFixed(2)})`);
+        glow.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        ctx.beginPath(); ctx.arc(p.x*w,p.y*h,p.size*5,0,Math.PI*2);
+        ctx.fillStyle=glow; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(p.x*w,p.y*h,p.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${op.toFixed(2)})`; ctx.fill();
+    });
+  }
 
-            const pulse = 0.88 + Math.sin(o.phase * 1.2) * 0.12;
-            const rPx   = o.r * Math.min(w, h) * pulse;
-            const cx    = o.x * w, cy = o.y * h;
-            const gr    = ctx.createRadialGradient(cx, cy, 0, cx, cy, rPx);
-            const [r,g,b] = o.rgb;
-            gr.addColorStop(0,    `rgba(${r},${g},${b},${o.a})`);
-            gr.addColorStop(0.35, `rgba(${r},${g},${b},${(o.a*0.5).toFixed(2)})`);
-            gr.addColorStop(1,    `rgba(${r},${g},${b},0)`);
-            ctx.beginPath();
-            ctx.arc(cx, cy, rPx, 0, Math.PI*2);
-            ctx.fillStyle = gr;
-            ctx.fill();
-        });
-        ctx.globalCompositeOperation = 'source-over';
+  /* ─────────────────────────────────────────────────────
+     DRAW — LIGHT
+  ───────────────────────────────────────────────────── */
+  function drawLight(w, h) {
+    ctx.fillStyle = '#f5ede0';
+    ctx.fillRect(0, 0, w, h);
 
-        /* particles */
-        parts.forEach(p => {
-            p.y     -= p.spd;
-            p.x     += p.drft + Math.sin(p.phase + t*1.8) * 0.00010;
-            p.phase += 0.020;
+    /* rays */
+    rays.forEach(ray => {
+      ray.phase += 0.004;
+      ray.op += (ray.targetOp + Math.sin(ray.phase)*0.012 - ray.op)*0.008;
+      const rx = ray.x*w, tan = Math.tan(ray.angle);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(rx - ray.width/2, 0);
+      ctx.lineTo(rx + ray.width/2, 0);
+      ctx.lineTo(rx + ray.width/2 + tan*h, h);
+      ctx.lineTo(rx - ray.width/2 + tan*h, h);
+      ctx.closePath();
+      const rg = ctx.createLinearGradient(rx,0,rx,h);
+      rg.addColorStop(0,   `rgba(200,140,60,0)`);
+      rg.addColorStop(0.2, `rgba(200,140,60,${ray.op.toFixed(3)})`);
+      rg.addColorStop(0.8, `rgba(200,140,60,${ray.op.toFixed(3)})`);
+      rg.addColorStop(1,   `rgba(200,140,60,0)`);
+      ctx.fillStyle=rg; ctx.fill(); ctx.restore();
+    });
 
-            const life = 1 - p.y;
-            if (life < 0.12)       p.op = (life/0.12) * p.maxOp;
-            else if (life > 0.82)  p.op = ((1-life)/0.18) * p.maxOp;
-            else                   p.op = p.maxOp * (0.75 + Math.sin(p.phase*2.5)*0.25);
+    /* motes */
+    motes.forEach((m, idx) => {
+      m.sway += m.swaySpd; m.y -= m.spd;
+      m.x += m.drft + Math.sin(m.sway)*m.swayAmp;
+      const life = 1-m.y;
+      if      (life<0.08) m.op=(life/0.08)*m.maxOp;
+      else if (life>0.90) m.op=((1-life)/0.10)*m.maxOp;
+      else                m.op=m.maxOp*(0.8+Math.sin(m.sway*1.7)*0.2);
+      if (m.y<-0.03) { motes[idx]=spawnMote(false); return; }
+      const [r,g,b]=m.col, op=Math.max(0,Math.min(1,m.op));
+      const halo=ctx.createRadialGradient(m.x*w,m.y*h,0,m.x*w,m.y*h,m.size*5);
+      halo.addColorStop(0,`rgba(${r},${g},${b},${(op*0.18).toFixed(3)})`);
+      halo.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.beginPath(); ctx.arc(m.x*w,m.y*h,m.size*5,0,Math.PI*2);
+      ctx.fillStyle=halo; ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x*w,m.y*h,m.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${op.toFixed(3)})`; ctx.fill();
+    });
 
-            if (p.y < -0.04) {
-                p.y = 1.04 + Math.random()*0.08;
-                p.x = Math.random();
-                p.op = 0;
-            }
-
-            const [r,g,b] = p.rgb;
-            const op = Math.max(0, Math.min(1, p.op));
-
-            /* glow halo behind particle */
-            if (p.size > 1.4) {
-                const glow = ctx.createRadialGradient(p.x*w, p.y*h, 0, p.x*w, p.y*h, p.size*5);
-                glow.addColorStop(0, `rgba(${r},${g},${b},${(op*0.28).toFixed(2)})`);
-                glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
-                ctx.beginPath();
-                ctx.arc(p.x*w, p.y*h, p.size*5, 0, Math.PI*2);
-                ctx.fillStyle = glow;
-                ctx.fill();
-            }
-
-            ctx.beginPath();
-            ctx.arc(p.x*w, p.y*h, p.size, 0, Math.PI*2);
-            ctx.fillStyle = `rgba(${r},${g},${b},${op.toFixed(2)})`;
-            ctx.fill();
-        });
-
-        /* film grain — every 2 frames to save GPU */
-        if (frame % 2 === 0) {
-            const iw = Math.ceil(w/3), ih = Math.ceil(h/3);
-            const id = ctx.createImageData(iw, ih);
-            for (let i = 0; i < id.data.length; i += 4) {
-                const v = (Math.random()*2-1)*22;
-                id.data[i]=id.data[i+1]=id.data[i+2]=128+v;
-                id.data[i+3] = 14;
-            }
-            const tmp = parent.document.createElement('canvas');
-            tmp.width=iw; tmp.height=ih;
-            tmp.getContext('2d').putImageData(id,0,0);
-            ctx.globalCompositeOperation = cfg.grainMode;
-            ctx.globalAlpha = cfg.grainAlpha;
-            ctx.drawImage(tmp, 0, 0, w, h);
-            ctx.globalAlpha = 1;
-            ctx.globalCompositeOperation = 'source-over';
+    /* embers */
+    embers.forEach((e, idx) => {
+      e.sway += e.swaySpd; e.y -= e.spd;
+      e.x += e.drft + Math.sin(e.sway)*e.swayAmp;
+      e.tail.push({x:e.x*w, y:e.y*h});
+      if (e.tail.length>7) e.tail.shift();
+      const life = 1-e.y;
+      if      (life<0.10) e.op=(life/0.10)*e.maxOp;
+      else if (life>0.85) e.op=((1-life)/0.15)*e.maxOp;
+      else                e.op=e.maxOp;
+      if (e.y<-0.04) { embers[idx]=spawnEmber(false); return; }
+      const [r,g,b]=e.col, op=Math.max(0,Math.min(1,e.op));
+      if (e.tail.length>2) {
+        for (let i=1;i<e.tail.length;i++) {
+          const frac=i/e.tail.length;
+          ctx.beginPath();
+          ctx.moveTo(e.tail[i-1].x,e.tail[i-1].y);
+          ctx.lineTo(e.tail[i].x,  e.tail[i].y);
+          ctx.strokeStyle=`rgba(${r},${g},${b},${(op*frac*0.35).toFixed(3)})`;
+          ctx.lineWidth=e.size*frac*0.9; ctx.lineCap='round'; ctx.stroke();
         }
+      }
+      const glow=ctx.createRadialGradient(e.x*w,e.y*h,0,e.x*w,e.y*h,e.size*6);
+      glow.addColorStop(0,`rgba(${r},${g},${b},${(op*0.30).toFixed(3)})`);
+      glow.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.beginPath(); ctx.arc(e.x*w,e.y*h,e.size*6,0,Math.PI*2);
+      ctx.fillStyle=glow; ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x*w,e.y*h,e.size,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${op.toFixed(3)})`; ctx.fill();
+    });
 
-        requestAnimationFrame(draw);
+    /* warm vignette */
+    const vig = ctx.createRadialGradient(w/2,h/2,h*0.25,w/2,h/2,h*0.85);
+    vig.addColorStop(0,'rgba(200,120,40,0)');
+    vig.addColorStop(1,'rgba(160,80,20,0.09)');
+    ctx.fillStyle=vig; ctx.fillRect(0,0,w,h);
+  }
+
+  /* ── GRAIN shared ── */
+  function drawGrain(w, h, mode, alpha) {
+    const iw=Math.ceil(w/4), ih=Math.ceil(h/4);
+    const id=ctx.createImageData(iw,ih);
+    for (let i=0;i<id.data.length;i+=4) {
+      const v=(Math.random()*2-1)*18;
+      id.data[i]=138+v; id.data[i+1]=118+v; id.data[i+2]=98+v; id.data[i+3]=15;
     }
-    draw();
+    const tmp=doc.createElement('canvas');
+    tmp.width=iw; tmp.height=ih;
+    tmp.getContext('2d').putImageData(id,0,0);
+    ctx.globalCompositeOperation=mode;
+    ctx.globalAlpha=alpha;
+    ctx.drawImage(tmp,0,0,w,h);
+    ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  }
+
+  /* ── MAIN LOOP ── */
+  function loop() {
+    t+=0.008; frame++;
+    const w=W(), h=H(), theme=getTheme();
+    ctx.clearRect(0,0,w,h);
+    if (theme==='dark') {
+      drawDark(w,h);
+      if (frame%2===0) drawGrain(w,h,'overlay',0.32);
+    } else {
+      drawLight(w,h);
+      if (frame%3===0) drawGrain(w,h,'multiply',0.45);
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
 })();
 </script>
 """, height=0, width=0)
