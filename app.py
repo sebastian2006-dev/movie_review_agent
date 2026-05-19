@@ -48,6 +48,7 @@ DARK = {
     "orb_opacity":      "0.45",
     "orb_blend":        "screen",
     "bg_base":          "#120c09",
+    "sidebar_bg":       "#201610",
 }
 
 LIGHT = {
@@ -86,23 +87,29 @@ LIGHT = {
     "orb_opacity":      "0.30",
     "orb_blend":        "multiply",
     "bg_base":          "#fdf6ee",
+    "sidebar_bg":       "#f5e8d8",
 }
 
 # ================================================================
 # THEME TOGGLE — state & query-param handler (runs before page config)
 # ================================================================
-if "theme" not in st.session_state:
-    st.session_state.theme = "dark"
+# (Replaced by pure JS and CSS variables for seamless transitions)
 
-# Handle toggle click from the HTML <a> button (sets ?toggle_theme=1)
-if st.query_params.get("toggle_theme"):
-    st.session_state.theme = "light" if st.session_state.theme == "dark" else "dark"
-    st.query_params.clear()
-    st.rerun()
+class CSSVarsGetter:
+    def __getitem__(self, key):
+        return f"var(--ncr-{key.replace('_', '-')})"
 
-current_theme = st.session_state.theme
-C = DARK if current_theme == "dark" else LIGHT
-toggle_icon = "☀️" if current_theme == "dark" else "🌙"
+C = CSSVarsGetter()
+
+def generate_css_vars():
+    css = ":root {\n"
+    for k, v in DARK.items():
+        css += f"  --ncr-{k.replace('_', '-')}: {v};\n"
+    css += "}\n\n:root[data-theme='light'] {\n"
+    for k, v in LIGHT.items():
+        css += f"  --ncr-{k.replace('_', '-')}: {v};\n"
+    css += "}\n"
+    return css
 
 # ================================================================
 # SEARCH MOVIES
@@ -259,14 +266,31 @@ if "search_results" not in st.session_state: st.session_state.search_results = [
 if "last_typed"     not in st.session_state: st.session_state.last_typed     = None
 if "search_error"   not in st.session_state: st.session_state.search_error   = None
 if "media_type"     not in st.session_state: st.session_state.media_type     = "Movie"
-if "theme"          not in st.session_state: st.session_state.theme          = "dark"
-
-# ── resolve token map for current SSR render ────────────────────
-current_theme = st.session_state.theme
-C = DARK if current_theme == "dark" else LIGHT
-
-# ── resolve sidebar icon color: near-black in light, near-white in dark ──
-sidebar_icon_color = "#1a1a1a" if current_theme == "light" else "#f0f0f0"
+# ── INJECT SEAMLESS THEME JS ────────────────────
+components.html("""
+<script>
+    const doc = parent.document;
+    const root = doc.documentElement;
+    const savedTheme = parent.window.localStorage.getItem('ncr_theme') || 'dark';
+    root.setAttribute('data-theme', savedTheme);
+    
+    setInterval(() => {
+        const btn = doc.getElementById('ncr-theme-toggle');
+        if (btn && !btn.hasAttribute('data-has-listener')) {
+            btn.innerHTML = root.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const current = root.getAttribute('data-theme');
+                const next = current === 'light' ? 'dark' : 'light';
+                root.setAttribute('data-theme', next);
+                parent.window.localStorage.setItem('ncr_theme', next);
+                btn.innerHTML = next === 'light' ? '🌙' : '☀️';
+            });
+            btn.setAttribute('data-has-listener', 'true');
+        }
+    }, 200);
+</script>
+""", height=0, width=0)
 
 # ── Render the theme toggle as pure HTML (after page config) ──
 st.markdown(f"""
@@ -309,7 +333,7 @@ st.markdown(f"""
         left: calc(21rem + 12px) !important;
     }}
 </style>
-<a href="?toggle_theme=1" target="_self" id="ncr-theme-toggle">{toggle_icon}</a>
+<a href="#" id="ncr-theme-toggle"></a>
 """, unsafe_allow_html=True)
 
 
@@ -321,36 +345,7 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Outfit:wght@300;400;500;600&display=swap');
 
 /* ── ROOT CSS CUSTOM PROPERTIES ── */
-:root {{
-  --ncr-bg:               {C["bg"]};
-  --ncr-bg-lowest:        {C["bg_lowest"]};
-  --ncr-bg-low:           {C["bg_low"]};
-  --ncr-bg-container:     {C["bg_container"]};
-  --ncr-bg-high:          {C["bg_high"]};
-  --ncr-bg-highest:       {C["bg_highest"]};
-  --ncr-bg-bright:        {C["bg_bright"]};
-  --ncr-on-surface:       {C["on_surface"]};
-  --ncr-on-surface-var:   {C["on_surface_var"]};
-  --ncr-on-primary:       {C["on_primary"]};
-  --ncr-text-muted:       {C["text_muted"]};
-  --ncr-text-dim:         {C["text_dim"]};
-  --ncr-primary:          {C["primary"]};
-  --ncr-primary-dim:      {C["primary_dim"]};
-  --ncr-primary-container:{C["primary_container"]};
-  --ncr-secondary:        {C["secondary"]};
-  --ncr-tertiary:         {C["tertiary"]};
-  --ncr-outline:          {C["outline"]};
-  --ncr-outline-var:      {C["outline_var"]};
-  --ncr-glow-copper:      {C["glow_copper"]};
-  --ncr-glow-copper-md:   {C["glow_copper_md"]};
-  --ncr-glow-copper-btn:  {C["glow_copper_btn"]};
-  --ncr-critic-color:     {C["critic_color"]};
-  --ncr-advocate-color:   {C["advocate_color"]};
-  --ncr-critic-bg:        {C["critic_bg"]};
-  --ncr-advocate-bg:      {C["advocate_bg"]};
-  --ncr-critic-border:    {C["critic_border"]};
-  --ncr-advocate-border:  {C["advocate_border"]};
-}}
+{generate_css_vars()}
 
 /* ── HIDE DEFAULT HEADER ── */
 header[data-testid="stHeader"] {{ background: transparent !important; }}
@@ -366,7 +361,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
-    background: {C['bg_high'] if current_theme == 'light' else C['bg_container']} !important;
+    background: {C['sidebar_bg']} !important;
     border: 1px solid {C['outline']} !important;
     border-radius: 0 8px 8px 0 !important;
     box-shadow: 2px 0 12px {C['glow_copper']},
@@ -393,7 +388,7 @@ header[data-testid="stHeader"] {{ background: transparent !important; }}
 }}
 div[data-testid="stSidebarCollapsedControl"] > div,
 div[data-testid="collapsedControl"] > div {{
-    background: {C['bg_high'] if current_theme == 'light' else C['bg_container']} !important;
+    background: {C['sidebar_bg']} !important;
     border-radius: 0 8px 8px 0 !important;
 }}
 
